@@ -8,8 +8,11 @@ import {
   updateProduct,
 } from "../controllers/productsController.js";
 import upload from "../middleware/upload.js";
+import requireAuth from "../middleware/requireAuth.js";
 
 const router = express.Router();
+
+router.use(requireAuth);
 
 router.get("/getproducts", getProducts);
 router.get("/products", getAllProducts);

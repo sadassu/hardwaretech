@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
+import { useAuthContext } from "../../hooks/useAuthContext";
 
 const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft"];
 
 const CreateVariant = ({ product }) => {
+  const { user } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     unit: "pcs", // default value
@@ -29,10 +31,18 @@ const CreateVariant = ({ product }) => {
     }
 
     try {
-      const res = await api.post("/product-variants", {
-        productId: product._id,
-        ...formData,
-      });
+      const res = await api.post(
+        "/product-variants",
+        {
+          productId: product._id,
+          ...formData,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
 
       toast.success(res.data.message || "Variant created!");
       setFormData({ unit: "pcs", size: "", price: "", quantity: "" });

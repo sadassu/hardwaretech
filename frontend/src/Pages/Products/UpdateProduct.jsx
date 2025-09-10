@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
+import { useAuthContext } from "../../hooks/useAuthContext";
 
 const UpdateProduct = ({ product, onUpdate }) => {
+  const { user } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -46,7 +48,10 @@ const UpdateProduct = ({ product, onUpdate }) => {
       if (image) form.append("image", image);
 
       const res = await api.put(`/products/${product._id}`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${user.token}`,
+        },
       });
 
       toast.success(res.data.message || "Product updated!");

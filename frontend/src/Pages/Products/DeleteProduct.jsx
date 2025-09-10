@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import api from "../../utils/api";
 import Modal from "../../components/Modal";
+import { useAuthContext } from "../../hooks/useAuthContext";
 
 const DeleteProduct = ({ product, onDeleteSuccess }) => {
+  const { user } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -14,7 +16,11 @@ const DeleteProduct = ({ product, onDeleteSuccess }) => {
 
     setIsDeleting(true);
     try {
-      await api.delete(`/products/${product._id}`);
+      await api.delete(`/products/${product._id}`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
 
       setIsOpen(false);
       if (onDeleteSuccess) onDeleteSuccess(product._id);

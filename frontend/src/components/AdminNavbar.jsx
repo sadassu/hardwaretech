@@ -1,17 +1,10 @@
-import { useNavigate } from "react-router";
-import { useAuth } from "../hooks/useAuth";
+import { useLogout } from "../hooks/useLogout";
 
 function AdminNavbar() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
+  const { logout } = useLogout();
 
-  const handleLogout = async () => {
-    try {
-      await logout(); // ✅ wait until cookie is cleared + state reset
-      navigate("/login"); // ✅ then redirect
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
+  const handleLogoutButton = () => {
+    logout();
   };
 
   return (
@@ -43,7 +36,7 @@ function AdminNavbar() {
         </button>
 
         {/* Logout button */}
-        <button className="btn btn-error btn-sm" onClick={handleLogout}>
+        <button className="btn btn-error btn-sm" onClick={handleLogoutButton}>
           Logout
         </button>
       </div>

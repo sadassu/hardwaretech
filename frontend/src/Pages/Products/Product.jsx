@@ -1,26 +1,35 @@
 import React, { useState } from "react";
+
 import CreateProduct from "./CreateProduct";
 import DeleteProduct from "./DeleteProduct";
 import UpdateProduct from "./UpdateProduct";
 import CreateVariant from "../Variants/CreateVariant";
 import { formatDatePHT } from "../../utils/formatDate";
-import { backendUrl } from "../../config/config";
 import { useFetch } from "../../hooks/useFetch";
+import { backendUrl } from "../config/url";
+import { useAuthContext } from "../../hooks/useAuthContext";
 
 const Product = () => {
   const [page, setPage] = useState(1);
   const limit = 5;
+  const { user } = useAuthContext();
 
   // Use custom hook
   const { data, loading, error } = useFetch(
     "/products",
-    { params: { page, limit, sortBy: "name", sortOrder: "asc" } },
+    {
+      params: { page, limit, sortBy: "name", sortOrder: "asc" },
+      headers: {
+        Authorization: `Bearer ${user.token}`,
+      },
+    },
     [page]
   );
 
   const products = data?.products || [];
   const pages = data?.pages || 1;
 
+  console.log(products);
   // handle delete
   const handleDeleteSuccess = (deletedProductId) => {
     if (!data) return;
@@ -38,7 +47,7 @@ const Product = () => {
       <h1 className="text-2xl font-bold mb-4">Products</h1>
 
       {loading ? (
-        <div className="text-center py-10">Loading...</div>
+        <span className="loading loading-bars loading-xl"></span>
       ) : error ? (
         <div className="text-center text-red-500 py-10">{error}</div>
       ) : (

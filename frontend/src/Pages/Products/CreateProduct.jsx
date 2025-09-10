@@ -1,16 +1,19 @@
-import  { useState } from "react";
+import { useState } from "react";
 import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
+import { useAuthContext } from "../../hooks/useAuthContext.js";
 
 const CreateProduct = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     category: "",
   });
   const [image, setImage] = useState(null);
+  const { user } = useAuthContext();
 
   const handleChange = (e) => {
     setFormData({
@@ -26,6 +29,11 @@ const CreateProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!user) {
+      setError("You must be logged in");
+      return;
+    }
+
     try {
       const form = new FormData();
       form.append("name", formData.name);
@@ -34,7 +42,10 @@ const CreateProduct = () => {
       if (image) form.append("image", image);
 
       const res = await api.post("/products", form, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${user.token}`,
+        },
       });
 
       toast.success(res.data.message || "Product created!");
@@ -57,6 +68,7 @@ const CreateProduct = () => {
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <h2 className="text-xl font-semibold mb-4">Create Product</h2>
+        {error && <div className="text-red-500 mb-4">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4 w-96">
           <input

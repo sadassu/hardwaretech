@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import validator from "validator";
 
 const userSchema = new mongoose.Schema(
   {
@@ -36,39 +37,53 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password before saving
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-
-  try {
-    const existingUser = await mongoose.models.User.findOne({
-      email: this.email,
-    });
-    if (existingUser && existingUser._id.toString() !== this._id.toString()) {
-      return next(new Error("Email already exists"));
-    }
-
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
-    if (!passwordRegex.test(this.password)) {
-      return next(
-        new Error(
-          "Password must be at least 8 characters long and include both uppercase and lowercase letters"
-        )
-      );
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-
-    next();
-  } catch (err) {
-    next(err);
+userSchema.statics.signup = async (name, email, password) => {
+  //! validation
+  if (!email || !password || !name) {
+    throw Error("All fields must be filled");
   }
-});
 
-// Compare password
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  if (!validator.isEmail(email)) {
+    throw Error("Email is not valid");
+  }
+
+  if (!validator.isStrongPassword(password)) {
+    throw Error("Password not strong enough");
+  }
+
+  const exists = await User.findOne({ email });
+
+  if (exists) {
+    throw Error("Email already in use");
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
+
+  const user = await User.create({ name, email, password: hash });
+
+  return user;
+};
+
+//static login method
+userSchema.statics.login = async function (email, password) {
+  //validation
+  if (!email || !password) {
+    throw Error("All fields must be filled");
+  }
+  const user = await this.findOne({ email });
+
+  if (!user) {
+    throw Error("Incorrect email");
+  }
+
+  const match = await bcrypt.compare(password, user.password);
+
+  if (!match) {
+    throw Error("Incorrect password");
+  }
+
+  return user;
 };
 
 const User = mongoose.model("User", userSchema);

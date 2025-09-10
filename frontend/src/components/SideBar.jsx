@@ -1,4 +1,8 @@
+import { useAuthContext } from "../hooks/useAuthContext";
+
 const SideBar = () => {
+  const { user } = useAuthContext();
+
   return (
     <div className="h-screen w-64 bg-slate-800 text-slate-100 shadow-xl fixed">
       {/* Header */}
@@ -100,7 +104,9 @@ const SideBar = () => {
               <span className="text-sm font-medium text-slate-200">U</span>
             </div>
           </div>
-          <span className="text-sm text-slate-300 truncate">User Name</span>
+          <span className="text-sm text-slate-300 truncate">
+            {user ? user.email : ""}
+          </span>
         </div>
       </div>
     </div>

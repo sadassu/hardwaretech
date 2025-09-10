@@ -1,15 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../../utils/api";
-import toast from "react-hot-toast";
+import { useLogin } from "../../hooks/useLogin";
 
 function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const { login, error, isLoading } = useLogin();
 
   const handleChange = (e) => {
     setFormData({
@@ -20,32 +17,19 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
-    try {
-      // ✅ Login request (cookie will be set automatically)
-      const { data } = await api.post("/auth/login", formData, {
-        withCredentials: true, // VERY important for cookies
-      });
-
-      toast.success(data.message || "Login successful");
-
-      // reset form
-      setFormData({ email: "", password: "" });
-
-      // redirect to dashboard
-      navigate("/products");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    await login(formData.email, formData.password);
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-base-200">
       <div className="card w-96 shadow-xl bg-base-100 p-6">
         <h2 className="text-2xl font-bold text-center mb-4">Login</h2>
+
+        {error && (
+          <div className="text-red-500 text-sm mb-2 text-center">{error}</div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label">Email</label>
@@ -72,9 +56,9 @@ function Login() {
           <button
             type="submit"
             className="btn btn-primary w-full"
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? "Logging in..." : "Login"}
+            {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>

@@ -29,8 +29,8 @@ app.use(
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Routes
-app.use("/api", productsRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api", productsRoutes);
 app.use("/api", variantRoutes);
 
 // ✅ Global error handler
