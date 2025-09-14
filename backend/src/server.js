@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import productsRoutes from "./routes/productsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import variantRoutes from "./routes/variantRoutes.js";
+import reservationRoutes from "./routes/reservationRoutes.js";
 import { connectDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 
@@ -31,7 +32,8 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api", productsRoutes);
-app.use("/api", variantRoutes);
+app.use("/api/product-variants", variantRoutes);
+app.use("/api/reservations", reservationRoutes);
 
 // ✅ Global error handler
 app.use((err, req, res, next) => {

@@ -13,23 +13,16 @@ export const getProducts = asyncHandler(async (req, res) => {
 
 //  Get all products
 export const getAllProducts = asyncHandler(async (req, res) => {
-  // Get query params for pagination and sorting
-  const page = parseInt(req.query.page) || 1; // default page 1
-  const limit = parseInt(req.query.limit) || 10; // default 10 items per page
-  const sortBy = req.query.sortBy || "name"; // default sort by name
-  const sortOrder = req.query.sortOrder === "desc" ? -1 : 1; // default ascending
+  const { filter, sort, skip, limit, page } = req.queryOptions;
 
-  const skip = (page - 1) * limit;
-
-  const products = await Product.find()
+  const products = await Product.find(filter)
     .populate("category")
-    .populate("variants") 
-    .sort({ [sortBy]: sortOrder })
+    .populate("variants")
+    .sort(sort)
     .skip(skip)
     .limit(limit);
 
-  // Get total count for pagination info
-  const total = await Product.countDocuments();
+  const total = await Product.countDocuments(filter);
 
   res.status(200).json({
     total,

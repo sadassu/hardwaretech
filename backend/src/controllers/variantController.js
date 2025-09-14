@@ -31,7 +31,7 @@ export const updateVariant = asyncHandler(async (req, res) => {
   const { unit, size, price, quantity } = req.body;
 
   const updatedVariant = await ProductVariant.findByIdAndUpdate(
-    req.params.variantId,
+    req.params.id,
     { unit, size, price, quantity },
     { new: true, runValidators: true }
   ).populate("product");

@@ -1,4 +1,9 @@
+import { Link } from "react-router";
+import { useAuthContext } from "../hooks/useAuthContext";
+import Login from "../Pages/Auth/Login";
+
 const NavBar = () => {
+  const { user } = useAuthContext();
   return (
     <div className="navbar bg-base-100 shadow-md px-4">
       {/* Logo / Brand */}
@@ -17,9 +22,7 @@ const NavBar = () => {
           <li>
             <a>Services</a>
           </li>
-          <li>
-            <a>Contact</a>
-          </li>
+          <li>{!user ? <Link to="/login">Login</Link> : user.email}</li>
         </ul>
       </div>
       {/* Dark Mode Toggle */}
@@ -76,9 +79,7 @@ const NavBar = () => {
           <li>
             <a>Services</a>
           </li>
-          <li>
-            <a>Contact</a>
-          </li>
+          {!user ? <Link to="/login">Login</Link> : user.email}
         </ul>
       </div>
     </div>

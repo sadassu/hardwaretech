@@ -4,13 +4,14 @@ import {
   deleteVariant,
   updateVariant,
 } from "../controllers/variantController.js";
+import { requireRole } from "../middleware/role.js";
 
 const router = express.Router();
 // add
-router.post("/product-variants", createVariant);
+router.post("", createVariant);
 // delete
-router.delete("/product-variants", deleteVariant);
+router.delete("/:id", deleteVariant);
 // update
-router.put("/product-variant", updateVariant);
+router.put("/:id", updateVariant);
 
 export default router;

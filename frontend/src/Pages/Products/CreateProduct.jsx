@@ -60,7 +60,7 @@ const CreateProduct = () => {
   return (
     <>
       <button
-        className="btn btn-wide btn-primary"
+        className="btn w-full btn-primary"
         onClick={() => setIsOpen(true)}
       >
         Add Product

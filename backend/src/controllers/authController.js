@@ -27,6 +27,9 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = createToken(user._id);
 
-  res.status(201).json({ email, token });
+  res.status(201).json({
+    name: user.name, // ✅ add name
+    email: user.email, // use user.email to ensure accuracy
+    token,
+  });
 });
-

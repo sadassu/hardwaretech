@@ -8,6 +8,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import Login from "./Pages/Auth/Login";
 import Register from "./Pages/Auth/Register";
 import { useAuthContext } from "./hooks/useAuthContext";
+import Reservation from "./Pages/Reservations/Reservation";
 
 const App = () => {
   const { user } = useAuthContext();
@@ -30,6 +31,11 @@ const App = () => {
             className="text-gray-500"
             path="/products"
             element={user ? <Product /> : <Navigate to="/login" />}
+          />
+          <Route
+            className="text-gray-500"
+            path="/reservations"
+            element={user ? <Reservation /> : <Navigate to="/login" />}
           />
         </Route>
       </Routes>

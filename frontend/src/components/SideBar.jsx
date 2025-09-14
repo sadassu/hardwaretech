@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { useAuthContext } from "../hooks/useAuthContext";
 
 const SideBar = () => {
@@ -32,7 +33,10 @@ const SideBar = () => {
           </a>
         </li>
         <li>
-          <a className="text-slate-200 hover:bg-slate-700 hover:text-slate-50 rounded-lg transition-colors duration-200 active:bg-slate-600">
+          <Link
+            to="/reservations"
+            className="text-slate-200 hover:bg-slate-700 hover:text-slate-50 rounded-lg transition-colors duration-200 active:bg-slate-600"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -47,11 +51,14 @@ const SideBar = () => {
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
               />
             </svg>
-            Profile
-          </a>
+            Reservations
+          </Link>
         </li>
         <li>
-          <a className="text-slate-200 hover:bg-slate-700 hover:text-slate-50 rounded-lg transition-colors duration-200 active:bg-slate-600">
+          <Link
+            to="/products"
+            className="text-slate-200 hover:bg-slate-700 hover:text-slate-50 rounded-lg transition-colors duration-200 active:bg-slate-600"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -67,7 +74,7 @@ const SideBar = () => {
               />
             </svg>
             Products
-          </a>
+          </Link>
         </li>
         <li>
           <a className="text-slate-200 hover:bg-slate-700 hover:text-slate-50 rounded-lg transition-colors duration-200 active:bg-slate-600">
@@ -105,7 +112,7 @@ const SideBar = () => {
             </div>
           </div>
           <span className="text-sm text-slate-300 truncate">
-            {user ? user.email : ""}
+            {user ? user.name : ""}
           </span>
         </div>
       </div>
