@@ -1,10 +1,11 @@
 import { useState } from "react";
 import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
-import { toast } from "react-hot-toast";
 import { useAuthContext } from "../../hooks/useAuthContext.js";
+import { useProductsContext } from "../../hooks/useProductContext.js";
 
 const CreateProduct = () => {
+  const { dispatch } = useProductsContext();
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
@@ -41,19 +42,20 @@ const CreateProduct = () => {
       form.append("category", formData.category);
       if (image) form.append("image", image);
 
-      const res = await api.post("/products", form, {
+      const { data } = await api.post("/products", form, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${user.token}`,
         },
       });
 
-      toast.success(res.data.message || "Product created!");
+      dispatch({ type: "CREATE_PRODUCT", payload: data.product });
+
       setFormData({ name: "", description: "", category: "" });
       setImage(null);
       setIsOpen(false);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
+      console.log(error);
     }
   };
 

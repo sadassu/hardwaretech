@@ -2,11 +2,18 @@ import React, { useState } from "react";
 import api from "../../utils/api";
 import Modal from "../../components/Modal";
 import { useAuthContext } from "../../hooks/useAuthContext";
+import { useProductsContext } from "../../hooks/useProductContext";
 
-const DeleteProduct = ({ product, onDeleteSuccess }) => {
+const DeleteProduct = ({ product }) => {
+  const { dispatch } = useProductsContext();
+
   const { user } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteSuccess = (deletedProductId) => {
+    dispatch({ type: "DELETE_PRODUCT", payload: deletedProductId });
+  };
 
   const handleDelete = async () => {
     if (!product?._id) {
@@ -23,9 +30,7 @@ const DeleteProduct = ({ product, onDeleteSuccess }) => {
       });
 
       setIsOpen(false);
-      if (onDeleteSuccess) onDeleteSuccess(product._id);
-
-      console.log("Product deleted successfully");
+      handleDeleteSuccess(product._id);
     } catch (error) {
       console.error("Error deleting product:", error);
       alert("Failed to delete product. Please try again.");

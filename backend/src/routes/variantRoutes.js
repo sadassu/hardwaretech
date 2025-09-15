@@ -4,7 +4,6 @@ import {
   deleteVariant,
   updateVariant,
 } from "../controllers/variantController.js";
-import { requireRole } from "../middleware/role.js";
 
 const router = express.Router();
 // add

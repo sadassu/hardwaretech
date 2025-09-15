@@ -25,13 +25,13 @@ export const productsReducer = (state, action) => {
       return {
         ...state,
         products: [action.payload, ...state.products],
-        total: state.total + 1,
+        total: state.total ? state.total + 1 : 1, 
       };
 
     case "DELETE_PRODUCT":
       return {
         ...state,
-        products: state.products.filter((p) => p._id !== action.payload._id),
+        products: state.products.filter((p) => p._id !== action.payload),
         total: state.total - 1,
       };
 

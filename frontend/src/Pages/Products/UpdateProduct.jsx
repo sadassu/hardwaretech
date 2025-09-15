@@ -4,7 +4,7 @@ import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
 import { useAuthContext } from "../../hooks/useAuthContext";
 
-const UpdateProduct = ({ product, onUpdate }) => {
+const UpdateProduct = ({ product, onUpdateSuccess }) => {
   const { user } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -58,7 +58,8 @@ const UpdateProduct = ({ product, onUpdate }) => {
       setFormData({ name: "", description: "", category: "" });
       setImage(null);
       setIsOpen(false);
-      if (onUpdate) onUpdate();
+      
+      if (onUpdateSuccess) onUpdateSuccess(res.data.product);
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
     }

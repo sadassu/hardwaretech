@@ -63,9 +63,11 @@ export const createProduct = asyncHandler(async (req, res) => {
     image: req.file ? `/uploads/${req.file.filename}` : "",
   });
 
+  const populatedProduct = await newProduct.populate("category");
+
   res.status(201).json({
     message: "Product created successfully",
-    product: newProduct,
+    product: populatedProduct,
   });
 });
 

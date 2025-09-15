@@ -10,6 +10,7 @@ import { useProductsContext } from "../../hooks/useProductContext";
 import { backendUrl } from "../../config/url";
 import DeleteVariant from "../Variants/DeleteVariant";
 import UpdateVariant from "../Variants/UpdateVariant";
+import Pagination from "../../components/Pagination";
 
 const Product = () => {
   const { products, pages, dispatch } = useProductsContext();
@@ -142,9 +143,9 @@ const Product = () => {
         ) : (
           <div className="space-y-4">
             {products?.length > 0 ? (
-              products.map((product) => (
+              products?.map((product, idx) => (
                 <div
-                  key={product._id}
+                  key={product._id || `product-${idx}`}
                   className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-300"
                 >
                   <div className="card-body p-6">
@@ -234,9 +235,11 @@ const Product = () => {
                         </div>
 
                         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                          {product.variants.map((variant) => (
+                          {product.variants?.map((variant, idx) => (
                             <div
-                              key={variant._id}
+                              key={
+                                variant._id || `${product._id}-variant-${idx}`
+                              }
                               className="card bg-base-200 shadow-md hover:shadow-lg transition-shadow duration-200 border border-base-300"
                             >
                               <div className="card-body p-4">
@@ -340,80 +343,7 @@ const Product = () => {
         )}
 
         {/* Pagination */}
-        {pages > 1 && (
-          <div className="flex justify-center mt-8">
-            <div className="btn-group shadow-lg">
-              <button
-                className="btn btn-outline"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-                Previous
-              </button>
-
-              {Array.from({ length: Math.min(pages, 7) }, (_, i) => {
-                let pageNum;
-                if (pages <= 7) {
-                  pageNum = i + 1;
-                } else if (page <= 4) {
-                  pageNum = i + 1;
-                } else if (page >= pages - 3) {
-                  pageNum = pages - 6 + i;
-                } else {
-                  pageNum = page - 3 + i;
-                }
-
-                return (
-                  <button
-                    key={pageNum}
-                    className={`btn ${
-                      page === pageNum ? "btn-primary" : "btn-outline"
-                    }`}
-                    onClick={() => setPage(pageNum)}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-
-              <button
-                className="btn btn-outline"
-                disabled={page === pages}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination page={page} pages={pages} onPageChange={setPage} />
       </div>
     </div>
   );
