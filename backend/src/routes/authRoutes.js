@@ -1,9 +1,44 @@
 import express from "express";
+import passport from "passport";
+import jwt from "jsonwebtoken";
 import { login, register } from "../controllers/authController.js";
 
 const router = express.Router();
 
-router.post("/register", register);
-router.post("/login", login);
+const createToken = (_id) => {
+  return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "3d" });
+};
+
+// Local auth
+router.post("/api/auth/register", register);
+router.post("/api/auth/login", login);
+
+// Google OAuth route - step 1
+router.get(
+  "/api/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+// Google OAuth callback - step 2
+router.get(
+  "/auth/google/callback",
+  passport.authenticate("google", { session: false }),
+  (req, res) => {
+    const token = createToken(req.user._id);
+
+    const role = Array.isArray(req.user.roles)
+      ? req.user.roles[0]
+      : req.user.roles;
+
+    // Redirect to frontend with query params
+    res.redirect(
+      `http://localhost:5173/login/success?token=${token}&roles${encodeURIComponent(
+        role
+      )}&name=${encodeURIComponent(req.user.name)}&email=${encodeURIComponent(
+        req.user.email
+      )}`
+    );
+  }
+);
 
 export default router;

@@ -1,14 +1,19 @@
 import { Link } from "react-router";
 import { useAuthContext } from "../hooks/useAuthContext";
 import Login from "../Pages/Auth/Login";
+import { useLogout } from "../hooks/useLogout";
 
 const NavBar = () => {
+  const { logout } = useLogout();
+  const handleLogoutButton = () => {
+    logout();
+  };
   const { user } = useAuthContext();
   return (
     <div className="navbar bg-base-100 shadow-md px-4">
       {/* Logo / Brand */}
       <div className="flex-1">
-        <a className="btn btn-ghost normal-case text-xl">CorporateApp</a>
+        <a className="btn btn-ghost normal-case text-xl">Hardware Tech</a>
       </div>
       {/* Desktop Menu */}
       <div className="hidden lg:flex">
@@ -22,31 +27,20 @@ const NavBar = () => {
           <li>
             <a>Services</a>
           </li>
-          <li>{!user ? <Link to="/login">Login</Link> : user.email}</li>
+          <li>{user ? user.email : <Link to="/login">Login</Link>}</li>
+          <li>
+            {user ? (
+              <button
+                className="btn btn-error btn-sm"
+                onClick={handleLogoutButton}
+              >
+                Logout
+              </button>
+            ) : (
+              ""
+            )}
+          </li>
         </ul>
-      </div>
-      {/* Dark Mode Toggle */}
-      <div className="flex-none">
-        <label className="swap swap-rotate">
-          {/* this hidden checkbox controls the state */}
-          <input type="checkbox" className="theme-controller" value="dark" />
-          {/* sun icon */}
-          <svg
-            className="swap-off fill-current w-6 h-6"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-          >
-            <path d="M5.64 17.657l-1.414-1.414L7.05 13.43l1.414 1.415-2.828 2.828zm12.728 0l-2.828-2.828 1.414-1.415 2.829 2.829-1.415 1.414zM12 18a6 6 0 100-12 6 6 0 000 12zm0 2a8 8 0 110-16 8 8 0 010 16z" />
-          </svg>
-          {/* moon icon */}
-          <svg
-            className="swap-on fill-current w-6 h-6"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-          >
-            <path d="M21.707 15.293a1 1 0 00-1.414 0 8.002 8.002 0 01-11.314 0 8.002 8.002 0 010-11.314 1 1 0 00-1.414-1.414 10 10 0 1014.142 14.142 1 1 0 000-1.414z" />
-          </svg>
-        </label>
       </div>
       {/* Mobile Menu */}
       <div className="dropdown dropdown-end lg:hidden">

@@ -10,6 +10,9 @@ import variantRoutes from "./routes/variantRoutes.js";
 import reservationRoutes from "./routes/reservationRoutes.js";
 import { connectDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
+import passport from "passport";
+// Register passport strategies
+import "./config/passport.js";
 
 dotenv.config();
 const app = express();
@@ -26,11 +29,13 @@ app.use(
   })
 );
 
+app.use(passport.initialize());
+
 // ✅ Serve uploads folder as static (important for images)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Routes
-app.use("/api/auth", authRoutes);
+app.use("/", authRoutes);
 app.use("/api", productsRoutes);
 app.use("/api/product-variants", variantRoutes);
 app.use("/api/reservations", reservationRoutes);

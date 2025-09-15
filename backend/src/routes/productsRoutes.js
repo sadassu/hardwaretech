@@ -10,7 +10,6 @@ import {
 import upload from "../middleware/upload.js";
 import requireAuth from "../middleware/requireAuth.js";
 import { queryOptions } from "../middleware/queryOption.js";
-import { requireRole } from "../middleware/role.js";
 
 const router = express.Router();
 
@@ -23,22 +22,8 @@ router.get(
   getAllProducts
 );
 router.get("/products/:id", getProductById);
-router.post(
-  "/products",
-  requireRole(["admin", "manager"]),
-  upload.single("image"),
-  createProduct
-);
-router.put(
-  "/products/:id",
-  requireRole(["admin", "manager"]),
-  upload.single("image"),
-  updateProduct
-);
-router.delete(
-  "/products/:id",
-  requireRole(["admin", "manager"]),
-  deleteProduct
-);
+router.post("/products", upload.single("image"), createProduct);
+router.put("/products/:id", upload.single("image"), updateProduct);
+router.delete("/products/:id", deleteProduct);
 
 export default router;

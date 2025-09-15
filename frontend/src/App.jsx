@@ -9,6 +9,9 @@ import Login from "./Pages/Auth/Login";
 import Register from "./Pages/Auth/Register";
 import { useAuthContext } from "./hooks/useAuthContext";
 import Reservation from "./Pages/Reservations/Reservation";
+import LoginSuccess from "./Pages/LoginSuccess";
+import RoleRoute from "./routes/RoleRoute";
+import Unauthorized from "./Pages/errors/Unanthorized";
 
 const App = () => {
   const { user } = useAuthContext();
@@ -16,6 +19,7 @@ const App = () => {
     <div>
       <Routes>
         <Route element={<PublicLayout />}>
+          <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/" element={<HomePage />} />
           <Route
             path="/login"
@@ -25,15 +29,18 @@ const App = () => {
             path="/register"
             element={!user ? <Register /> : <Navigate to="/products" />}
           />
+          <Route path="/login/success" element={<LoginSuccess />} />
         </Route>
         <Route element={<AdminLayout />}>
           <Route
-            className="text-gray-500"
             path="/products"
-            element={user ? <Product /> : <Navigate to="/login" />}
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <Product />
+              </RoleRoute>
+            }
           />
           <Route
-            className="text-gray-500"
             path="/reservations"
             element={user ? <Reservation /> : <Navigate to="/login" />}
           />
