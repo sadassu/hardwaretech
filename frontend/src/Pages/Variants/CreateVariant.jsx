@@ -4,7 +4,7 @@ import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
 import { useAuthContext } from "../../hooks/useAuthContext";
 
-const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft"];
+const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"];
 
 const CreateVariant = ({ product }) => {
   const { user } = useAuthContext();

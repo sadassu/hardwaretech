@@ -12,7 +12,7 @@ const initialState = {
 
 export const reservationsReducer = (state, action) => {
   switch (action.type) {
-    case "SET_RESERVATION":
+    case "SET_RESERVATIONS":
       return {
         ...state,
         reservations: action.payload.reservations,
@@ -37,9 +37,17 @@ export const reservationsReducer = (state, action) => {
         total: state.total - 1,
       };
 
+    case "UPDATE_RESERVATION":
+      return {
+        ...state,
+        reservations: state.reservations.map((reservation) =>
+          reservation._id === action.payload._id ? action.payload : reservation
+        ),
+      };
+
     default:
       return state;
-  } 
+  }
 };
 
 export const ReservationContextProvider = ({ children }) => {

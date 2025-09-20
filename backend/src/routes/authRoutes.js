@@ -32,11 +32,11 @@ router.get(
 
     // Redirect to frontend with query params
     res.redirect(
-      `http://localhost:5173/login/success?token=${token}&roles${encodeURIComponent(
-        role
-      )}&name=${encodeURIComponent(req.user.name)}&email=${encodeURIComponent(
-        req.user.email
-      )}`
+      `http://localhost:5173/login/success?token=${token}&userId=${
+        req.user._id
+      }&role=${encodeURIComponent(role)}&name=${encodeURIComponent(
+        req.user.name
+      )}&email=${encodeURIComponent(req.user.email)}`
     );
   }
 );

@@ -12,6 +12,8 @@ import Reservation from "./Pages/Reservations/Reservation";
 import LoginSuccess from "./Pages/LoginSuccess";
 import RoleRoute from "./routes/RoleRoute";
 import Unauthorized from "./Pages/errors/Unanthorized";
+import ProductList from "./Pages/UserPages/ProductList";
+import UserReservations from "./Pages/UserPages/UserReservations";
 
 const App = () => {
   const { user } = useAuthContext();
@@ -30,6 +32,11 @@ const App = () => {
             element={!user ? <Register /> : <Navigate to="/products" />}
           />
           <Route path="/login/success" element={<LoginSuccess />} />
+          <Route path="/user/product-list" element={<ProductList />} />
+          <Route
+            path="/reservations/user/:userId"
+            element={user ? <UserReservations /> : <Navigate to="/login" />}
+          />
         </Route>
         <Route element={<AdminLayout />}>
           <Route

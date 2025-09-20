@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
-import cookieParser from "cookie-parser";
 
 import productsRoutes from "./routes/productsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -20,11 +19,10 @@ const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(express.json());
-app.use(cookieParser());
 app.use(rateLimiter);
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL,
     credentials: true,
   })
 );
@@ -35,10 +33,11 @@ app.use(passport.initialize());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Routes
+app.use("/api/reservations", reservationRoutes);
+
 app.use("/", authRoutes);
 app.use("/api", productsRoutes);
 app.use("/api/product-variants", variantRoutes);
-app.use("/api/reservations", reservationRoutes);
 
 // ✅ Global error handler
 app.use((err, req, res, next) => {

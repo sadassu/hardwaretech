@@ -9,7 +9,7 @@ const productVariantSchema = new mongoose.Schema(
     },
     unit: {
       type: String,
-      enum: ["pcs", "kg", "g", "lb", "m", "cm", "ft"],
+      enum: ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"],
       required: true,
     },
     size: { type: String }, 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useReservationsContext } from "../../hooks/useReservationContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useFetch } from "../../hooks/useFetch";
+import UpdateReservationStatus from "./UpdateReservationStatus";
 
 const Reservation = () => {
   const { reservations, pages, dispatch } = useReservationsContext();
@@ -14,9 +15,9 @@ const Reservation = () => {
     "/reservations",
     {
       params: { page, limit, sortBy: "reservationDate", sortOrder: "asc" },
-      headers: { Authorization: `Bearer ${user.token}` },
+      headers: { Authorization: `Bearer ${user?.token}` },
     },
-    [page]
+    [page, user?.token]
   );
 
   useEffect(() => {
@@ -44,19 +45,19 @@ const Reservation = () => {
         <table className="table w-full">
           <thead>
             <tr>
-              <th>#</th>
               <th>User</th>
               <th>Email</th>
               <th>Reservation Date</th>
               <th>Notes</th>
               <th>Total Price</th>
+              <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {reservations && reservations.length > 0 ? (
-              reservations.map((res, index) => (
+              reservations.map((res) => (
                 <tr key={res._id}>
-                  <td>{(page - 1) * limit + index + 1}</td>
                   <td className="font-medium">{res.userId?.name}</td>
                   <td>{res.userId?.email}</td>
                   <td>
@@ -68,6 +69,18 @@ const Reservation = () => {
                   </td>
                   <td>{res.notes || "-"}</td>
                   <td>₱{res.totalPrice?.toLocaleString()}</td>
+                  <td>{res.status}</td>
+                  <td>
+                    <UpdateReservationStatus
+                      reservation={res}
+                      onUpdateSuccess={(updated) =>
+                        dispatch({
+                          type: "UPDATE_RESERVATION",
+                          payload: updated,
+                        })
+                      }
+                    />
+                  </td>
                 </tr>
               ))
             ) : (

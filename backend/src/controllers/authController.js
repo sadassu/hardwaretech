@@ -15,6 +15,7 @@ export const register = asyncHandler(async (req, res) => {
   const token = createToken(user._id);
 
   res.status(201).json({
+    userId: user._id,
     roles: user.roles,
     name,
     email,
@@ -32,6 +33,7 @@ export const login = asyncHandler(async (req, res) => {
   const token = createToken(user._id);
 
   res.status(201).json({
+    userId: user._id,
     roles: user.roles,
     name: user.name,
     email: user.email,

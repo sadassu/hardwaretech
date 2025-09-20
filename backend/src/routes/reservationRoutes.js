@@ -4,13 +4,15 @@ import {
   getReservationByUserId,
   deleteReservation,
   getAllReservations,
+  updateReservationStatus,
 } from "../controllers/reservationsController.js";
+import requireAuth from "../middleware/requireAuth.js";
 
 const router = express.Router();
 
 // @route   POST /api/reservations
 // @desc    Create a new reservation with details
-router.post("/", createReservation);
+router.post("/", requireAuth, createReservation);
 
 // @route   GET /api/reservations/user/:userId
 // @desc    Get all reservations for a specific user (with pagination)
@@ -23,5 +25,8 @@ router.delete("/:id", deleteReservation);
 // @route   GET /api/reservations
 // @desc    Get all reservations (with pagination)
 router.get("/", getAllReservations);
+
+// @route   GET /api/reservations
+router.put("/:id/status", requireAuth, updateReservationStatus);
 
 export default router;

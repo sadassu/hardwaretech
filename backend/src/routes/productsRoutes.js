@@ -14,8 +14,6 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = express.Router();
 
-router.use(requireAuth);
-
 router.get("/getproducts", getProducts);
 router.get(
   "/products",
@@ -25,18 +23,21 @@ router.get(
 router.get("/products/:id", getProductById);
 router.post(
   "/products",
+  requireAuth,
   requireRole(["admin", "manager"]),
   upload.single("image"),
   createProduct
 );
 router.put(
   "/products/:id",
+  requireAuth,
   requireRole(["admin", "manager"]),
   upload.single("image"),
   updateProduct
 );
 router.delete(
   "/products/:id",
+  requireAuth,  
   requireRole(["admin", "manager"]),
   deleteProduct
 );

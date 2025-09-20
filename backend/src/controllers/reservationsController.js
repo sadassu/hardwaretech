@@ -5,41 +5,39 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // Add reservation with details
 export const createReservation = asyncHandler(async (req, res) => {
-  const { userId, notes, totalPrice, reservationDetails, reservationDate } =
-    req.body;
+  const { notes, totalPrice, reservationDetails, reservationDate } = req.body;
 
   let emptyFields = [];
-
-  if (!userId) emptyFields.push("userId");
   if (!totalPrice) emptyFields.push("totalPrice");
   if (!reservationDate) emptyFields.push("reservationDate");
 
   if (emptyFields.length > 0) {
     return res
       .status(400)
-      .json({ error: "Please fill in all fields", emptyFields });
+      .json({ error: "Please fill in all required fields", emptyFields });
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // Reservation
-    const [reservation] = await Reservation.create(
-      [
-        {
-          userId,
-          reservationDate: reservationDate || Date.now(),
-          status: "pending",
-          notes,
-          totalPrice,
-        },
-      ],
-      { session }
-    );
+    const reservationData = {
+      userId: req.user._id,
+      reservationDate: reservationDate || Date.now(),
+      status: "pending",
+      totalPrice,
+    };
 
-    // Details
-    if (Array.isArray(reservationDetails)) {
+    // ✅ only add notes if provided
+    if (notes && notes.trim() !== "") {
+      reservationData.notes = notes;
+    }
+
+    const [reservation] = await Reservation.create([reservationData], {
+      session,
+    });
+
+    if (Array.isArray(reservationDetails) && reservationDetails.length > 0) {
       const detailsWithReservationId = reservationDetails.map((d) => ({
         ...d,
         reservationId: reservation._id,
@@ -49,10 +47,15 @@ export const createReservation = asyncHandler(async (req, res) => {
     }
 
     await session.commitTransaction();
-    res.status(201).json({ message: "Reservation created", reservation });
+
+    res.status(201).json({
+      message: "Reservation created",
+      reservation,
+    });
   } catch (err) {
     await session.abortTransaction();
-    throw err;
+    console.error("Reservation error:", err.message);
+    res.status(500).json({ error: "Failed to create reservation" });
   } finally {
     session.endSession();
   }
@@ -69,7 +72,7 @@ export const getReservationByUserId = asyncHandler(async (req, res) => {
 
   // Fetch reservations
   const reservations = await Reservation.find({ userId: req.params.userId })
-    .populate("reservationDetail")
+    .populate("reservationDetails")
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit);
@@ -91,6 +94,40 @@ export const getReservationByUserId = asyncHandler(async (req, res) => {
   });
 });
 
+export const updateReservationStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate status
+    const allowedStatuses = ["pending", "confirmed", "cancelled", "failed"];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+
+    // Find and update reservation
+    const reservation = await Reservation.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    )
+      .populate("userId", "name email") 
+      .populate("reservationDetails");
+
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
+
+    res.status(200).json({
+      message: "Reservation status updated successfully",
+      reservation,
+    });
+  } catch (error) {
+    console.error("Error updating reservation status:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // Get ALL reservations (Admin) with user details
 export const getAllReservations = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -104,7 +141,7 @@ export const getAllReservations = asyncHandler(async (req, res) => {
   const reservations = await Reservation.find()
     .populate("userId", "name email roles isActive") // show specific fields from user
     .populate({
-      path: "reservationDetail", // if Reservation has `reservationDetail` ref
+      path: "reservationDetails",
       model: "ReservationDetail",
     })
     .sort({ [sortBy]: sortOrder })

@@ -15,7 +15,7 @@ const ReservationDetailSchema = new mongoose.Schema({
   quantity: { type: Number, required: true },
   unit: {
     type: String,
-    enum: ["pcs", "kg", "g", "lb", "m", "cm", "ft"],
+    enum: ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"],
     required: true,
   },
 });

@@ -1,6 +1,6 @@
 const saleSchema = new mongoose.Schema(
   {
-    items: [saleItemSchema],
+    items: [saleSchema],
 
     totalPrice: {
       type: Number,
