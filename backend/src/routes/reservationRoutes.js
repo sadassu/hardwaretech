@@ -5,6 +5,7 @@ import {
   deleteReservation,
   getAllReservations,
   updateReservationStatus,
+  completeReservation,
 } from "../controllers/reservationsController.js";
 import requireAuth from "../middleware/requireAuth.js";
 
@@ -28,5 +29,7 @@ router.get("/", getAllReservations);
 
 // @route   GET /api/reservations
 router.put("/:id/status", requireAuth, updateReservationStatus);
+
+router.patch("/:id/complete", requireAuth, completeReservation);
 
 export default router;

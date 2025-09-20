@@ -6,7 +6,7 @@ import { useCheckout } from "../hooks/useCheckout";
 function CartContent() {
   const { checkout, loading } = useCheckout();
   const [isOpen, setIsOpen] = useState(false);
-  const [notes, setNotes] = useState(""); // <-- NEW state for notes
+  const [notes, setNotes] = useState(""); 
 
   const {
     cartItems,
@@ -183,9 +183,25 @@ function CartContent() {
                           -
                         </button>
 
-                        <span className="font-medium text-center min-w-8">
-                          {item.quantity}
-                        </span>
+                        {/* Use input with min/max */}
+                        <input
+                          type="number"
+                          className="input input-bordered input-xs w-16 text-center"
+                          value={item.quantity}
+                          min={1}
+                          max={item.quantityAvailable} 
+                          onChange={(e) => {
+                            let value = parseInt(e.target.value, 10) || 1;
+                            if (value > item.quantityAvailable)
+                              value = item.quantityAvailable;
+                            if (value < 1) value = 1;
+                            updateQuantity(
+                              item.productId,
+                              item.variantId,
+                              value
+                            );
+                          }}
+                        />
 
                         <button
                           className="btn btn-outline btn-xs"
@@ -196,6 +212,7 @@ function CartContent() {
                               item.quantity + 1
                             )
                           }
+                          disabled={item.quantity >= item.quantityAvailable} 
                         >
                           +
                         </button>

@@ -32,6 +32,7 @@ export function useCheckout() {
         form.append(`reservationDetails[${idx}][productId]`, item.productId);
         form.append(`reservationDetails[${idx}][variantId]`, item.variantId);
         form.append(`reservationDetails[${idx}][quantity]`, item.quantity);
+        form.append(`reservationDetails[${idx}][size]`, item.size);
         form.append(`reservationDetails[${idx}][unit]`, item.unit);
         form.append(`reservationDetails[${idx}][price]`, item.price);
         form.append(`reservationDetails[${idx}][total]`, item.total);

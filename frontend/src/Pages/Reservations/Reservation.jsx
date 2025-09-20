@@ -3,6 +3,7 @@ import { useReservationsContext } from "../../hooks/useReservationContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useFetch } from "../../hooks/useFetch";
 import UpdateReservationStatus from "./UpdateReservationStatus";
+import CompleteReservation from "./CompleteReservation";
 
 const Reservation = () => {
   const { reservations, pages, dispatch } = useReservationsContext();
@@ -72,6 +73,15 @@ const Reservation = () => {
                   <td>{res.status}</td>
                   <td>
                     <UpdateReservationStatus
+                      reservation={res}
+                      onUpdateSuccess={(updated) =>
+                        dispatch({
+                          type: "UPDATE_RESERVATION",
+                          payload: updated,
+                        })
+                      }
+                    />
+                    <CompleteReservation
                       reservation={res}
                       onUpdateSuccess={(updated) =>
                         dispatch({

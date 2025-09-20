@@ -1,6 +1,23 @@
+// models/Sale.js
+import mongoose from "mongoose";
+
+const saleItemSchema = new mongoose.Schema({
+  productId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
+  },
+  name: { type: String, required: true },
+  size: { type: String },
+  unit: { type: String },
+  quantity: { type: Number, required: true },
+  price: { type: Number, required: true },
+  subtotal: { type: Number },
+});
+
 const saleSchema = new mongoose.Schema(
   {
-    items: [saleSchema],
+    items: [saleItemSchema],
 
     totalPrice: {
       type: Number,
@@ -24,7 +41,7 @@ const saleSchema = new mongoose.Schema(
 
     cashier: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", 
+      ref: "User",
     },
 
     type: {
@@ -36,15 +53,16 @@ const saleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-saleSchema.pre("save", function (next) {
+saleSchema.pre("validate", function (next) {
   this.items.forEach((item) => {
     item.subtotal = item.price * item.quantity;
   });
+
   this.totalPrice = this.items.reduce((acc, item) => acc + item.subtotal, 0);
   this.change = this.amountPaid - this.totalPrice;
+
   next();
 });
 
 const Sale = mongoose.model("Sale", saleSchema);
-
 export default Sale;

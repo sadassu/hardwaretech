@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import Reservation from "../models/Reservation.js";
 import ReservationDetail from "../models/ReservationDetail.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import ProductVariant from "../models/ProductVariant.js";
+import Sale from "../models/Sale.js";
 
 // Add reservation with details
 export const createReservation = asyncHandler(async (req, res) => {
@@ -94,39 +96,34 @@ export const getReservationByUserId = asyncHandler(async (req, res) => {
   });
 });
 
-export const updateReservationStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
+export const updateReservationStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
 
-    // Validate status
-    const allowedStatuses = ["pending", "confirmed", "cancelled", "failed"];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status value" });
-    }
-
-    // Find and update reservation
-    const reservation = await Reservation.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true, runValidators: true }
-    )
-      .populate("userId", "name email") 
-      .populate("reservationDetails");
-
-    if (!reservation) {
-      return res.status(404).json({ message: "Reservation not found" });
-    }
-
-    res.status(200).json({
-      message: "Reservation status updated successfully",
-      reservation,
-    });
-  } catch (error) {
-    console.error("Error updating reservation status:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+  // Validate status
+  const allowedStatuses = ["pending", "confirmed", "cancelled", "failed"];
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ message: "Invalid status value" });
   }
-};
+
+  // Find and update reservation
+  const reservation = await Reservation.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true, runValidators: true }
+  )
+    .populate("userId", "name email")
+    .populate("reservationDetails");
+
+  if (!reservation) {
+    return res.status(404).json({ message: "Reservation not found" });
+  }
+
+  res.status(200).json({
+    message: "Reservation status updated successfully",
+    reservation,
+  });
+});
 
 // Get ALL reservations (Admin) with user details
 export const getAllReservations = asyncHandler(async (req, res) => {
@@ -171,4 +168,124 @@ export const deleteReservation = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json({ message: "Reservation deleted successfully" });
+});
+
+//take the reservation id
+//take also the product variant of all the reservation details
+//minus the all the quantity of the reservation details to the product variant
+//change the reservation status to complete
+export const completeReservation = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { amountPaid } = req.body;
+  const cashierId = req.user._id; // from auth middleware
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. Find reservation
+    const reservation = await Reservation.findById(id).session(session);
+    if (!reservation) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: "Reservation not found" });
+    }
+
+    // 2. Get reservation details
+    const details = await ReservationDetail.find({ reservationId: id }).session(
+      session
+    );
+    if (!details.length) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: "No reservation details found" });
+    }
+
+    // 3. Update stock
+    for (const detail of details) {
+      const variant = await ProductVariant.findOne({
+        product: detail.productId,
+        size: detail.size,
+        unit: detail.unit,
+      }).session(session);
+
+      if (!variant) {
+        await session.abortTransaction();
+        session.endSession();
+        return res
+          .status(404)
+          .json({ error: `Variant not found for product ${detail.productId}` });
+      }
+
+      if (variant.quantity < detail.quantity) {
+        await session.abortTransaction();
+        session.endSession();
+        return res
+          .status(400)
+          .json({ error: `Not enough stock for product ${detail.productId}` });
+      }
+
+      variant.quantity -= detail.quantity;
+      await variant.save({ session });
+    }
+
+    // 4. Build sale items with product lookup
+    const items = [];
+    for (const d of details) {
+      const variant = await ProductVariant.findOne({
+        product: d.productId,
+        size: d.size,
+        unit: d.unit,
+      })
+        .populate("product")
+        .session(session);
+
+      if (!variant) {
+        await session.abortTransaction();
+        session.endSession();
+        return res
+          .status(404)
+          .json({ error: `Variant not found for product ${d.productId}` });
+      }
+
+      items.push({
+        productId: d.productId,
+        name: variant.product.name,
+        size: d.size,
+        unit: d.unit,
+        quantity: d.quantity,
+        price: variant.price,
+      });
+    }
+
+    // 5. Create Sale
+    const sale = new Sale({
+      items,
+      amountPaid,
+      cashier: cashierId,
+      type: "reservation",
+    });
+
+    await sale.save({ session });
+
+    // 6. Update reservation status
+    reservation.status = "completed";
+    await reservation.save({ session });
+
+    // ✅ Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({
+      message: "Reservation completed and sale recorded successfully",
+      reservation,
+      sale,
+    });
+  } catch (error) {
+    // ❌ Rollback on error
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Transaction failed:", error);
+    res.status(500).json({ error: "Failed to complete reservation" });
+  }
 });
