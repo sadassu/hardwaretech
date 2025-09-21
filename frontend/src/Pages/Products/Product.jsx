@@ -11,6 +11,8 @@ import { backendUrl } from "../../config/url";
 import DeleteVariant from "../Variants/DeleteVariant";
 import UpdateVariant from "../Variants/UpdateVariant";
 import Pagination from "../../components/Pagination";
+import Loading from "../../components/Loading";
+import SearchBar from "../../components/SearchBar";
 
 const Product = () => {
   const { products, pages, dispatch } = useProductsContext();
@@ -78,31 +80,14 @@ const Product = () => {
             </div>
 
             {/* Search Bar */}
-            <div className="form-control w-full max-w-md">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="input input-bordered input-lg w-full text-base-content bg-base-100 pr-12"
-                />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/50"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-            </div>
+            <SearchBar
+              search={search}
+              onSearchChange={(e) => setSearch(e.target.value)}
+              onClear={() => setSearch("")}
+              isSearching={loading} // show spinner while fetching
+              placeholder="Search products..."
+              className="w-full"
+            />
           </div>
         </div>
 
@@ -117,12 +102,7 @@ const Product = () => {
 
         {/* Content Section */}
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="flex flex-col items-center gap-4">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
-              <p className="text-base-content/70">Loading products...</p>
-            </div>
-          </div>
+          <Loading message="Loading products..." />
         ) : error ? (
           <div className="alert alert-error shadow-lg">
             <svg

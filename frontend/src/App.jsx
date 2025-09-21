@@ -25,11 +25,11 @@ const App = () => {
           <Route path="/" element={<HomePage />} />
           <Route
             path="/login"
-            element={!user ? <Login /> : <Navigate to="/products" />}
+            element={!user ? <Login /> : <Navigate to="/" />}
           />
           <Route
             path="/register"
-            element={!user ? <Register /> : <Navigate to="/products" />}
+            element={!user ? <Register /> : <Navigate to="/" />}
           />
           <Route path="/login/success" element={<LoginSuccess />} />
           <Route path="/user/product-list" element={<ProductList />} />
@@ -49,7 +49,11 @@ const App = () => {
           />
           <Route
             path="/reservations"
-            element={user ? <Reservation /> : <Navigate to="/login" />}
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <Reservation />
+              </RoleRoute>
+            }
           />
         </Route>
       </Routes>

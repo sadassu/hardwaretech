@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from "react";
+
 import { useProductsContext } from "../../hooks/useProductContext";
-import { useFetch } from "../../hooks/useFetch";
 import { useAuthContext } from "../../hooks/useAuthContext";
+
+import { useFetch } from "../../hooks/useFetch";
 import { backendUrl } from "../../config/url";
+
 import CreateCart from "./CreateCart";
+import Pagination from "../../components/Pagination";
+import Loading from "../../components/Loading";
+import SearchBar from "../../components/SearchBar";
 
 function ProductList() {
   const { products, pages, dispatch } = useProductsContext();
@@ -67,16 +73,7 @@ function ProductList() {
   };
 
   if (loading && !products?.length && !search) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col items-center justify-center py-16">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="mt-4 text-lg text-base-content/70">
-            Loading products...
-          </p>
-        </div>
-      </div>
-    );
+    return <Loading message="Loading products..." />;
   }
 
   if (error) {
@@ -107,58 +104,14 @@ function ProductList() {
       {/* Enhanced Search Section */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full max-w-md">
-            <input
-              type="text"
+          <div className="p-6">
+            <SearchBar
+              search={search}
+              onSearchChange={handleSearchChange}
+              onClear={clearSearch}
+              isSearching={isSearching}
               placeholder="Search for products..."
-              className="input input-bordered input-primary w-full pl-12 pr-12 text-base"
-              value={search}
-              onChange={handleSearchChange}
             />
-
-            {/* Search Icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-base-content/50"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-
-            {/* Loading Indicator for Search */}
-            {isSearching && (
-              <span className="absolute right-12 top-1/2 transform -translate-y-1/2 loading loading-spinner loading-sm text-primary"></span>
-            )}
-
-            {/* Clear Button */}
-            {search && (
-              <button
-                onClick={clearSearch}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 btn btn-ghost btn-sm btn-circle"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            )}
           </div>
 
           {/* Search Results Info */}
@@ -302,82 +255,7 @@ function ProductList() {
       </div>
 
       {/* Pagination */}
-      {pages > 1 && (
-        <div className="flex justify-center mt-12">
-          <div className="join">
-            <button
-              className="join-item btn btn-outline"
-              onClick={() => setPage(page - 1)}
-              disabled={page === 1 || loading}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Previous
-            </button>
-
-            {/* Page Numbers */}
-            {Array.from({ length: Math.min(pages, 5) }, (_, i) => {
-              let pageNum;
-              if (pages <= 5) {
-                pageNum = i + 1;
-              } else if (page <= 3) {
-                pageNum = i + 1;
-              } else if (page >= pages - 2) {
-                pageNum = pages - 4 + i;
-              } else {
-                pageNum = page - 2 + i;
-              }
-
-              return (
-                <button
-                  key={pageNum}
-                  className={`join-item btn ${
-                    page === pageNum ? "btn-primary" : "btn-outline"
-                  }`}
-                  onClick={() => setPage(pageNum)}
-                  disabled={loading}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-
-            <button
-              className="join-item btn btn-outline"
-              onClick={() => setPage(page + 1)}
-              disabled={page === pages || loading}
-            >
-              Next
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination page={page} pages={pages} onPageChange={setPage} />
 
       {/* No Products Found */}
       {products?.length === 0 && !loading && (

@@ -59,7 +59,7 @@ function UpdateReservationStatus({ reservation, onUpdateSuccess }) {
   return (
     <>
       <button
-        className="btn w-full btn-primary"
+        className="btn btn-primary"
         onClick={() => setIsOpen(true)}
       >
         Edit status

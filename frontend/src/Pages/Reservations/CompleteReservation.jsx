@@ -58,7 +58,7 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
   return (
     <>
       <button
-        className="btn w-full btn-primary"
+        className="btn btn-primary"
         onClick={() => setIsOpen(true)}
       >
         Complete
