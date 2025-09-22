@@ -7,6 +7,7 @@ import productsRoutes from "./routes/productsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import variantRoutes from "./routes/variantRoutes.js";
 import reservationRoutes from "./routes/reservationRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
 import { connectDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 import passport from "passport";
@@ -38,6 +39,7 @@ app.use("/api/reservations", reservationRoutes);
 app.use("/", authRoutes);
 app.use("/api", productsRoutes);
 app.use("/api/product-variants", variantRoutes);
+app.use("/api/profile", profileRoutes);
 
 // ✅ Global error handler
 app.use((err, req, res, next) => {

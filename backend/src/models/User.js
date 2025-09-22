@@ -44,10 +44,14 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.statics.signup = async (name, email, password) => {
+userSchema.statics.signup = async (name, email, password, confirmPassword) => {
   //! validation
-  if (!email || !password || !name) {
+  if (!email || !password || !name || !confirmPassword) {
     throw Error("All fields must be filled");
+  }
+
+  if (password !== confirmPassword) {
+    throw Error("Passwords do not match");
   }
 
   if (!validator.isEmail(email)) {
@@ -55,7 +59,9 @@ userSchema.statics.signup = async (name, email, password) => {
   }
 
   if (!validator.isStrongPassword(password)) {
-    throw Error("Password not strong enough");
+    throw Error(
+      "Password must be stronger. It should include at least 8 characters, uppercase, lowercase, numbers, and symbols."
+    );
   }
 
   const exists = await User.findOne({ email });
@@ -68,6 +74,40 @@ userSchema.statics.signup = async (name, email, password) => {
   const hash = await bcrypt.hash(password, salt);
 
   const user = await User.create({ name, email, password: hash });
+
+  return user;
+};
+
+userSchema.statics.changePassword = async function (
+  userId,
+  password,
+  confirmPassword
+) {
+  const user = await this.findById(userId);
+
+  if (!user) {
+    throw Error("User does not exist");
+  }
+
+  if (!password || !confirmPassword) {
+    throw Error("All fields must be filled");
+  }
+
+  if (password !== confirmPassword) {
+    throw Error("Passwords do not match");
+  }
+
+  if (!validator.isStrongPassword(password)) {
+    throw Error(
+      "Password must be stronger. It should include at least 8 characters, uppercase, lowercase, numbers, and symbols."
+    );
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
+
+  user.password = hash;
+  await user.save();
 
   return user;
 };

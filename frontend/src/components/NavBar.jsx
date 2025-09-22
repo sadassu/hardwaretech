@@ -183,7 +183,10 @@ const NavBar = () => {
                 </li>
                 <div className="divider my-1"></div>
                 <li>
-                  <Link to="/profile" className="flex items-center gap-2">
+                  <Link
+                    to={`/profile/${user.userId}`}
+                    className="flex items-center gap-2"
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"

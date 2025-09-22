@@ -10,6 +10,7 @@ import CreateCart from "./CreateCart";
 import Pagination from "../../components/Pagination";
 import Loading from "../../components/Loading";
 import SearchBar from "../../components/SearchBar";
+import ProductListVariant from "./ProductListVariant";
 
 function ProductList() {
   const { products, pages, dispatch } = useProductsContext();
@@ -18,6 +19,7 @@ function ProductList() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const limit = 12;
 
   useEffect(() => {
@@ -62,6 +64,17 @@ function ProductList() {
       });
     }
   }, [data, dispatch]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -156,12 +169,12 @@ function ProductList() {
         {products?.map((product) => (
           <div
             key={product._id}
-            className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-300 hover:border-primary/30"
+            className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-300 hover:border-primary/30 group relative h-[500px] overflow-hidden" // Fixed height here
           >
-            <div className="card-body p-6">
+            <div className="card-body p-6 flex flex-col h-full">
               {/* Product Image */}
               {product.image && (
-                <figure className="mb-4 -mx-6 -mt-6">
+                <figure className="mb-4 -mx-6 -mt-6 flex-shrink-0">
                   <img
                     src={
                       product.image
@@ -169,86 +182,40 @@ function ProductList() {
                         : "https://img.daisyui.com/images/profile/demo/1@94.webp"
                     }
                     alt={product.name}
-                    className="w-full h-56 object-cover rounded-t-2xl"
+                    className="w-full h-48 object-cover rounded-t-2xl" // Fixed image height
                   />
                 </figure>
               )}
 
               {/* Product Name */}
-              <h2 className="card-title text-xl font-bold mb-3 text-base-content">
+              <h2 className="card-title text-xl font-bold mb-3 text-base-content flex-shrink-0">
                 {product.name}
               </h2>
 
-              {/* Product Description */}
-              {product.description && (
-                <p className="text-base text-base-content/80 mb-4 line-clamp-3 leading-relaxed">
-                  {product.description}
-                </p>
-              )}
+              {/* Product Description - This will be hidden on hover for desktop */}
+              <div className="flex-1 overflow-hidden">
+                {product.description && (
+                  <p className="text-base text-base-content/80 mb-4 line-clamp-3 leading-relaxed group-hover:opacity-0 md:group-hover:opacity-0 transition-opacity duration-300">
+                    {product.description}
+                  </p>
+                )}
+              </div>
 
               {/* Product Price */}
               {product.price && (
-                <div className="mb-4">
+                <div className="mb-4 flex-shrink-0">
                   <span className="text-2xl font-bold text-primary">
                     ₱{product.price}
                   </span>
                 </div>
               )}
 
-              {/* Variants Section */}
-              {product.variants?.length > 0 ? (
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-base text-base-content/90 border-b pb-1">
-                    Available Options:
-                  </h3>
-                  <div className="space-y-2">
-                    {product.variants?.map((variant, idx) => (
-                      <div
-                        key={variant._id || `${product._id}-variant-${idx}`}
-                        className="card bg-base-200 shadow-md hover:shadow-lg transition-all duration-200 border border-base-300 hover:border-primary/30"
-                      >
-                        <div className="card-body p-4">
-                          <div className="flex items-center justify-between">
-                            {/* Left side: details */}
-                            <div className="flex-1">
-                              <div className="flex flex-wrap gap-2 mb-2">
-                                {variant.size && (
-                                  <div className="badge badge-outline text-base">
-                                    {variant.size} {variant.unit}
-                                  </div>
-                                )}
-                                {variant.quantity && (
-                                  <div className="badge badge-ghost text-base">
-                                    Qty: {variant.quantity}
-                                  </div>
-                                )}
-                              </div>
-
-                              {variant.price && (
-                                <div className="text-lg font-semibold text-primary">
-                                  ₱{variant.price}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Right side: button */}
-                            <div className="flex-shrink-0 ml-4">
-                              {user && (
-                                <CreateCart
-                                  product={product}
-                                  variant={variant}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="card-actions justify-end mt-4"></div>
-              )}
+              {/* Variants Component */}
+              <ProductListVariant
+                product={product}
+                user={user}
+                isMobile={isMobile}
+              />
             </div>
           </div>
         ))}

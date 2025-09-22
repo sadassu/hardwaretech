@@ -9,8 +9,8 @@ const createToken = (_id) => {
 
 // register
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
-  const user = await User.signup(name, email, password);
+  const { name, email, password, confirmPassword } = req.body;
+  const user = await User.signup(name, email, password, confirmPassword);
 
   const token = createToken(user._id);
 
