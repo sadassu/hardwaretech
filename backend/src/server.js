@@ -7,6 +7,7 @@ import productsRoutes from "./routes/productsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import variantRoutes from "./routes/variantRoutes.js";
 import reservationRoutes from "./routes/reservationRoutes.js";
+import saleRoutes from "./routes/saleRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import { connectDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
@@ -40,6 +41,7 @@ app.use("/", authRoutes);
 app.use("/api", productsRoutes);
 app.use("/api/product-variants", variantRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/sales", saleRoutes);
 
 // ✅ Global error handler
 app.use((err, req, res, next) => {

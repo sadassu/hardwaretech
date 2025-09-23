@@ -57,5 +57,48 @@ export function useCheckout() {
     }
   };
 
-  return { checkout, loading, error };
+  const adminCheckout = async ({ amountPaid }) => {
+    if (!user) {
+      setError("You must be logged in");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const form = new FormData();
+      form.append("amountPaid", amountPaid);
+      form.append("cashier", user.userId);
+
+      cartItems.forEach((item, idx) => {
+        form.append(`items[${idx}][productId]`, item.productId);
+        form.append(`items[${idx}][variantId]`, item.variantId);
+        form.append(`items[${idx}][quantity]`, item.quantity);
+        form.append(`items[${idx}][size]`, item.size);
+        form.append(`items[${idx}][unit]`, item.unit);
+        form.append(`items[${idx}][price]`, item.price);
+        form.append(`items[${idx}][total]`, item.total);
+      });
+
+      const { data } = await api.post("/sales", form, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+
+      // ✅ Clear cart on success
+      clearCart();
+
+      return data;
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.error || "Checkout failed");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { checkout, adminCheckout, loading, error };
 }

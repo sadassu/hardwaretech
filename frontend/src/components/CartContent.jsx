@@ -2,11 +2,14 @@ import React, { useState } from "react";
 import Modal from "./Modal";
 import { useCart } from "../hooks/useCart";
 import { useCheckout } from "../hooks/useCheckout";
+import { useAuthContext } from "../hooks/useAuthContext";
 
 function CartContent() {
-  const { checkout, loading } = useCheckout();
+  const { checkout, loading, adminCheckout } = useCheckout();
   const [isOpen, setIsOpen] = useState(false);
-  const [notes, setNotes] = useState(""); 
+  const [notes, setNotes] = useState("");
+  const [amountPaid, setAmountPaid] = useState("");
+  const { user } = useAuthContext();
 
   const {
     cartItems,
@@ -19,16 +22,29 @@ function CartContent() {
 
   const handleCheckout = async () => {
     try {
-      await checkout({
-        notes,
-        reservationDate: new Date(), // can be replaced with user-selected date
-      });
+      if (isRestricted) {
+        await adminCheckout({
+          amountPaid,
+          reservationDate: new Date(),
+        });
+      } else {
+        await checkout({
+          notes,
+          reservationDate: new Date(),
+        });
+      }
       setIsOpen(false);
       alert("Checkout successful! 🎉");
     } catch (error) {
       alert("Checkout failed, please try again.", error);
     }
   };
+
+  // roles check
+  const restrictedRoles = ["admin", "cashier", "manager"];
+  const isRestricted = user?.roles?.some((role) =>
+    restrictedRoles.includes(role)
+  );
 
   return (
     <>
@@ -84,7 +100,7 @@ function CartContent() {
                   d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007Z"
                 />
               </svg>
-              Shopping Cart
+              Cart
             </h2>
             {cartItems.length > 0 && (
               <button
@@ -183,13 +199,12 @@ function CartContent() {
                           -
                         </button>
 
-                        {/* Use input with min/max */}
                         <input
                           type="number"
                           className="input input-bordered input-xs w-16 text-center"
                           value={item.quantity}
                           min={1}
-                          max={item.quantityAvailable} 
+                          max={item.quantityAvailable}
                           onChange={(e) => {
                             let value = parseInt(e.target.value, 10) || 1;
                             if (value > item.quantityAvailable)
@@ -212,7 +227,7 @@ function CartContent() {
                               item.quantity + 1
                             )
                           }
-                          disabled={item.quantity >= item.quantityAvailable} 
+                          disabled={item.quantity >= item.quantityAvailable}
                         >
                           +
                         </button>
@@ -235,18 +250,34 @@ function CartContent() {
             <>
               <div className="divider"></div>
 
-              {/* Notes Field */}
-              <div className="form-control mb-4">
-                <label className="label">
-                  <span className="label-text font-medium">Notes</span>
-                </label>
-                <textarea
-                  className="textarea textarea-bordered w-full"
-                  placeholder="Any special requests or delivery instructions?"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
+              {/* Notes OR Amount Paid */}
+              {!isRestricted ? (
+                <div className="form-control mb-4">
+                  <label className="label">
+                    <span className="label-text font-medium">Notes</span>
+                  </label>
+                  <textarea
+                    className="textarea textarea-bordered w-full"
+                    placeholder="Any special requests or delivery instructions?"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div className="form-control mb-4">
+                  <label className="label">
+                    <span className="label-text font-medium">Amount Paid</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="input input-bordered w-full"
+                    placeholder="Enter amount paid"
+                    value={amountPaid}
+                    min={0}
+                    onChange={(e) => setAmountPaid(e.target.value)}
+                  />
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-2 bg-base-200 px-4 rounded-lg">

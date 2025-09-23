@@ -1,4 +1,5 @@
 import { useLogout } from "../hooks/useLogout";
+import CartContent from "./CartContent";
 
 function AdminNavbar() {
   const { logout } = useLogout();
@@ -14,6 +15,7 @@ function AdminNavbar() {
 
       {/* Right-side buttons */}
       <div className="flex items-center space-x-3">
+        <CartContent />
         {/* Notification button */}
         <button className="btn btn-ghost btn-circle">
           <div className="indicator">

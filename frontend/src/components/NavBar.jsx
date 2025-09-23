@@ -167,7 +167,7 @@ const NavBar = () => {
                 role="button"
                 className="btn btn-ghost btn-circle avatar placeholder"
               >
-                <div className="bg-neutral text-neutral-content rounded-full w-10">
+                <div className="bg-primary text-neutral-content rounded-full w-10">
                   <span className="text-sm font-medium">
                     {user.email?.charAt(0).toUpperCase()}
                   </span>
@@ -177,11 +177,33 @@ const NavBar = () => {
                 tabIndex={0}
                 className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg border border-base-300"
               >
-                <li className="menu-title"></li>
                 <li className="menu-title">
-                  <span className="text-xs opacity-60">{user.email}</span>
+                  <span className="text-xs">{user.email}</span>
                 </li>
                 <div className="divider my-1"></div>
+                {user.roles?.some((role) =>
+                  ["admin", "manager", "staff"].includes(role)
+                ) && (
+                  <li>
+                    <Link to="/products" className="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      Go to Admin Dashboard
+                    </Link>
+                  </li>
+                )}
                 <li>
                   <Link
                     to={`/profile/${user.userId}`}
@@ -204,8 +226,12 @@ const NavBar = () => {
                     Profile
                   </Link>
                 </li>
+
                 <li>
-                  <Link to="/reservations" className="flex items-center gap-2">
+                  <Link
+                    to={`/reservations/user/${user.userId}`}
+                    className="flex items-center gap-2"
+                  >
                     <img
                       src="/icons/calendar.svg"
                       alt="calendar.svg"

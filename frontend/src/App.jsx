@@ -15,6 +15,7 @@ import Unauthorized from "./Pages/errors/Unanthorized";
 import ProductList from "./Pages/UserPages/ProductList";
 import UserReservations from "./Pages/UserPages/UserReservations";
 import Profile from "./Pages/UserPages/Profile";
+import Pos from "./Pages/Pos/Pos";
 
 const App = () => {
   const { user } = useAuthContext();
@@ -57,6 +58,14 @@ const App = () => {
             element={
               <RoleRoute allowedRoles={["admin"]}>
                 <Reservation />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/pos"
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <Pos />
               </RoleRoute>
             }
           />
