@@ -26,7 +26,7 @@ router.get(
   (req, res) => {
     const token = createToken(req.user._id);
 
-    const role = Array.isArray(req.user.roles)
+    const roles = Array.isArray(req.user.roles)
       ? req.user.roles[0]
       : req.user.roles;
 
@@ -34,7 +34,7 @@ router.get(
     res.redirect(
       `http://localhost:5173/login/success?token=${token}&userId=${
         req.user._id
-      }&role=${encodeURIComponent(role)}&name=${encodeURIComponent(
+      }&roles=${encodeURIComponent(roles)}&name=${encodeURIComponent(
         req.user.name
       )}&email=${encodeURIComponent(req.user.email)}`
     );

@@ -62,12 +62,8 @@ const Product = () => {
     }
   }, [data, dispatch]);
 
-  const handleDeleteSuccess = (deletedProductId) => {
-    dispatch({ type: "DELETE_PRODUCT", payload: deletedProductId });
-  };
-
   return (
-    <div className="min-h-screen bg-base-200 p-4 lg:p-2">
+    <div className="min-h-screen p-4 lg:p-2">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 mb-8 text-primary-content shadow-xl">
@@ -177,29 +173,10 @@ const Product = () => {
 
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-2 lg:flex-nowrap">
-                        <UpdateProduct
-                          product={product}
-                          onUpdateSuccess={(updated) =>
-                            dispatch({
-                              type: "UPDATE_PRODUCT",
-                              payload: updated,
-                            })
-                          }
-                        />
-                        <DeleteProduct
-                          product={product}
-                          onDeleteSuccess={handleDeleteSuccess}
-                        />
+                        <CreateVariant product={product} />
+                        <UpdateProduct product={product} />
+                        <DeleteProduct product={product} />
                       </div>
-                      <CreateVariant
-                        product={product}
-                        onUpdateSuccess={(updated) =>
-                          dispatch({
-                            type: "UPDATE_PRODUCT",
-                            payload: updated,
-                          })
-                        }
-                      />
                     </div>
 
                     {/* Variants Section */}
@@ -250,10 +227,7 @@ const Product = () => {
                                       })
                                     }
                                   />
-                                  <DeleteVariant
-                                    variant={variant}
-                                    onDeleteSuccess={handleDeleteSuccess}
-                                  />
+                                  <DeleteVariant variant={variant} />
                                 </div>
                               </div>
                             </div>

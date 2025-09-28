@@ -8,7 +8,10 @@ const AdminLayout = () => {
       <SideBar />
 
       {/* Main Content Area */}
-      <div className="ml-64 w-full flex flex-col min-h-screen bg-base-100">
+      <div
+        className={`flex flex-col min-h-screen bg-base-100 w-full transition-all duration-300
+      ml-7`}
+      >
         {/* Navbar */}
         <AdminNavbar />
 

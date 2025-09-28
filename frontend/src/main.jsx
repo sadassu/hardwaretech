@@ -6,6 +6,7 @@ import { BrowserRouter } from "react-router";
 import { AuthContextProvider } from "./context/AuthContext";
 import { ProductContextProvider } from "./context/ProductContext.jsx";
 import { ReservationContextProvider } from "./context/ReservationContext.jsx";
+import { SaleContextProvider } from "./context/SaleContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -13,7 +14,9 @@ createRoot(document.getElementById("root")).render(
       <AuthContextProvider>
         <ReservationContextProvider>
           <ProductContextProvider>
-            <App />
+            <SaleContextProvider>
+              <App />
+            </SaleContextProvider>
           </ProductContextProvider>
         </ReservationContextProvider>
       </AuthContextProvider>

@@ -63,6 +63,120 @@ export const createReservation = asyncHandler(async (req, res) => {
   }
 });
 
+export const updateReservation = asyncHandler(async (req, res) => {
+  const { reservationDetails = [], remarks } = req.body || {};
+  const reservationId = req.params.id;
+
+  if (!reservationId) {
+    return res.status(400).json({ message: "Reservation ID is required" });
+  }
+
+  const reservation = await Reservation.findById(reservationId);
+  if (!reservation) {
+    return res.status(404).json({ message: "Reservation not found" });
+  }
+
+  const existingDetails = await ReservationDetail.find({ reservationId });
+  if (!existingDetails.length) {
+    return res.status(400).json({ message: "No reservation details found" });
+  }
+
+  const updatedDetails = [];
+  const deletedDetails = [];
+  const newDetails = [];
+
+  const incomingMap = new Map(
+    reservationDetails.map((d) => [String(d.productId), d])
+  );
+
+  for (const detail of existingDetails) {
+    const incoming = incomingMap.get(String(detail.productId));
+
+    if (!incoming) {
+      await ReservationDetail.findByIdAndDelete(detail._id);
+      deletedDetails.push(detail.productId);
+    } else {
+      let hasChanges = false;
+
+      if (incoming.quantity !== detail.quantity) {
+        detail.quantity = incoming.quantity;
+        hasChanges = true;
+      }
+      if (incoming.size && incoming.size !== detail.size) {
+        detail.size = incoming.size;
+        hasChanges = true;
+      }
+      if (incoming.unit && incoming.unit !== detail.unit) {
+        detail.unit = incoming.unit;
+        hasChanges = true;
+      }
+
+      if (hasChanges) {
+        await detail.save();
+        updatedDetails.push(detail.productId);
+      }
+
+      incomingMap.delete(String(detail.productId));
+    }
+  }
+
+  for (const incoming of incomingMap.values()) {
+    const newDetail = new ReservationDetail({
+      reservationId,
+      productId: incoming.productId,
+      quantity: incoming.quantity,
+      size: incoming.size,
+      unit: incoming.unit,
+    });
+    await newDetail.save();
+    newDetails.push(newDetail.productId);
+  }
+
+  // ✅ Recalculate totalPrice using ProductVariant
+  const allDetails = await ReservationDetail.find({ reservationId });
+  let newTotalPrice = 0;
+
+  for (const d of allDetails) {
+    const variant = await ProductVariant.findOne({
+      product: d.productId,
+      unit: d.unit,
+      size: d.size || null,
+    });
+
+    if (variant) {
+      newTotalPrice += variant.price * d.quantity;
+    }
+  }
+
+  reservation.totalPrice = newTotalPrice;
+
+  if (remarks) {
+    reservation.remarks = remarks;
+  }
+
+  await reservation.save();
+
+  // ✅ Populate user and details
+  const updatedReservation = await Reservation.findById(reservationId)
+    .populate("userId", "name email role") // 👈 Add this
+    .populate({
+      path: "reservationDetails",
+      populate: {
+        path: "productId",
+      },
+    });
+
+  return res.status(200).json({
+    message: "Reservation updated successfully",
+    reservation: updatedReservation,
+    updated: updatedDetails,
+    deleted: deletedDetails,
+    added: newDetails,
+    remarks: reservation.remarks,
+    totalPrice: reservation.totalPrice,
+  });
+});
+
 // Get reservations by userID
 export const getReservationByUserId = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;

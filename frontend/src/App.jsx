@@ -1,21 +1,27 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuthContext } from "./hooks/useAuthContext";
 
 import HomePage from "./Pages/HomePage";
-import Product from "./Pages/Products/Product";
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout from "./layouts/AdminLayout";
+
 import Login from "./Pages/Auth/Login";
 import Register from "./Pages/Auth/Register";
-import { useAuthContext } from "./hooks/useAuthContext";
-import Reservation from "./Pages/Reservations/Reservation";
 import LoginSuccess from "./Pages/LoginSuccess";
+
 import RoleRoute from "./routes/RoleRoute";
 import Unauthorized from "./Pages/errors/Unanthorized";
+
 import ProductList from "./Pages/UserPages/ProductList";
 import UserReservations from "./Pages/UserPages/UserReservations";
 import Profile from "./Pages/UserPages/Profile";
-import Pos from "./Pages/Pos/Pos";
+import SettingList from "./Pages/Settings/SettingList";
+
+const Product = lazy(() => import("./Pages/Products/Product"));
+const Sales = lazy(() => import("./Pages/Sales/Sales"));
+const Pos = lazy(() => import("./Pages/Pos/Pos"));
+const Reservation = lazy(() => import("./Pages/Reservations/Reservation"));
 
 const App = () => {
   const { user } = useAuthContext();
@@ -48,25 +54,51 @@ const App = () => {
           <Route
             path="/products"
             element={
-              <RoleRoute allowedRoles={["admin"]}>
-                <Product />
-              </RoleRoute>
+              <Suspense fallback={<div>Loading...</div>}>
+                <RoleRoute allowedRoles={["admin"]}>
+                  <Product />
+                </RoleRoute>
+              </Suspense>
             }
           />
           <Route
             path="/reservations"
             element={
-              <RoleRoute allowedRoles={["admin"]}>
-                <Reservation />
-              </RoleRoute>
+              <Suspense fallback={<div>Loading...</div>}>
+                <RoleRoute allowedRoles={["admin"]}>
+                  <Reservation />
+                </RoleRoute>
+              </Suspense>
             }
           />
           <Route
             path="/pos"
             element={
-              <RoleRoute allowedRoles={["admin"]}>
-                <Pos />
-              </RoleRoute>
+              <Suspense fallback={<div>Loading...</div>}>
+                <RoleRoute allowedRoles={["admin"]}>
+                  <Pos />
+                </RoleRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sales"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <RoleRoute allowedRoles={["admin"]}>
+                  <Sales />
+                </RoleRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <RoleRoute allowedRoles={["admin"]}>
+                  <SettingList />
+                </RoleRoute>
+              </Suspense>
             }
           />
         </Route>

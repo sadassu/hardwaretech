@@ -9,7 +9,7 @@ import CreateCart from "./CreateCart";
 import Pagination from "../../components/Pagination";
 import Loading from "../../components/Loading";
 import SearchBar from "../../components/SearchBar";
-import ProductListVariant from "./ProductListVariant";
+import ProductListVariant from "../../components/ProductListVariant";
 import ProductGrid from "../../components/ProductGrid";
 
 function ProductList() {

@@ -22,6 +22,7 @@ export const createVariant = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     message: "Product variant created successfully",
+    productId: existingProduct._id,
     variant: newVariant,
   });
 });
@@ -42,16 +43,23 @@ export const updateVariant = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     message: "Variant updated successfully",
+    productId: updatedVariant.product._id,
     variant: updatedVariant,
   });
 });
 
 export const deleteVariant = asyncHandler(async (req, res) => {
-  const deletedVariant = await ProductVariant.findByIdAndDelete(req.params.id);
+  const deletedVariant = await ProductVariant.findByIdAndDelete(
+    req.params.id
+  ).populate("product");
 
-  if (!deleteVariant) {
+  if (!deletedVariant) {
     return res.status(404).json({ message: "Product variant not found" });
   }
 
-  res.status(200).json({ message: "Product variant deleted successfully" });
+  res.status(200).json({
+    message: "Product variant deleted successfully",
+    productId: deletedVariant.product._id, 
+    variantId: deletedVariant._id,
+  });
 });

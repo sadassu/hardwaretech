@@ -3,11 +3,13 @@ import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
 import { useAuthContext } from "../../hooks/useAuthContext";
+import { useProductsContext } from "../../hooks/useProductContext.js";
 
 const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft"];
 
-const UpdateVariant = ({ variant, onUpdate }) => {
+const UpdateVariant = ({ variant }) => {
   const { user } = useAuthContext();
+  const { dispatch } = useProductsContext(); 
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     unit: "pcs",
@@ -16,7 +18,6 @@ const UpdateVariant = ({ variant, onUpdate }) => {
     quantity: "",
   });
 
-  // Populate form with existing variant data when modal opens
   useEffect(() => {
     if (isOpen && variant) {
       setFormData({
@@ -52,7 +53,15 @@ const UpdateVariant = ({ variant, onUpdate }) => {
 
       toast.success(res.data.message || "Variant updated!");
       setIsOpen(false);
-      if (onUpdate) onUpdate();
+
+      // ✅ keep state in sync with context
+      dispatch({
+        type: "UPDATE_VARIANT",
+        payload: {
+          productId: res.data.productId,
+          variant: res.data.variant,
+        },
+      });
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
     }

@@ -57,6 +57,8 @@ export function useCheckout() {
     }
   };
 
+  
+// admin check out
   const adminCheckout = async ({ amountPaid }) => {
     if (!user) {
       setError("You must be logged in");

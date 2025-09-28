@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export function useCart() {
   const [cart, setCart] = useState([]);
@@ -16,13 +16,16 @@ export function useCart() {
     return () => window.removeEventListener("cartUpdated", handleCartUpdated);
   }, []);
 
-  const syncCart = (newCart) => {
+  const syncCart = useCallback((newCart) => {
     localStorage.setItem("cart", JSON.stringify(newCart));
     setCart(newCart);
-    window.dispatchEvent(new Event("cartUpdated"));
-  };
+    // Use setTimeout to avoid state updates during render
+    setTimeout(() => {
+      window.dispatchEvent(new Event("cartUpdated"));
+    }, 0);
+  }, []);
 
-  const addToCart = (item) => {
+  const addToCart = useCallback((item) => {
     setCart((prevCart) => {
       const cartCopy = [...prevCart];
       const existingIndex = cartCopy.findIndex(
@@ -37,36 +40,61 @@ export function useCart() {
         cartCopy.push(item);
       }
 
-      syncCart(cartCopy);
+      // Update localStorage and dispatch event after state update
+      localStorage.setItem("cart", JSON.stringify(cartCopy));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("cartUpdated"));
+      }, 0);
+
       return cartCopy;
     });
-  };
+  }, []);
 
-  const removeFromCart = (productId, variantId) => {
-    const newCart = cart.filter(
-      (c) => !(c.productId === productId && c.variantId === variantId)
-    );
-    syncCart(newCart);
-  };
+  const removeFromCart = useCallback((productId, variantId) => {
+    setCart((prevCart) => {
+      const newCart = prevCart.filter(
+        (c) => !(c.productId === productId && c.variantId === variantId)
+      );
 
-  const clearCart = () => {
-    syncCart([]);
-  };
+      localStorage.setItem("cart", JSON.stringify(newCart));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("cartUpdated"));
+      }, 0);
 
-  const updateQuantity = (productId, variantId, newQty) => {
-    const newCart = cart.map((c) =>
-      c.productId === productId && c.variantId === variantId
-        ? {
-            ...c,
-            quantity: newQty,
-            total: newQty * c.price,
-          }
-        : c
-    );
-    syncCart(newCart);
-  };
+      return newCart;
+    });
+  }, []);
 
-  // 👇 Add derived values
+  const clearCart = useCallback(() => {
+    setCart([]);
+    localStorage.setItem("cart", JSON.stringify([]));
+    setTimeout(() => {
+      window.dispatchEvent(new Event("cartUpdated"));
+    }, 0);
+  }, []);
+
+  const updateQuantity = useCallback((productId, variantId, newQty) => {
+    setCart((prevCart) => {
+      const newCart = prevCart.map((c) =>
+        c.productId === productId && c.variantId === variantId
+          ? {
+              ...c,
+              quantity: newQty,
+              total: newQty * c.price,
+            }
+          : c
+      );
+
+      localStorage.setItem("cart", JSON.stringify(newCart));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("cartUpdated"));
+      }, 0);
+
+      return newCart;
+    });
+  }, []);
+
+  // Derived values - these are computed during render and don't cause side effects
   const cartItems = cart;
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce((sum, item) => sum + item.total, 0);
@@ -77,7 +105,7 @@ export function useCart() {
     totalPrice,
     addToCart,
     updateQuantity,
-    removeItem: removeFromCart, // alias for your component
+    removeItem: removeFromCart,
     clearCart,
   };
 }

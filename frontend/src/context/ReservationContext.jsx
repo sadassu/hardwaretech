@@ -45,6 +45,15 @@ export const reservationsReducer = (state, action) => {
         ),
       };
 
+    case "CLEAR_RESERVATIONS":
+      return {
+        ...state,
+        reservations: [],
+        total: 0,
+        page: 1,
+        pages: 1,
+      };
+
     default:
       return state;
   }

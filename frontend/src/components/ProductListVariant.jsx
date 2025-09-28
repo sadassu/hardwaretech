@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import CreateCart from "./CreateCart";
+import CreateCart from "../Pages/UserPages/CreateCart";
 
 function ProductListVariant({ product, user, isMobile }) {
   const [showVariants, setShowVariants] = useState(false);
@@ -77,9 +77,9 @@ function ProductListVariant({ product, user, isMobile }) {
         </div>
       )}
 
-      {/* Desktop: Hover overlay */}
+      {/* Desktop: Hover overlay - positioned to fill the entire card */}
       {!isMobile && (
-        <div className="absolute inset-0 bg-base-100/95 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-2xl overflow-hidden">
+        <div className="absolute inset-0 bg-base-100/95 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-2xl overflow-hidden z-10">
           <div className="p-6 h-full flex flex-col">
             {/* Header */}
             <div className="mb-4">

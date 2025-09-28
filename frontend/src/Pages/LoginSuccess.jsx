@@ -12,11 +12,18 @@ function LoginSuccess() {
 
     const userId = params.get("userId");
     const token = params.get("token");
-    const roles = params.get("roles");
+    const rolesParam = params.get("roles");
     const name = params.get("name");
     const emailParam = params.get("email");
 
     if (token) {
+      let roles = [];
+      try {
+        roles = JSON.parse(rolesParam); // ✅ ensures array
+      } catch {
+        roles = rolesParam ? [rolesParam] : ["user"]; // fallback
+      }
+
       const user = { userId, token, roles, name, email: emailParam };
 
       // Save full user object
@@ -24,7 +31,6 @@ function LoginSuccess() {
       dispatch({ type: "LOGIN", payload: user });
 
       setEmail(emailParam);
-
       navigate("/");
     } else {
       navigate("/login");

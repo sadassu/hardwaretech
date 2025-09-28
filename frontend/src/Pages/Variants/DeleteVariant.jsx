@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import api from "../../utils/api";
 import Modal from "../../components/Modal";
+import { useProductsContext } from "../../hooks/useProductContext";
 
-function DeleteVariant({ variant, onDeleteSuccess }) {
+function DeleteVariant({ variant }) {
   const { user } = useAuthContext();
+  const { dispatch } = useProductsContext();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -16,16 +18,22 @@ function DeleteVariant({ variant, onDeleteSuccess }) {
 
     setIsDeleting(true);
     try {
-      await api.delete(`/product-variants/${variant._id}`, {
+      const res = await api.delete(`/product-variants/${variant._id}`, {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       });
 
-      setIsOpen(false);
-      if (onDeleteSuccess) onDeleteSuccess(variant._id);
+      // ✅ update local state
+      dispatch({
+        type: "DELETE_VARIANT",
+        payload: {
+          productId: res.data.productId,
+          variantId: res.data.variantId,
+        },
+      });
 
-      console.log("Variant deleted successfully");
+      setIsOpen(false);
     } catch (error) {
       console.error("Error deleting variant:", error);
       alert("Failed to delete variant. Please try again.");

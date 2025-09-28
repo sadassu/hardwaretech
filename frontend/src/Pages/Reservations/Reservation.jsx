@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { useFetch } from "../../hooks/useFetch";
+
+import UpdateReservationStatus from "./UpdateReservationStatus";
+import CompleteReservation from "./CompleteReservation";
+import UpdateReservationDetails from "./UpdateReservationDetails";
+
 import { useReservationsContext } from "../../hooks/useReservationContext";
 import { useProductsContext } from "../../hooks/useProductContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
-import { useFetch } from "../../hooks/useFetch";
-import UpdateReservationStatus from "./UpdateReservationStatus";
-import CompleteReservation from "./CompleteReservation";
 
+import Pagination from "../../components/Pagination";
 const Reservation = () => {
   const { reservations, pages, dispatch } = useReservationsContext();
   const { products } = useProductsContext();
@@ -24,7 +28,6 @@ const Reservation = () => {
     [page, user?.token]
   );
 
-  console.log(reservations);
   useEffect(() => {
     if (data) {
       dispatch({
@@ -84,7 +87,7 @@ const Reservation = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-base-content">Reservations</h1>
         <p className="text-base-content/70 mt-2">
@@ -175,6 +178,15 @@ const Reservation = () => {
                         <td>
                           <div className="flex gap-2">
                             <UpdateReservationStatus
+                              reservation={res}
+                              onUpdateSuccess={(updated) =>
+                                dispatch({
+                                  type: "UPDATE_RESERVATION",
+                                  payload: updated,
+                                })
+                              }
+                            />
+                            <UpdateReservationDetails
                               reservation={res}
                               onUpdateSuccess={(updated) =>
                                 dispatch({
@@ -350,59 +362,7 @@ const Reservation = () => {
       </div>
 
       {/* Pagination */}
-      {pages > 1 && (
-        <div className="flex justify-center mt-6">
-          <div className="join">
-            <button
-              className="join-item btn btn-outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Previous
-            </button>
-
-            <button className="join-item btn btn-outline btn-disabled">
-              Page {page} of {pages}
-            </button>
-
-            <button
-              className="join-item btn btn-outline"
-              onClick={() => setPage((p) => Math.min(pages, p + 1))}
-              disabled={page === pages}
-            >
-              Next
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination page={page} pages={pages} onPageChange={setPage} />
     </div>
   );
 };

@@ -3,14 +3,16 @@ import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
 import { useAuthContext } from "../../hooks/useAuthContext";
+import { useProductsContext } from "../../hooks/useProductContext.js";
 
 const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"];
 
 const CreateVariant = ({ product }) => {
   const { user } = useAuthContext();
+  const { dispatch } = useProductsContext(); 
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
-    unit: "pcs", // default value
+    unit: "pcs",
     size: "",
     price: "",
     quantity: "",
@@ -45,6 +47,16 @@ const CreateVariant = ({ product }) => {
       );
 
       toast.success(res.data.message || "Variant created!");
+
+      // ✅ update local state
+      dispatch({
+        type: "UPDATE_VARIANT",
+        payload: {
+          productId: res.data.productId,
+          variant: res.data.variant,
+        },
+      });
+
       setFormData({ unit: "pcs", size: "", price: "", quantity: "" });
       setIsOpen(false);
     } catch (error) {
