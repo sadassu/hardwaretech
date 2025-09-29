@@ -1,34 +1,30 @@
 import React, { useState, useEffect } from "react";
+
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useProductsContext } from "../../hooks/useProductContext";
+
 import { useFetch } from "../../hooks/useFetch";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 import Loading from "../../components/Loading";
 import SearchBar from "../../components/SearchBar";
 import Pagination from "../../components/Pagination";
 import ProductGrid from "../../components/ProductGrid";
+import CategoryFilter from "../../components/CategoryFilter";
 
 function Pos() {
   const { user } = useAuthContext();
   const { products, pages, dispatch } = useProductsContext();
 
+  const isMobile = useIsMobile();
+
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const limit = 9;
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // debounce search
   useEffect(() => {
@@ -53,10 +49,12 @@ function Pos() {
         sortBy: "name",
         sortOrder: "asc",
         search: debouncedSearch,
+        category: selectedCategory,
+        includeCategories: "true",
       },
       headers: { Authorization: `Bearer ${user?.token}` },
     },
-    [page, debouncedSearch]
+    [page, debouncedSearch, selectedCategory]
   );
 
   // update context when new data arrives
@@ -71,6 +69,10 @@ function Pos() {
           pages: data.pages,
         },
       });
+      // Store categories if returned
+      if (data.categories) {
+        setCategories(data.categories);
+      }
     }
   }, [data, dispatch]);
 
@@ -78,6 +80,18 @@ function Pos() {
   const clearSearch = () => {
     setSearch("");
     setDebouncedSearch("");
+  };
+
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+    setPage(1);
+  };
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setSelectedCategory("");
+    setPage(1);
   };
 
   if (loading && !products?.length) {
@@ -149,6 +163,48 @@ function Pos() {
             placeholder="Search products for POS..."
           />
         </div>
+
+        {(search || selectedCategory) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-base">Active filters:</span>
+            {search && (
+              <div className="badge badge-primary badge-lg gap-2">
+                Search: "{search}"
+                <button onClick={clearSearch} className="btn btn-ghost btn-xs">
+                  ✕
+                </button>
+              </div>
+            )}
+            {selectedCategory && (
+              <div className="badge badge-secondary badge-lg gap-2">
+                Category:{" "}
+                {categories.find((c) => c._id === selectedCategory)?.name ||
+                  "Selected"}
+                <button
+                  onClick={() => handleCategoryChange("")}
+                  className="btn btn-ghost btn-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            <button
+              onClick={clearAllFilters}
+              className="btn btn-ghost btn-sm ml-2"
+            >
+              Clear All Filters
+            </button>
+          </div>
+        )}
+
+        {/* Category Filter */}
+        <CategoryFilter
+          className={"mb-4"}
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onCategoryChange={handleCategoryChange}
+          loading={loading}
+        />
 
         {/* Loading State */}
         {loading && (

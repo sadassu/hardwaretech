@@ -11,9 +11,37 @@ export const getProducts = asyncHandler(async (req, res) => {
   res.status(200).json(products);
 });
 
-//  Get all products
+/**
+ * @desc    Get all products with filtering, sorting, pagination, population,
+ *          and optional category list
+ * @route   GET /api/products
+ * @access  Public (or adjust if protected)
+ *
+ * Features:
+ * - Supports filtering (`req.queryOptions.filter`)
+ * - Supports sorting (`req.queryOptions.sort`)
+ * - Supports pagination (`skip`, `limit`, `page`)
+ * - Populates `category` and `variants` fields
+ * - If `req.query.includeCategories=true`, also returns all categories
+ *
+ * @example Request:
+ *   GET /api/products?page=1&limit=10&includeCategories=true
+ *
+ * @example Response JSON:
+ * {
+ *   "total": 42,
+ *   "page": 1,
+ *   "pages": 5,
+ *   "products": [ ... ],
+ *   "categories": [
+ *     { "_id": "64f1c8b2...", "name": "Electronics" },
+ *     { "_id": "64f1c8b3...", "name": "Clothing" }
+ *   ]
+ * }
+ */
 export const getAllProducts = asyncHandler(async (req, res) => {
   const { filter, sort, skip, limit, page } = req.queryOptions;
+  const { includeCategories } = req.query;
 
   const products = await Product.find(filter)
     .populate("category")
@@ -24,12 +52,21 @@ export const getAllProducts = asyncHandler(async (req, res) => {
 
   const total = await Product.countDocuments(filter);
 
-  res.status(200).json({
+  // Build response
+  const response = {
     total,
     page,
     pages: Math.ceil(total / limit),
     products,
-  });
+  };
+
+  // If requested, include categories
+  if (includeCategories === "true") {
+    const categories = await Category.find().sort({ name: 1 });
+    response.categories = categories;
+  }
+
+  res.status(200).json(response);
 });
 
 //  Get single product by ID

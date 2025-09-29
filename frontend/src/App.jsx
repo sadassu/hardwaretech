@@ -17,6 +17,7 @@ import ProductList from "./Pages/UserPages/ProductList";
 import UserReservations from "./Pages/UserPages/UserReservations";
 import Profile from "./Pages/UserPages/Profile";
 import SettingList from "./Pages/Settings/SettingList";
+import Dashboard from "./Pages/Dashboard/Dashboard";
 
 const Product = lazy(() => import("./Pages/Products/Product"));
 const Sales = lazy(() => import("./Pages/Sales/Sales"));
@@ -97,6 +98,16 @@ const App = () => {
               <Suspense fallback={<div>Loading...</div>}>
                 <RoleRoute allowedRoles={["admin"]}>
                   <SettingList />
+                </RoleRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <RoleRoute allowedRoles={["admin"]}>
+                  <Dashboard />
                 </RoleRoute>
               </Suspense>
             }

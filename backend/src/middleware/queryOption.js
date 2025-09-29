@@ -4,15 +4,22 @@ export const queryOptions =
   (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const sortBy = req.query.sortBy || defaultSortField; // use custom default
+    const sortBy = req.query.sortBy || defaultSortField;
     const sortOrder = req.query.sortOrder === "desc" ? -1 : 1;
     const search = req.query.search || "";
 
     let filter = {};
+
+    // Search filter
     if (search && searchableFields.length > 0) {
       filter.$or = searchableFields.map((field) => ({
         [field]: { $regex: search, $options: "i" },
       }));
+    }
+
+    // Category filter - ADD THIS
+    if (req.query.category) {
+      filter.category = req.query.category;
     }
 
     req.queryOptions = {

@@ -109,7 +109,7 @@ function CartContent() {
       {/* Enhanced Cart Button */}
       <div className="relative">
         <button
-          className="relative group cursor-pointer btn btn-ghost hover:btn-primary transition-all duration-300 ease-in-out transform hover:scale-105"
+          className="relative group cursor-pointer btn btn-ghost hover:bg-[#30475E] transition-all duration-300 ease-in-out transform hover:scale-105"
           onClick={() => setIsOpen(true)}
           title="View Cart"
         >
@@ -117,7 +117,7 @@ function CartContent() {
           <div className="relative">
             <img src="/icons/cart.svg" alt="cart" className="h-7 w-7" />
             {cartCount > 0 && (
-              <div className="absolute -top-3 -right-3 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-bounce">
+              <div className="absolute -top-3 -right-3 bg-[#F05454] text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-bounce">
                 {cartCount > 99 ? "99+" : cartCount}
               </div>
             )}
@@ -131,9 +131,9 @@ function CartContent() {
         onClose={() => setIsOpen(false)}
         className="w-full max-w-2xl"
       >
-        <div className="bg-gradient-to-br from-base-100 to-base-200 rounded-2xl shadow-2xl">
+        <div className="bg-[#222831] rounded-2xl shadow-2xl">
           {/* Enhanced Header */}
-          <div className="bg-gradient-to-r from-primary to-secondary text-primary-content p-6 rounded-t-2xl">
+          <div className="bg-[#30475E] text-white p-6 rounded-t-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 p-2 rounded-full">
@@ -187,13 +187,13 @@ function CartContent() {
 
           <div className="p-6">
             {/* Enhanced Cart Items */}
-            <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-primary scrollbar-track-base-300">
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#30475E] scrollbar-track-[#222831]">
               {cartItems.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="relative mb-6">
-                    <div className="w-24 h-24 mx-auto bg-gradient-to-r from-primary/10 to-secondary/10 rounded-full flex items-center justify-center">
+                    <div className="w-24 h-24 mx-auto bg-[#30475E]/20 rounded-full flex items-center justify-center">
                       <svg
-                        className="w-12 h-12 text-primary/40"
+                        className="w-12 h-12 text-[#30475E]/60"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -207,10 +207,10 @@ function CartContent() {
                       </svg>
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-base-content mb-2">
+                  <h3 className="text-xl font-semibold text-[#DDDDDD] mb-2">
                     Your cart is empty
                   </h3>
-                  <p className="text-base-content/60">
+                  <p className="text-[#DDDDDD]/60">
                     Add some delicious items to get started!
                   </p>
                 </div>
@@ -218,17 +218,17 @@ function CartContent() {
                 cartItems.map((item) => (
                   <div
                     key={`${item.productId}-${item.variantId}`}
-                    className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-primary/30 overflow-hidden"
+                    className="group bg-[#DDDDDD] rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#30475E]/30 hover:border-[#30475E] overflow-hidden"
                   >
                     <div className="p-5">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg text-base-content truncate group-hover:text-primary transition-colors">
+                          <h3 className="font-semibold text-lg text-[#222831] truncate group-hover:text-[#30475E] transition-colors">
                             {item.name}
                           </h3>
                           {item.size && (
                             <div className="inline-flex items-center gap-1 mt-1">
-                              <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
+                              <span className="text-xs font-medium text-[#30475E] bg-[#30475E]/10 px-2 py-1 rounded-full">
                                 <span className="text-lg">₱</span>
                                 {item.price.toFixed(2)} / 1 {item.unit}
                               </span>
@@ -236,7 +236,7 @@ function CartContent() {
                           )}
                         </div>
                         <button
-                          className="btn btn-ghost btn-sm text-error/60 hover:text-error hover:bg-error/10 rounded-full w-8 h-8 p-0"
+                          className="btn btn-ghost btn-sm text-[#F05454]/60 hover:text-[#F05454] hover:bg-[#F05454]/10 rounded-full w-8 h-8 p-0"
                           onClick={() =>
                             removeItem(item.productId, item.variantId)
                           }
@@ -258,9 +258,9 @@ function CartContent() {
 
                       <div className="flex items-center justify-between">
                         {/* Enhanced quantity controls */}
-                        <div className="flex items-center gap-3 bg-base-200 rounded-full p-1">
+                        <div className="flex items-center gap-3 bg-[#222831]/10 rounded-full p-1">
                           <button
-                            className="btn btn-ghost btn-sm rounded-full w-8 h-8 p-0 hover:bg-primary hover:text-primary-content"
+                            className="btn btn-ghost btn-sm rounded-full w-8 h-8 p-0 hover:bg-[#30475E] hover:text-white"
                             onClick={() =>
                               updateQuantity(
                                 item.productId,
@@ -285,7 +285,7 @@ function CartContent() {
 
                           <input
                             type="number"
-                            className="input input-ghost input-sm w-16 text-center font-semibold bg-transparent border-none focus:bg-white rounded-lg"
+                            className="input input-ghost input-sm w-16 text-center font-semibold bg-transparent border-none focus:bg-white rounded-lg text-[#222831]"
                             value={item.quantity}
                             min={1}
                             max={item.quantityAvailable}
@@ -303,7 +303,7 @@ function CartContent() {
                           />
 
                           <button
-                            className="btn btn-ghost btn-sm rounded-full w-8 h-8 p-0 hover:bg-primary hover:text-primary-content"
+                            className="btn btn-ghost btn-sm rounded-full w-8 h-8 p-0 hover:bg-[#30475E] hover:text-white"
                             onClick={() =>
                               updateQuantity(
                                 item.productId,
@@ -328,7 +328,7 @@ function CartContent() {
                         </div>
 
                         <div className="text-right">
-                          <p className="text-2xl font-bold bg-gradient-to-r from-success to-green-600 bg-clip-text text-transparent">
+                          <p className="text-2xl font-bold text-[#F05454]">
                             ₱{item.total.toFixed(2)}
                           </p>
                         </div>
@@ -348,7 +348,7 @@ function CartContent() {
                 {!isRestricted ? (
                   <div className="form-control mb-6">
                     <label className="label">
-                      <span className="label-text font-semibold text-base-content flex items-center gap-2">
+                      <span className="label-text font-semibold text-[#DDDDDD] flex items-center gap-2">
                         <svg
                           className="w-4 h-4"
                           fill="currentColor"
@@ -364,7 +364,7 @@ function CartContent() {
                       </span>
                     </label>
                     <textarea
-                      className="textarea textarea-bordered textarea-lg w-full bg-white focus:border-primary focus:outline-primary rounded-xl"
+                      className="textarea textarea-bordered textarea-lg w-full bg-[#DDDDDD] text-[#222831] focus:border-[#30475E] focus:outline-[#30475E] rounded-xl"
                       placeholder="Any special requests or delivery instructions? (Optional)"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
@@ -374,9 +374,9 @@ function CartContent() {
                 ) : (
                   <div className="form-control mb-6">
                     <label className="label">
-                      <span className="label-text font-semibold text-base-content flex items-center gap-2">
+                      <span className="label-text font-semibold text-[#DDDDDD] flex items-center gap-2">
                         <svg
-                          className="w-4 h-4 text-success"
+                          className="w-4 h-4 text-[#F05454]"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -392,7 +392,7 @@ function CartContent() {
                     </label>
                     <input
                       type="number"
-                      className="input input-bordered input-lg w-full bg-white focus:border-primary focus:outline-primary rounded-xl"
+                      className="input input-bordered input-lg w-full bg-[#DDDDDD] text-[#222831] focus:border-[#30475E] focus:outline-[#30475E] rounded-xl"
                       placeholder="Enter amount paid by customer"
                       value={amountPaid}
                       min={0}
@@ -404,12 +404,12 @@ function CartContent() {
 
                 <div className="space-y-6">
                   {/* Enhanced Total Display */}
-                  <div className="bg-gradient-to-r from-success/10 to-green-500/10 p-6 rounded-2xl border border-success/20">
+                  <div className="bg-[#30475E]/20 p-6 rounded-2xl border border-[#30475E]/40">
                     <div className="flex justify-between items-center">
-                      <span className="text-xl font-semibold text-base-content">
+                      <span className="text-xl font-semibold text-[#DDDDDD]">
                         Total Amount:
                       </span>
-                      <span className="text-3xl font-bold bg-gradient-to-r from-success to-green-600 bg-clip-text text-transparent">
+                      <span className="text-3xl font-bold text-[#F05454]">
                         ₱{totalPrice.toFixed(2)}
                       </span>
                     </div>
@@ -418,7 +418,7 @@ function CartContent() {
                   {/* Enhanced Action Buttons */}
                   <div className="flex gap-4">
                     <button
-                      className="btn btn-outline btn-lg flex-1 rounded-xl hover:scale-105 transition-all duration-200"
+                      className="btn btn-outline btn-lg flex-1 rounded-xl hover:scale-105 transition-all duration-200 border-[#DDDDDD] text-[#DDDDDD] hover:bg-[#DDDDDD] hover:text-[#222831]"
                       onClick={() => setIsOpen(false)}
                     >
                       <svg
@@ -437,7 +437,7 @@ function CartContent() {
                       Continue Shopping
                     </button>
                     <button
-                      className="btn btn-primary btn-lg flex-1 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl hover:scale-105 bg-gradient-to-r from-primary to-secondary border-none"
+                      className="btn btn-lg flex-1 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl hover:scale-105 bg-[#F05454] hover:bg-[#F05454]/90 text-white border-none"
                       onClick={handleCheckout}
                       disabled={loading || (isRestricted && !amountPaid)}
                     >

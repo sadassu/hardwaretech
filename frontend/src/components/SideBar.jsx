@@ -85,7 +85,7 @@ const SideBar = () => {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-slate-800 text-white rounded-lg shadow-lg hover:bg-slate-700 transition-colors"
+        className="md:hidden fixed top-4 left-4 z-49 p-2 bg-slate-800 text-white rounded-lg shadow-lg hover:bg-slate-700 transition-colors"
         aria-label="Toggle mobile menu"
       >
         <Menu size={24} />
@@ -94,7 +94,7 @@ const SideBar = () => {
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="md:hidden fixed inset-0 bg-gray-600/50 bg-opacity-50 z-40"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
@@ -102,7 +102,7 @@ const SideBar = () => {
       {/* Sidebar */}
       <div
         className={`
-          fixed left-0 top-0 h-screen bg-slate-800 text-slate-100 shadow-xl z-40
+          fixed left-0 top-0 h-screen bg-slate-800 text-slate-100 shadow-xl z-50
           transition-all duration-300 ease-in-out
           ${isCollapsed ? "w-16" : "w-64"}
           ${

@@ -5,23 +5,28 @@ import { useAuthContext } from "../../hooks/useAuthContext";
 
 import { useFetch } from "../../hooks/useFetch";
 
-import CreateCart from "./CreateCart";
 import Pagination from "../../components/Pagination";
 import Loading from "../../components/Loading";
 import SearchBar from "../../components/SearchBar";
-import ProductListVariant from "../../components/ProductListVariant";
 import ProductGrid from "../../components/ProductGrid";
+import CategoryFilter from "../../components/CategoryFilter";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 function ProductList() {
   const { products, pages, dispatch } = useProductsContext();
   const { user } = useAuthContext();
+  
+  const { isMobile } = useIsMobile();
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState([]);
   const limit = 12;
 
+  // Debounce search
   useEffect(() => {
     if (search !== debouncedSearch) {
       setIsSearching(true);
@@ -36,6 +41,7 @@ function ProductList() {
     return () => clearTimeout(handler);
   }, [search, debouncedSearch]);
 
+  // Fetch products with category filter
   const { data, loading, error } = useFetch(
     "/products",
     {
@@ -45,12 +51,15 @@ function ProductList() {
         sortBy: "name",
         sortOrder: "asc",
         search: debouncedSearch,
+        category: selectedCategory,
+        includeCategories: "true",
       },
       headers: { Authorization: `Bearer ${user?.token}` },
     },
-    [page, debouncedSearch]
+    [page, debouncedSearch, selectedCategory]
   );
 
+  // Update products and categories from API response
   useEffect(() => {
     if (data) {
       dispatch({
@@ -62,19 +71,12 @@ function ProductList() {
           pages: data.pages,
         },
       });
+      // Store categories if returned
+      if (data.categories) {
+        setCategories(data.categories);
+      }
     }
   }, [data, dispatch]);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -85,7 +87,19 @@ function ProductList() {
     setDebouncedSearch("");
   };
 
-  if (loading && !products?.length && !search) {
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+    setPage(1); // Reset to first page when category changes
+  };
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setSelectedCategory("");
+    setPage(1);
+  };
+
+  if (loading && !products?.length && !search && !selectedCategory) {
     return <Loading message="Loading products..." />;
   }
 
@@ -114,10 +128,10 @@ function ProductList() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      {/* Enhanced Search Section */}
+      {/* Enhanced Search and Filter Section */}
       <div className="mb-8">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="p-6">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <div className="flex-1 w-full md:w-auto">
             <SearchBar
               search={search}
               onSearchChange={handleSearchChange}
@@ -138,19 +152,49 @@ function ProductList() {
           </div>
         </div>
 
-        {/* Active Search Indicator */}
-        {search && (
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-base">Searching for:</span>
-            <div className="badge badge-primary badge-lg gap-2">
-              "{search}"
-              <button onClick={clearSearch} className="btn btn-ghost btn-xs">
-                ✕
-              </button>
-            </div>
+        {/* Active Filters Indicator */}
+        {(search || selectedCategory) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-base">Active filters:</span>
+            {search && (
+              <div className="badge badge-primary badge-lg gap-2">
+                Search: "{search}"
+                <button onClick={clearSearch} className="btn btn-ghost btn-xs">
+                  ✕
+                </button>
+              </div>
+            )}
+            {selectedCategory && (
+              <div className="badge badge-secondary badge-lg gap-2">
+                Category:{" "}
+                {categories.find((c) => c._id === selectedCategory)?.name ||
+                  "Selected"}
+                <button
+                  onClick={() => handleCategoryChange("")}
+                  className="btn btn-ghost btn-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            <button
+              onClick={clearAllFilters}
+              className="btn btn-ghost btn-sm ml-2"
+            >
+              Clear All Filters
+            </button>
           </div>
         )}
       </div>
+
+      {/* Category Filter */}
+      <CategoryFilter
+        className={"mb-4"}
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onCategoryChange={handleCategoryChange}
+        loading={loading}
+      />
 
       {/* Loading State for Products */}
       {loading && (
@@ -197,12 +241,12 @@ function ProductList() {
               We couldn't find any products matching your search criteria. Try
               using different keywords or browse all products.
             </p>
-            {search && (
+            {(search || selectedCategory) && (
               <button
-                onClick={clearSearch}
+                onClick={clearAllFilters}
                 className="btn btn-primary btn-wide"
               >
-                Clear Search & Show All
+                Clear All Filters & Show All
               </button>
             )}
           </div>

@@ -23,7 +23,7 @@ function ProductGrid({ products, user, isMobile }) {
             </span>
 
             {/* Product Card */}
-            <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-300 hover:border-primary/30 group relative h-[400px] overflow-hidden w-full">
+            <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-300 hover:border-primary/30 group relative lg:h-[400px] overflow-hidden w-full">
               <div className="card-body p-6 flex flex-col h-full">
                 {/* Product Image */}
                 {product.image && (

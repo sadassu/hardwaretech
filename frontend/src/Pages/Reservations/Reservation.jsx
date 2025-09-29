@@ -87,7 +87,7 @@ const Reservation = () => {
   }
 
   return (
-    <div className="">
+    <div className="p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-base-content">Reservations</h1>
         <p className="text-base-content/70 mt-2">
