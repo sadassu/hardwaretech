@@ -1,3 +1,4 @@
+import ProductVariant from "../models/ProductVariant.js";
 import Sale from "../models/Sale.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -52,10 +53,18 @@ export const getDashboardSales = asyncHandler(async (req, res) => {
     };
 
     formatDate = {
-      $dateToString: { format: "%Y-%m-%d", date: "$saleDate" },
+      $dateToString: {
+        format: "%Y-%m-%d",
+        date: {
+          $dateFromParts: {
+            year: "$_id.year",
+            month: "$_id.month",
+            day: "$_id.day",
+          },
+        },
+      },
     };
   } else if (option === "monthly") {
-    // Current year by month
     const currentYear = new Date().getFullYear();
     const start = new Date(`${currentYear}-01-01`);
     const end = new Date(`${currentYear}-12-31`);
@@ -74,7 +83,6 @@ export const getDashboardSales = asyncHandler(async (req, res) => {
       $concat: [{ $toString: "$_id.year" }, "-", { $toString: "$_id.month" }],
     };
   } else if (option === "yearly") {
-    // Group all sales by year
     groupStage = {
       _id: { year: { $year: "$saleDate" } },
       totalSales: { $sum: "$totalPrice" },
@@ -89,6 +97,7 @@ export const getDashboardSales = asyncHandler(async (req, res) => {
   const sales = await Sale.aggregate([
     { $match: matchStage },
     { $group: groupStage },
+    { $match: { totalSales: { $gt: 0 } } }, // exclude 0 sales
     { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } },
     {
       $project: {
@@ -138,3 +147,76 @@ export const getTotalSalesYear = asyncHandler(async (req, res) => {
     totalSales: result.length > 0 ? result[0].totalSales : 0,
   });
 });
+
+/**
+ * Controller: getStockStatus
+ *
+ * Fetches product variants based on stock status (low, out, or all).
+ *
+ * Features:
+ * - Supports:
+ *   - "low"  → quantity < 20 but > 0
+ *   - "out"  → quantity = 0
+ *   - "all"  → no filter (all items)
+ * - Pagination support.
+ * - limit=0 → only return counts.
+ */
+export const getStockStatus = async (req, res) => {
+  try {
+    const { type } = req.query;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Validation
+    if (!["low", "out", "all"].includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid type. Use 'low', 'out', or 'all'.",
+      });
+    }
+
+    // Build query depending on stock type
+    let query = {};
+    if (type === "low") query = { quantity: { $gt: 0, $lt: 20 } };
+    if (type === "out") query = { quantity: 0 };
+    if (type === "all") query = {}; // no filter
+
+    const total = await ProductVariant.countDocuments(query);
+
+    if (limit === 0) {
+      return res.json({
+        success: true,
+        type,
+        page,
+        total,
+        hasMore: false,
+        items: [],
+      });
+    }
+
+    const items = await ProductVariant.find(query)
+      .populate({
+        path: "product",
+        select: "name description image category",
+      })
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    return res.json({
+      success: true,
+      type,
+      page,
+      total,
+      hasMore: skip + items.length < total,
+      items,
+    });
+  } catch (error) {
+    console.error("Error fetching stock status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};

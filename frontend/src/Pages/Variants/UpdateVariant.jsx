@@ -4,16 +4,19 @@ import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useProductsContext } from "../../hooks/useProductContext.js";
+import TextInput from "../../components/TextInput.jsx";
 
-const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft"];
+const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"];
 
 const UpdateVariant = ({ variant }) => {
   const { user } = useAuthContext();
-  const { dispatch } = useProductsContext(); 
+  const { dispatch } = useProductsContext();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
-    unit: "pcs",
+    unit: "",
     size: "",
+    color: "",
+    supplier_price: "",
     price: "",
     quantity: "",
   });
@@ -21,9 +24,11 @@ const UpdateVariant = ({ variant }) => {
   useEffect(() => {
     if (isOpen && variant) {
       setFormData({
-        unit: variant.unit || "pcs",
+        unit: variant.unit || "",
         size: variant.size || "",
+        color: variant.color || "",
         price: variant.price || "",
+        supplier_price: variant.supplier_price || "",
         quantity: variant.quantity || "",
       });
     }
@@ -41,15 +46,16 @@ const UpdateVariant = ({ variant }) => {
     if (!variant?._id) return;
 
     try {
-      const res = await api.put(
-        `/product-variants/${variant._id}`,
-        { ...formData },
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
+      // send only fields that are filled
+      const payload = { ...formData };
+      if (!payload.unit) delete payload.unit;
+      if (!payload.color) delete payload.color;
+
+      const res = await api.put(`/product-variants/${variant._id}`, payload, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
 
       toast.success(res.data.message || "Variant updated!");
       setIsOpen(false);
@@ -93,13 +99,15 @@ const UpdateVariant = ({ variant }) => {
         <h2 className="text-xl font-semibold mb-4">Update Variant</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4 w-96">
+          {/* Unit dropdown - optional */}
           <select
             name="unit"
             value={formData.unit}
             onChange={handleChange}
-            className="select select-bordered w-full"
+            className="select select-bordered w-full bg-[#30475E] text-white"
             required
           >
+            <option value="">No Unit</option>
             {UNIT_OPTIONS.map((unit) => (
               <option key={unit} value={unit}>
                 {unit.toUpperCase()}
@@ -107,35 +115,62 @@ const UpdateVariant = ({ variant }) => {
             ))}
           </select>
 
-          <input
+          {/* Size input */}
+          <TextInput
+            label="Size"
             type="text"
             name="size"
             placeholder="Size (e.g., small, medium)"
             value={formData.size}
             onChange={handleChange}
-            className="input input-bordered w-full"
+          />
+
+          {/* Supplier Price */}
+          <TextInput
+            label="Supplier Price"
+            type="number"
+            name="supplier_price"
+            placeholder="Supplier price"
+            value={formData.supplier_price}
+            onChange={handleChange}
             required
           />
-          <input
+
+          {/* Price input */}
+          <TextInput
+            label="Price"
             type="number"
             name="price"
             placeholder="Price"
             value={formData.price}
             onChange={handleChange}
-            className="input input-bordered w-full"
             required
           />
-          <input
+
+          <TextInput
+            label="Quantity"
             type="number"
             name="quantity"
             placeholder="Quantity"
             value={formData.quantity}
             onChange={handleChange}
-            className="input input-bordered w-full"
             required
           />
 
-          <button type="submit" className="btn btn-primary w-full">
+          {/* Color input */}
+          <TextInput
+            label="Color (if only applicable)"
+            type="text"
+            name="color"
+            placeholder="Color (e.g., Red, Blue)"
+            value={formData.color}
+            onChange={handleChange}
+          />
+
+          <button
+            type="submit"
+            className="rounded-2xl p-2 cursor-pointer bg-[#f05454] w-full"
+          >
             Update Variant
           </button>
         </form>

@@ -23,28 +23,18 @@ function Login() {
   };
 
   return (
-    <div className="hero min-h-screen bg-gradient-to-br from-primary/20 via-base-200 to-secondary/20">
+    <div className="hero min-h-screen bg-[url(/assets/background-shadow.webp)]">
       <div className="hero-content flex-col lg:flex-row-reverse max-w-6xl">
         {/* Welcome Section */}
-        <div className="text-center lg:text-left lg:ml-12">
+        <div className="text-center lg:text-left lg:ml-12 ">
           <div className="max-w-md">
             <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Welcome Back!
             </h1>
-            <p className="py-6 text-lg opacity-80">
+            <p className="py-6 text-lg opacity-80 text-white">
               Sign in to your account and continue your journey with us. Access
               all your favorite features and stay connected.
             </p>
-            <div className="flex items-center gap-4 justify-center lg:justify-start">
-              <div className="stat bg-base-100/50 rounded-box shadow-sm">
-                <div className="stat-value text-2xl text-primary">24/7</div>
-                <div className="stat-desc">Support</div>
-              </div>
-              <div className="stat bg-base-100/50 rounded-box shadow-sm">
-                <div className="stat-value text-2xl text-secondary">100%</div>
-                <div className="stat-desc">Secure</div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -53,11 +43,6 @@ function Login() {
           <div className="card-body">
             {/* Header */}
             <div className="text-center mb-6">
-              <div className="avatar placeholder mb-4">
-                <div className="bg-primary text-primary-content rounded-full w-16">
-                  <span className="text-2xl">👋</span>
-                </div>
-              </div>
               <h2 className="card-title text-3xl font-bold justify-center mb-2">
                 Sign In
               </h2>
@@ -190,17 +175,6 @@ function Login() {
                   >
                     Forgot password?
                   </Link>
-                </label>
-              </div>
-
-              {/* Remember Me */}
-              <div className="form-control">
-                <label className="label cursor-pointer justify-start gap-3">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary checkbox-sm"
-                  />
-                  <span className="label-text">Remember me for 30 days</span>
                 </label>
               </div>
 

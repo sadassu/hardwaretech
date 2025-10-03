@@ -67,7 +67,7 @@ const Register = () => {
   const strengthInfo = getPasswordStrengthText(passwordStrength);
 
   return (
-    <div className="hero min-h-screen bg-gradient-to-br from-secondary/20 via-base-200 to-primary/20">
+    <div className="hero min-h-screen bg-[url(/assets/background-shadow.webp)]">
       <div className="hero-content flex-col lg:flex-row max-w-6xl">
         {/* Welcome Section */}
         <div className="text-center lg:text-left lg:mr-12 order-2 lg:order-1">
@@ -75,75 +75,10 @@ const Register = () => {
             <h1 className="text-5xl font-bold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
               Join Us Today!
             </h1>
-            <p className="py-6 text-lg opacity-80">
+            <p className="py-6 text-lg opacity-80 text-white">
               Create your account and unlock a world of possibilities. Join
               thousands of satisfied users who trust our platform.
             </p>
-
-            {/* Benefits List */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 bg-base-100/50 p-3 rounded-box">
-                <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-success"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium">
-                  Free forever plan available
-                </span>
-              </div>
-              <div className="flex items-center gap-3 bg-base-100/50 p-3 rounded-box">
-                <div className="w-8 h-8 rounded-full bg-info/20 flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-info"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium">Bank-level security</span>
-              </div>
-              <div className="flex items-center gap-3 bg-base-100/50 p-3 rounded-box">
-                <div className="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-warning"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium">
-                  Lightning fast setup
-                </span>
-              </div>
-            </div>
           </div>
         </div>
 

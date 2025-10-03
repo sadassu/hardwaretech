@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
-import api from "../utils/api"; 
+import api from "../utils/api";
 
 export const useFetch = (url, options = {}, dependencies = []) => {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // default false
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let isMounted = true; 
+    let isMounted = true;
+
+    // ⛔ Skip if url is not provided
+    if (!url) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 

@@ -8,6 +8,18 @@ import { formatPrice } from "../../utils/formatPrice";
 import ChangeName from "./ChangeName";
 import { useAuthorize } from "../../hooks/useAuthorize";
 import ChangePassword from "./ChangePassword";
+import ChangeAvatar from "./ChangeAvatar"; // ✅ import
+
+// lucide-react icons
+import {
+  User,
+  BarChart3,
+  ClipboardList,
+  EllipsisVertical,
+  FileDown,
+  Eye,
+  Receipt,
+} from "lucide-react";
 
 const Profile = () => {
   const { userId } = useParams();
@@ -19,7 +31,7 @@ const Profile = () => {
   //check if the params userid is actually the user logged in
   useAuthorize(userId);
 
-  const { data, loading, error } = useFetch(
+  const { data, loading } = useFetch(
     `/reservations/user/${userId}`,
     {
       params: {
@@ -68,7 +80,7 @@ const Profile = () => {
 
   const statusCounts = getStatusCounts();
 
-  // Get status badge color (matching your UserReservations component)
+  // Get status badge color
   const getStatusBadgeColor = (status) => {
     const statusClasses = {
       pending: "badge-warning",
@@ -96,26 +108,15 @@ const Profile = () => {
           <div className="lg:col-span-1">
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
-                <h2 className="card-title text-xl mb-4">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
+                <h2 className="card-title text-xl mb-4 flex items-center gap-2">
+                  <User className="h-6 w-6" />
                   Account Information
                 </h2>
 
                 {/* User Details */}
                 <div className="space-y-4">
+                  {/* Avatar Upload Section */}
+                  <ChangeAvatar /> {/* ✅ Avatar change */}
                   <div>
                     <label className="label">
                       <span className="label-text font-semibold">Name</span>
@@ -130,7 +131,6 @@ const Profile = () => {
                       <ChangeName />
                     </div>
                   </div>
-
                   <div>
                     <label className="label">
                       <span className="label-text font-semibold">Email</span>
@@ -159,21 +159,8 @@ const Profile = () => {
             {/* Status Overview Card */}
             <div className="card bg-base-100 shadow-xl mt-6">
               <div className="card-body">
-                <h2 className="card-title text-xl mb-4">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
+                <h2 className="card-title text-xl mb-4 flex items-center gap-2">
+                  <BarChart3 className="h-6 w-6" />
                   Reservation Summary
                 </h2>
 
@@ -221,21 +208,8 @@ const Profile = () => {
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="card-title text-xl">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                      />
-                    </svg>
+                  <h2 className="card-title text-xl flex items-center gap-2">
+                    <ClipboardList className="h-6 w-6" />
                     Transaction History
                   </h2>
                   <div className="text-sm text-base-content/70">
@@ -336,30 +310,22 @@ const Profile = () => {
                               role="button"
                               className="btn btn-ghost btn-sm"
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M12 5v.01M12 12v.01M12 19v.01"
-                                />
-                              </svg>
+                              <EllipsisVertical className="h-4 w-4" />
                             </button>
                             <ul
                               tabIndex={0}
                               className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
                             >
                               <li>
-                                <a>View Details</a>
+                                <a className="flex items-center gap-2">
+                                  <Eye className="h-4 w-4" /> View Details
+                                </a>
                               </li>
                               <li>
-                                <a>Download Receipt</a>
+                                <a className="flex items-center gap-2">
+                                  <FileDown className="h-4 w-4" /> Download
+                                  Receipt
+                                </a>
                               </li>
                             </ul>
                           </div>
@@ -368,20 +334,7 @@ const Profile = () => {
                     ))
                   ) : !loading ? (
                     <div className="text-center py-12">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-12 w-12 mx-auto text-base-content/30 mb-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
+                      <Receipt className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
                       <h3 className="text-lg font-medium text-base-content/60 mb-2">
                         No Transactions Yet
                       </h3>

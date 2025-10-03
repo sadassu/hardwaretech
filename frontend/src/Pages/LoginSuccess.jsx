@@ -15,16 +15,17 @@ function LoginSuccess() {
     const rolesParam = params.get("roles");
     const name = params.get("name");
     const emailParam = params.get("email");
+    const avatar = params.get("avatar"); 
 
     if (token) {
       let roles = [];
       try {
-        roles = JSON.parse(rolesParam); // ✅ ensures array
+        roles = JSON.parse(rolesParam); 
       } catch {
         roles = rolesParam ? [rolesParam] : ["user"]; // fallback
       }
 
-      const user = { userId, token, roles, name, email: emailParam };
+      const user = { userId, token, roles, name, email: emailParam, avatar }; // ✅ added avatar
 
       // Save full user object
       localStorage.setItem("user", JSON.stringify(user));

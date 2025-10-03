@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ImageSlider from "../components/ImageSlider";
 
 const HomePage = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
@@ -64,6 +65,7 @@ const HomePage = () => {
     <div className="min-h-screen bg-base-100">
       {/* Navigation */}
 
+      <ImageSlider />
       {/* Hero Section */}
       <div className="hero min-h-[80vh] bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
         <div className="hero-content text-center max-w-5xl">

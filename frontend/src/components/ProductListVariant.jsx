@@ -51,6 +51,11 @@ function ProductListVariant({ product, user, isMobile }) {
                               {variant.size} {variant.unit}
                             </div>
                           )}
+                          {variant.color && (
+                            <div className="badge badge-info badge-sm">
+                              {variant.color}
+                            </div>
+                          )}
                           {variant.quantity && (
                             <div className="badge badge-ghost badge-sm">
                               Qty: {variant.quantity}
@@ -105,6 +110,11 @@ function ProductListVariant({ product, user, isMobile }) {
                           {variant.size && (
                             <div className="badge badge-outline text-xs">
                               {variant.size} {variant.unit}
+                            </div>
+                          )}
+                          {variant.color && (
+                            <div className={`text-white p-1 rounded px-2 text-xs bg-${variant.color.toLowerCase()}-500 border-${variant.color.toLowerCase()}-500`}>
+                              {variant.color}
                             </div>
                           )}
                           {variant.quantity && (

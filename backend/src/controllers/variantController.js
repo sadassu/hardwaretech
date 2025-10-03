@@ -4,7 +4,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // ✅ Create Variant
 export const createVariant = asyncHandler(async (req, res) => {
-  const { productId, unit, size, price, quantity } = req.body;
+  const { productId, unit, size, price, quantity, supplier_price, color } =
+    req.body;
 
   const existingProduct = await Product.findById(productId);
 
@@ -12,13 +13,22 @@ export const createVariant = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Product not found" });
   }
 
-  const newVariant = await ProductVariant.create({
+  // Build variant data
+  const newVariantData = {
     product: existingProduct._id,
     unit,
     size,
     price,
     quantity,
-  });
+    supplier_price,
+  };
+
+  // ✅ Only add color if it was provided
+  if (color) {
+    newVariantData.color = color;
+  }
+
+  const newVariant = await ProductVariant.create(newVariantData);
 
   res.status(201).json({
     message: "Product variant created successfully",
@@ -29,11 +39,19 @@ export const createVariant = asyncHandler(async (req, res) => {
 
 //Update Variant
 export const updateVariant = asyncHandler(async (req, res) => {
-  const { unit, size, price, quantity } = req.body;
+  const { unit, size, price, quantity, supplier_price, color } = req.body;
+
+  // Build update data
+  const updateData = { unit, size, price, quantity, supplier_price };
+
+  // ✅ Only add color if provided
+  if (color !== undefined) {
+    updateData.color = color;
+  }
 
   const updatedVariant = await ProductVariant.findByIdAndUpdate(
     req.params.id,
-    { unit, size, price, quantity },
+    updateData,
     { new: true, runValidators: true }
   ).populate("product");
 
@@ -59,7 +77,7 @@ export const deleteVariant = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     message: "Product variant deleted successfully",
-    productId: deletedVariant.product._id, 
+    productId: deletedVariant.product._id,
     variantId: deletedVariant._id,
   });
 });

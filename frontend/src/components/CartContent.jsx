@@ -109,13 +109,13 @@ function CartContent() {
       {/* Enhanced Cart Button */}
       <div className="relative">
         <button
-          className="relative group cursor-pointer btn btn-ghost hover:bg-[#30475E] transition-all duration-300 ease-in-out transform hover:scale-105"
+          className="relative group cursor-pointer btn btn-ghost hover:bg-gray-400 transition-all duration-300 ease-in-out transform hover:scale-105"
           onClick={() => setIsOpen(true)}
           title="View Cart"
         >
           {/* Cart Icon with gradient effect */}
           <div className="relative">
-            <img src="/icons/cart.svg" alt="cart" className="h-7 w-7" />
+            <img src="/icons/cart.svg" alt="cart" className="h-7 w-7 invert" />
             {cartCount > 0 && (
               <div className="absolute -top-3 -right-3 bg-[#F05454] text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-bounce">
                 {cartCount > 99 ? "99+" : cartCount}
@@ -218,7 +218,7 @@ function CartContent() {
                 cartItems.map((item) => (
                   <div
                     key={`${item.productId}-${item.variantId}`}
-                    className="group bg-[#DDDDDD] rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#30475E]/30 hover:border-[#30475E] overflow-hidden"
+                    className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#30475E]/30 hover:border-[#30475E] overflow-hidden"
                   >
                     <div className="p-5">
                       <div className="flex justify-between items-start mb-4">
@@ -364,7 +364,7 @@ function CartContent() {
                       </span>
                     </label>
                     <textarea
-                      className="textarea textarea-bordered textarea-lg w-full bg-[#DDDDDD] text-[#222831] focus:border-[#30475E] focus:outline-[#30475E] rounded-xl"
+                      className="textarea textarea-bordered textarea-lg w-full bg-white text-[#222831] focus:border-[#30475E] focus:outline-[#30475E] rounded-xl"
                       placeholder="Any special requests or delivery instructions? (Optional)"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
@@ -392,7 +392,7 @@ function CartContent() {
                     </label>
                     <input
                       type="number"
-                      className="input input-bordered input-lg w-full bg-[#DDDDDD] text-[#222831] focus:border-[#30475E] focus:outline-[#30475E] rounded-xl"
+                      className="input input-bordered input-lg w-full bg-white text-[#222831] focus:border-[#30475E] focus:outline-[#30475E] rounded-xl"
                       placeholder="Enter amount paid by customer"
                       value={amountPaid}
                       min={0}
@@ -404,9 +404,9 @@ function CartContent() {
 
                 <div className="space-y-6">
                   {/* Enhanced Total Display */}
-                  <div className="bg-[#30475E]/20 p-6 rounded-2xl border border-[#30475E]/40">
+                  <div className="bg-white p-6 rounded-2xl border border-[#30475E]/40">
                     <div className="flex justify-between items-center">
-                      <span className="text-xl font-semibold text-[#DDDDDD]">
+                      <span className="text-xl font-semibold ">
                         Total Amount:
                       </span>
                       <span className="text-3xl font-bold text-[#F05454]">
@@ -418,7 +418,7 @@ function CartContent() {
                   {/* Enhanced Action Buttons */}
                   <div className="flex gap-4">
                     <button
-                      className="btn btn-outline btn-lg flex-1 rounded-xl hover:scale-105 transition-all duration-200 border-[#DDDDDD] text-[#DDDDDD] hover:bg-[#DDDDDD] hover:text-[#222831]"
+                      className="btn btn-outline btn-lg flex-1 rounded-xl hover:scale-105 transition-all duration-200 border-[#DDDDDD] text-[#DDDDDD] hover:bg-white hover:text-[#222831]"
                       onClick={() => setIsOpen(false)}
                     >
                       <svg

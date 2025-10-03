@@ -1,7 +1,12 @@
 import express from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
-import { login, register } from "../controllers/authController.js";
+import {
+  fetchUserData,
+  login,
+  register,
+  updateUserRoles,
+} from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -12,6 +17,8 @@ const createToken = (_id) => {
 // Local auth
 router.post("/api/auth/register", register);
 router.post("/api/auth/login", login);
+router.get("/api/user/fetchUser", fetchUserData);
+router.put("/api/user/updateRoles/:id", updateUserRoles);
 
 // Google OAuth route - step 1
 router.get(
@@ -36,7 +43,9 @@ router.get(
         req.user._id
       }&roles=${encodeURIComponent(roles)}&name=${encodeURIComponent(
         req.user.name
-      )}&email=${encodeURIComponent(req.user.email)}`
+      )}&email=${encodeURIComponent(
+        req.user.email
+      )}&avatar=${encodeURIComponent(req.user.avatar || "")}`
     );
   }
 );

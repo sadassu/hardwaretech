@@ -9,7 +9,7 @@ function AdminNavbar() {
   };
 
   return (
-    <nav className="bg-base-100 px-4 py-2 flex justify-between items-center">
+    <nav className="bg-[#222831] px-4 py-2 flex justify-between items-center">
       {/* Logo / Brand */}
       <div className="text-xl font-bold"></div>
 
@@ -17,7 +17,7 @@ function AdminNavbar() {
       <div className="flex items-center space-x-3">
         <CartContent />
         {/* Notification button */}
-        <button className="btn btn-ghost btn-circle">
+        {/* <button className="btn btn-ghost btn-circle">
           <div className="indicator">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -35,7 +35,7 @@ function AdminNavbar() {
             </svg>
             <span className="badge badge-xs badge-primary indicator-item"></span>
           </div>
-        </button>
+        </button> */}
 
         {/* Logout button */}
         <button className="btn btn-error btn-sm" onClick={handleLogoutButton}>

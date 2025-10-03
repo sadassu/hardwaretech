@@ -102,7 +102,7 @@ const SideBar = () => {
       {/* Sidebar */}
       <div
         className={`
-          fixed left-0 top-0 h-screen bg-slate-800 text-slate-100 shadow-xl z-50
+          fixed left-0 top-0 h-screen bg-[#222831] text-slate-100 shadow-xl z-50
           transition-all duration-300 ease-in-out
           ${isCollapsed ? "w-16" : "w-64"}
           ${
@@ -152,10 +152,10 @@ const SideBar = () => {
 
               const baseClasses = `
                 flex items-center w-full p-3 rounded-lg transition-all duration-200
-                text-left hover:bg-slate-700 hover:text-slate-50 active:bg-slate-600
+                text-left hover:bg-red-500 hover:text-slate-50 active:bg-slate-600
                 ${
                   active
-                    ? "bg-slate-700 text-slate-50 shadow-md border-l-4 border-blue-400"
+                    ? "bg-red-500 text-red-50 shadow-md border-l-4 border-blue-400"
                     : "text-slate-200"
                 }
                 ${isCollapsed ? "justify-center" : "justify-start"}

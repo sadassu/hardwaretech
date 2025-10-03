@@ -18,6 +18,7 @@ import UserReservations from "./Pages/UserPages/UserReservations";
 import Profile from "./Pages/UserPages/Profile";
 import SettingList from "./Pages/Settings/SettingList";
 import Dashboard from "./Pages/Dashboard/Dashboard";
+import EditUserData from "./Pages/Auth/EditUserData";
 
 const Product = lazy(() => import("./Pages/Products/Product"));
 const Sales = lazy(() => import("./Pages/Sales/Sales"));
@@ -108,6 +109,16 @@ const App = () => {
               <Suspense fallback={<div>Loading...</div>}>
                 <RoleRoute allowedRoles={["admin"]}>
                   <Dashboard />
+                </RoleRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/user/edit"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <RoleRoute allowedRoles={["admin"]}>
+                  <EditUserData />
                 </RoleRoute>
               </Suspense>
             }
