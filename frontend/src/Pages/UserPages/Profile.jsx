@@ -20,6 +20,7 @@ import {
   Eye,
   Receipt,
 } from "lucide-react";
+import UserInformationCard from "./UserInformationCard";
 
 const Profile = () => {
   const { userId } = useParams();
@@ -97,111 +98,16 @@ const Profile = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-base-content mb-2">Profile</h1>
-          <p className="text-base-content/70">
-            Manage your account and view your reservation history
-          </p>
+          <h1 className="text-2xl font-bold text-base-content mb-2 fira-code">My Profile</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* User Information Card */}
-          <div className="lg:col-span-1">
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title text-xl mb-4 flex items-center gap-2">
-                  <User className="h-6 w-6" />
-                  Account Information
-                </h2>
-
-                {/* User Details */}
-                <div className="space-y-4">
-                  {/* Avatar Upload Section */}
-                  <ChangeAvatar /> {/* ✅ Avatar change */}
-                  <div>
-                    <label className="label">
-                      <span className="label-text font-semibold">Name</span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={user?.name || ""}
-                        className="input input-bordered flex-1"
-                        disabled
-                      />
-                      <ChangeName />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="label">
-                      <span className="label-text font-semibold">Email</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={user?.email || ""}
-                      className="input input-bordered w-full"
-                      disabled
-                    />
-                    <label className="label">
-                      <span className="label-text-alt text-base-content/60">
-                        Email cannot be changed
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="card-actions justify-end mt-6">
-                  <ChangePassword />
-                </div>
-              </div>
-            </div>
-
-            {/* Status Overview Card */}
-            <div className="card bg-base-100 shadow-xl mt-6">
-              <div className="card-body">
-                <h2 className="card-title text-xl mb-4 flex items-center gap-2">
-                  <BarChart3 className="h-6 w-6" />
-                  Reservation Summary
-                </h2>
-
-                <div className="stats stats-vertical shadow">
-                  <div className="stat">
-                    <div className="stat-title">Total Reservations</div>
-                    <div className="stat-value text-primary">
-                      {data?.total || 0}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <div className="stat bg-base-200 rounded-lg p-3">
-                    <div className="stat-title text-xs">Pending</div>
-                    <div className="stat-value text-sm text-warning">
-                      {statusCounts.pending}
-                    </div>
-                  </div>
-                  <div className="stat bg-base-200 rounded-lg p-3">
-                    <div className="stat-title text-xs">Confirmed</div>
-                    <div className="stat-value text-sm text-success">
-                      {statusCounts.confirmed}
-                    </div>
-                  </div>
-                  <div className="stat bg-base-200 rounded-lg p-3">
-                    <div className="stat-title text-xs">Completed</div>
-                    <div className="stat-value text-sm text-info">
-                      {statusCounts.completed}
-                    </div>
-                  </div>
-                  <div className="stat bg-base-200 rounded-lg p-3">
-                    <div className="stat-title text-xs">Cancelled/Failed</div>
-                    <div className="stat-value text-sm text-error">
-                      {statusCounts.cancelled + statusCounts.failed}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <UserInformationCard
+            user={user}
+            data={data}
+            statusCounts={statusCounts}
+          />
 
           {/* Transactions History */}
           <div className="lg:col-span-2">

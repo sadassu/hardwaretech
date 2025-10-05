@@ -29,11 +29,7 @@ function ProductGrid({ products, user, isMobile }) {
                 {product.image && (
                   <figure className="mb-4 -mx-6 -mt-6 flex-shrink-0 group-hover:opacity-0 transition-opacity duration-300">
                     <img
-                      src={
-                        product.image
-                          ? `${backendUrl}${product.image}`
-                          : "https://img.daisyui.com/images/profile/demo/1@94.webp"
-                      }
+                      src={product.image}
                       alt={product.name}
                       className="w-full h-48 object-cover rounded-t-2xl"
                     />

@@ -3,6 +3,7 @@ import { useReservationsContext } from "../../hooks/useReservationContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import Modal from "../../components/Modal";
 import api from "../../utils/api";
+import TextInput from "../../components/TextInput";
 
 function CompleteReservation({ reservation, onCompleteSuccess }) {
   const { dispatch } = useReservationsContext();
@@ -58,7 +59,7 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
   return (
     <>
       <button
-        className="btn btn-primary"
+        className="btn btn-sm btn-outline"
         onClick={() => setIsOpen(true)}
       >
         Complete
@@ -71,12 +72,12 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
           <span className="font-semibold text-green-600">completed</span>.
         </p>
 
-        <input
+        <TextInput
+          label="Amount Paid"
           type="number"
           placeholder="Amount Paid"
           value={amountPaid}
           onChange={(e) => setAmountPaid(e.target.value)}
-          className="input input-bordered w-full mb-3"
         />
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -92,7 +93,7 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
           </button>
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn bg-red-500 text-white border-red-500"
             onClick={handleComplete}
             disabled={loading}
           >

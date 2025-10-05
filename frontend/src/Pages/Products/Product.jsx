@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useProductsContext } from "../../hooks/useProductContext";
 
-import { backendUrl } from "../../config/url";
 import { formatDatePHT } from "../../utils/formatDate";
 import { useFetch } from "../../hooks/useFetch";
 
@@ -415,11 +414,7 @@ const Product = () => {
                       <div className="avatar">
                         <div className="w-16 h-16 rounded-xl ring ring-primary ring-offset-base-100 ring-offset-2">
                           <img
-                            src={
-                              product.image
-                                ? `${backendUrl}${product.image}`
-                                : "https://img.daisyui.com/images/profile/demo/1@94.webp"
-                            }
+                            src={product.image}
                             alt={product.name}
                             className="object-cover"
                           />

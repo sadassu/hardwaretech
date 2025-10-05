@@ -1,18 +1,15 @@
 import React, { useState } from "react";
 import Modal from "../../components/Modal";
-import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
-import { useAuthContext } from "../../hooks/useAuthContext";
-import { useProductsContext } from "../../hooks/useProductContext.js";
 import TextInput from "../../components/TextInput.jsx"; // ✅ import reusable component
+import { useVariant } from "../../hooks/useVariant.js";
 
 const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"];
 
 const CreateVariant = ({ product }) => {
-  const { user } = useAuthContext();
-  const { dispatch } = useProductsContext();
   const [isOpen, setIsOpen] = useState(false);
   const [hasColor, setHasColor] = useState(false);
+  const { createVariant } = useVariant();
   const [formData, setFormData] = useState({
     unit: "pcs",
     size: "",
@@ -36,45 +33,20 @@ const CreateVariant = ({ product }) => {
       return toast.error("Product not specified");
     }
 
-    try {
-      const res = await api.post(
-        "/product-variants",
-        {
-          productId: product._id,
-          ...formData,
-          color: hasColor ? formData.color : null,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
+    await createVariant(product._id, formData, hasColor);
 
-      toast.success(res.data.message || "Variant created!");
+    // reset
+    setFormData({
+      unit: "pcs",
+      size: "",
+      price: "",
+      quantity: "",
+      supplier_price: "",
+      color: "",
+    });
 
-      dispatch({
-        type: "UPDATE_VARIANT",
-        payload: {
-          productId: res.data.productId,
-          variant: res.data.variant,
-        },
-      });
-
-      // reset
-      setFormData({
-        unit: "pcs",
-        size: "",
-        price: "",
-        quantity: "",
-        supplier_price: "",
-        color: "",
-      });
-      setHasColor(false);
-      setIsOpen(false);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
-    }
+    setHasColor(false);
+    setIsOpen(false);
   };
 
   return (

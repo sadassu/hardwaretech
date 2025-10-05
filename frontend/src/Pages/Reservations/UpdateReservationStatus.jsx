@@ -59,13 +59,13 @@ function UpdateReservationStatus({ reservation, onUpdateSuccess }) {
   return (
     <>
       <button
-        className="btn btn-primary"
+        className="btn btn-sm btn-outline"
         onClick={() => setIsOpen(true)}
       >
         Edit status
       </button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} className="w-[350px]">
         <h2 className="text-xl font-semibold mb-4">Edit Status</h2>
         <form onSubmit={handleSubmit}>
           <label className="block mb-2">
@@ -74,7 +74,7 @@ function UpdateReservationStatus({ reservation, onUpdateSuccess }) {
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="select select-bordered w-full"
+              className="select select-bordered w-full bg-[#30475E] text-white"
             >
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
@@ -95,7 +95,7 @@ function UpdateReservationStatus({ reservation, onUpdateSuccess }) {
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="btn bg-red-500 border-red-500 text-white"
               disabled={loading}
             >
               {loading ? "Saving..." : "Save"}

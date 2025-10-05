@@ -3,6 +3,7 @@ import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { useAuthContext } from "../../hooks/useAuthContext.js";
 import { useProductsContext } from "../../hooks/useProductContext.js";
+import TextInput from "../../components/TextInput.jsx";
 
 const CreateProduct = () => {
   const { dispatch } = useProductsContext();
@@ -62,7 +63,7 @@ const CreateProduct = () => {
   return (
     <>
       <button
-        className="btn w-full btn-primary"
+        className="btn w-full bg-red-500 text-white border-red-500"
         onClick={() => setIsOpen(true)}
       >
         Add Product
@@ -73,23 +74,29 @@ const CreateProduct = () => {
         {error && <div className="text-red-500 mb-4">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4 w-96">
-          <input
+          <TextInput
+            label="Product Name"
             type="text"
             name="name"
             placeholder="Product Name"
             value={formData.name}
             onChange={handleChange}
-            className="input input-bordered w-full"
             required
           />
+          <label className="label">
+            <span className="label-text font-semibold text-gray-200">
+              Description
+            </span>
+          </label>
           <textarea
             name="description"
             placeholder="Description"
             value={formData.description}
             onChange={handleChange}
-            className="textarea textarea-bordered w-full"
+            className="textarea textarea-bordered w-full bg-[#30475E] text-white"
           />
-          <input
+          <TextInput
+            label="Category"
             type="text"
             name="category"
             placeholder="Category"
@@ -103,10 +110,10 @@ const CreateProduct = () => {
             type="file"
             accept="image/*"
             onChange={handleFileChange}
-            className="file-input file-input-bordered w-full"
+            className="file-input file-input-bordered w-full bg-[#30475E] text-white"
           />
 
-          <button type="submit" className="btn btn-primary w-full">
+          <button type="submit" className="btn bg-red-500 text-white border-red-500 w-full">
             Create
           </button>
         </form>

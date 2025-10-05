@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from "react";
 import Modal from "../../components/Modal";
-import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
-import { useAuthContext } from "../../hooks/useAuthContext";
-import { useProductsContext } from "../../hooks/useProductContext.js";
 import TextInput from "../../components/TextInput.jsx";
+import { useVariant } from "../../hooks/useVariant.js";
 
 const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"];
 
 const UpdateVariant = ({ variant }) => {
-  const { user } = useAuthContext();
-  const { dispatch } = useProductsContext();
+  const { updateVariant } = useVariant();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     unit: "",
@@ -43,34 +40,15 @@ const UpdateVariant = ({ variant }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!variant?._id) return;
+    if (!variant?._id) return toast.error("No variant selected");
 
-    try {
-      // send only fields that are filled
-      const payload = { ...formData };
-      if (!payload.unit) delete payload.unit;
-      if (!payload.color) delete payload.color;
+    // Clean up optional fields
+    const payload = { ...formData };
+    if (!payload.unit) delete payload.unit;
+    if (!payload.color) delete payload.color;
 
-      const res = await api.put(`/product-variants/${variant._id}`, payload, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-
-      toast.success(res.data.message || "Variant updated!");
-      setIsOpen(false);
-
-      // ✅ keep state in sync with context
-      dispatch({
-        type: "UPDATE_VARIANT",
-        payload: {
-          productId: res.data.productId,
-          variant: res.data.variant,
-        },
-      });
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
-    }
+    await updateVariant(variant._id, payload);
+    setIsOpen(false);
   };
 
   return (

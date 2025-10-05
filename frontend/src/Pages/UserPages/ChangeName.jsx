@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import Modal from "../../components/Modal";
 import api from "../../utils/api";
+import { SquarePen } from "lucide-react";
 
 function ChangeName({ onUpdateSuccess }) {
   const { user, dispatch } = useAuthContext();
@@ -25,7 +26,7 @@ function ChangeName({ onUpdateSuccess }) {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`, 
+            Authorization: `Bearer ${user.token}`,
           },
         }
       );
@@ -46,8 +47,9 @@ function ChangeName({ onUpdateSuccess }) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="btn btn-outline btn-sm"
+        className="btn bg-red-500 text-white rounded-xl"
       >
+        <SquarePen />
         Change Name
       </button>
 

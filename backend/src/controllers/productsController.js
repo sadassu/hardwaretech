@@ -85,19 +85,31 @@ export const createProduct = asyncHandler(async (req, res) => {
   const { name, description, category } = req.body || {};
 
   if (!name || !category) {
+    if (req.file) fs.unlinkSync(req.file.path); // cleanup if invalid
     return res.status(400).json({ message: "Name and category are required" });
   }
 
+  // ✅ Check uploaded file type
+  if (req.file && !req.file.mimetype.startsWith("image/")) {
+    fs.unlinkSync(req.file.path);
+    return res.status(400).json({ message: "Only image files are allowed" });
+  }
+
+  // ✅ Ensure category exists
   let existingCategory = await Category.findOne({ name: category });
   if (!existingCategory) {
     existingCategory = await Category.create({ name: category });
   }
 
+  // ✅ Save FULL URL of image
+  const BASE_URL =
+    process.env.SERVER_URL || `${req.protocol}://${req.get("host")}`;
+
   const newProduct = await Product.create({
     name,
     description: description || "",
     category: existingCategory._id,
-    image: req.file ? `/uploads/${req.file.filename}` : "",
+    image: req.file ? `${BASE_URL}/uploads/${req.file.filename}` : "",
   });
 
   const populatedProduct = await newProduct.populate("category");
@@ -114,15 +126,17 @@ export const updateProduct = asyncHandler(async (req, res) => {
   const productId = req.params.id;
 
   if (!productId) {
+    if (req.file) fs.unlinkSync(req.file.path); // cleanup if invalid
     return res.status(400).json({ message: "Product ID is required" });
   }
 
   const product = await Product.findById(productId);
   if (!product) {
+    if (req.file) fs.unlinkSync(req.file.path);
     return res.status(404).json({ message: "Product not found" });
   }
 
-  // Handle category
+  // ✅ Handle category
   let categoryId = product.category;
   if (category) {
     let existingCategory = await Category.findOne({ name: category });
@@ -132,12 +146,36 @@ export const updateProduct = asyncHandler(async (req, res) => {
     categoryId = existingCategory._id;
   }
 
+  // ✅ Check uploaded file type
+  if (req.file && !req.file.mimetype.startsWith("image/")) {
+    fs.unlinkSync(req.file.path);
+    return res.status(400).json({ message: "Only image files are allowed" });
+  }
+
+  // ✅ If product already has an image, delete old file
+  if (req.file && product.image) {
+    try {
+      const oldPath = product.image.replace(
+        process.env.SERVER_URL || `${req.protocol}://${req.get("host")}`,
+        ""
+      );
+      const oldFile = path.join(process.cwd(), oldPath);
+      if (fs.existsSync(oldFile)) {
+        fs.unlinkSync(oldFile);
+      }
+    } catch (err) {
+      console.error("Error deleting old product image:", err.message);
+    }
+  }
+
+  const BASE_URL =
+    process.env.SERVER_URL || `${req.protocol}://${req.get("host")}`;
+
   product.name = name || product.name;
   product.description = description || product.description;
   product.category = categoryId;
-
   if (req.file) {
-    product.image = `/uploads/${req.file.filename}`;
+    product.image = `${BASE_URL}/uploads/${req.file.filename}`;
   }
 
   await product.save();

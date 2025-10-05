@@ -94,9 +94,6 @@ function Pos() {
     setPage(1);
   };
 
-  if (loading && !products?.length) {
-    return <Loading message="Loading products..." />;
-  }
 
   if (error) {
     return (
@@ -154,16 +151,22 @@ function Pos() {
 
       <div className="container mx-auto px-6 py-6">
         {/* Search Section */}
-        <div className="mb-6">
+        <div className="mb-6 relative">
           <SearchBar
             search={search}
             onSearchChange={handleSearchChange}
             onClear={clearSearch}
-            isSearching={isSearching}
+            isSearching={isSearching || loading} // show spinner in search bar
             placeholder="Search products for POS..."
           />
+          {(isSearching || loading) && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <span className="loading loading-spinner loading-sm text-primary"></span>
+            </div>
+          )}
         </div>
 
+        {/* Active Filters */}
         {(search || selectedCategory) && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="text-base">Active filters:</span>
@@ -206,39 +209,33 @@ function Pos() {
           loading={loading}
         />
 
-        {/* Loading State */}
-        {loading && (
-          <div className="flex justify-center py-8">
-            <span className="loading loading-spinner loading-lg text-primary"></span>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {products?.length === 0 && !loading && (
-          <div className="hero min-h-[400px]">
-            <div className="hero-content text-center">
-              <div className="max-w-md">
-                <div className="text-6xl mb-4">📦</div>
-                <h1 className="text-2xl font-bold text-base-content/70">
-                  No Products Found
-                </h1>
-                <p className="py-4 text-base-content/50">
-                  {search
-                    ? "Try adjusting your search terms"
-                    : "No products available at the moment"}
-                </p>
-                {search && (
-                  <button className="btn btn-primary" onClick={clearSearch}>
-                    Clear Search
-                  </button>
-                )}
+        {/* Product Grid */}
+        {products?.length > 0 ? (
+          <ProductGrid products={products} user={user} isMobile={isMobile} />
+        ) : (
+          !loading && (
+            <div className="hero min-h-[400px]">
+              <div className="hero-content text-center">
+                <div className="max-w-md">
+                  <div className="text-6xl mb-4">📦</div>
+                  <h1 className="text-2xl font-bold text-base-content/70">
+                    No Products Found
+                  </h1>
+                  <p className="py-4 text-base-content/50">
+                    {search
+                      ? "Try adjusting your search terms"
+                      : "No products available at the moment"}
+                  </p>
+                  {search && (
+                    <button className="btn btn-primary" onClick={clearSearch}>
+                      Clear Search
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )
         )}
-
-        {/* Product Grid */}
-        <ProductGrid products={products} user={user} isMobile={isMobile} />
 
         {/* Pagination */}
         {pages > 1 && (

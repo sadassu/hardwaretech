@@ -80,13 +80,13 @@ const UpdateReservationDetails = ({
 
           {/* Remarks */}
           <div>
-            <label className="block text-sm mb-1">Remarks</label>
+            <label className="block text-sm mb-1 text-white ">Remarks</label>
             <textarea
               value={formData.remarks}
               onChange={(e) =>
                 setFormData({ ...formData, remarks: e.target.value })
               }
-              className="textarea textarea-bordered w-full"
+              className="textarea textarea-bordered w-full bg-[#30475E] text-white"
               rows={2}
             />
           </div>
@@ -103,7 +103,7 @@ const UpdateReservationDetails = ({
                 return (
                   <div
                     key={index}
-                    className="bg-base-100 p-3 rounded-lg border relative"
+                    className="p-3 rounded-lg border relative bg-[#30475E] text-white"
                   >
                     {/* Remove Button */}
                     <button
@@ -200,14 +200,14 @@ const UpdateReservationDetails = ({
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
-              className="btn btn-ghost btn-sm"
+              className="btn btn-ghost"
               onClick={() => setIsOpen(false)}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn btn-primary btn-sm"
+              className="btn bg-red-500 text-white border-red-500"
               disabled={loading}
             >
               {loading ? "Saving..." : "Save Changes"}

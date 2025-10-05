@@ -38,3 +38,5 @@ This project is a Point of Sale (POS) and inventory management system built usin
     *This command downloads and installs all the packages your backend needs to run.*
 
 ---
+
+#### **Frontend Setup Instructions**
