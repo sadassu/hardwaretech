@@ -3,10 +3,11 @@ import DeleteProductsData from "./DeleteProductsData";
 import DeleteReservationsData from "./DeleteReservationsData";
 import DeleteSalesData from "./DeleteSalesData";
 import { Link } from "react-router";
+import DeleteSupplyHistoryData from "./DeleteSupplyHistoryData";
 
 function SettingList() {
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="container mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800">Settings</h2>
@@ -41,6 +42,33 @@ function SettingList() {
               className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors"
             >
               Edit User
+            </Link>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M17.414 2.586a2 2 0 010 2.828l-9.9 9.9-3.536.707.707-3.536 9.9-9.9a2 2 0 012.829 0z" />
+                <path
+                  fillRule="evenodd"
+                  d="M2 15.25V18h2.75l8.63-8.63-2.75-2.75L2 15.25z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Categories
+            </h3>
+            <p className="text-sm text-blue-700 mb-4">
+              Update user information such as name, email, and roles.
+            </p>
+            <Link
+              to="/categories"
+              className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors"
+            >
+              Edit Categories
             </Link>
           </div>
 
@@ -96,6 +124,16 @@ function SettingList() {
                   </p>
                 </div>
                 <DeleteSalesData />
+              </li>
+
+              <li className="flex items-center justify-between p-3 bg-white rounded-md border border-red-100">
+                <div>
+                  <h4 className="font-medium text-gray-800">Supply History</h4>
+                  <p className="text-sm text-gray-600">
+                    Clear all supply history records
+                  </p>
+                </div>
+                <DeleteSupplyHistoryData />
               </li>
             </ul>
           </div>

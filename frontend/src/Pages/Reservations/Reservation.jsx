@@ -87,8 +87,7 @@ const Reservation = () => {
   }
 
   return (
-   
-    <div className="mx-auto max-w-7xl p-6">
+    <div className="container mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-base-content">Reservations</h1>
         <p className="text-base-content/70 mt-2">
@@ -178,15 +177,7 @@ const Reservation = () => {
                         </td>
                         <td>
                           <div className="flex gap-2">
-                            <UpdateReservationStatus
-                              reservation={res}
-                              onUpdateSuccess={(updated) =>
-                                dispatch({
-                                  type: "UPDATE_RESERVATION",
-                                  payload: updated,
-                                })
-                              }
-                            />
+                            <UpdateReservationStatus reservation={res} />
                             <UpdateReservationDetails
                               reservation={res}
                               onUpdateSuccess={(updated) =>

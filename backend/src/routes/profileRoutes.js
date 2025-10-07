@@ -11,6 +11,6 @@ const router = express.Router();
 
 router.put("/:id/change-name", requireAuth, changeName);
 router.put("/:id/change-password", requireAuth, changePassword);
-router.post("/:id/avatar", upload.single("avatar"), uploadAvatar);
+router.post("/:id/avatar", requireAuth, upload.single("avatar"), uploadAvatar);
 
 export default router;

@@ -19,6 +19,8 @@ import Profile from "./Pages/UserPages/Profile";
 import SettingList from "./Pages/Settings/SettingList";
 import Dashboard from "./Pages/Dashboard/Dashboard";
 import EditUserData from "./Pages/Auth/EditUserData";
+import SupplyHistories from "./Pages/SupplyHistories/SupplyHistories";
+import CategoryList from "./Pages/Settings/CategoryList";
 
 const Product = lazy(() => import("./Pages/Products/Product"));
 const Sales = lazy(() => import("./Pages/Sales/Sales"));
@@ -119,6 +121,26 @@ const App = () => {
               <Suspense fallback={<div>Loading...</div>}>
                 <RoleRoute allowedRoles={["admin"]}>
                   <EditUserData />
+                </RoleRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/supply-histories"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <RoleRoute allowedRoles={["admin"]}>
+                  <SupplyHistories />
+                </RoleRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/categories"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <RoleRoute allowedRoles={["admin"]}>
+                  <CategoryList />
                 </RoleRoute>
               </Suspense>
             }

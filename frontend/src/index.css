@@ -22,9 +22,9 @@
 }
 
 .success-toast {
-  @apply border-l-4 border-green-500 bg-green-50 text-green-800;
+  @apply border-green-500 bg-green-50 text-green-800;
 }
 
 .error-toast {
-  @apply border-l-4 border-red-500 bg-red-50 text-red-800;
+  @apply border-red-500 bg-red-50 text-red-800;
 }

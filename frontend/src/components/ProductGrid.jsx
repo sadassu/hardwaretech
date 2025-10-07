@@ -1,4 +1,3 @@
-import { backendUrl } from "../config/url";
 import ProductListVariant from "./ProductListVariant";
 
 function ProductGrid({ products, user, isMobile }) {

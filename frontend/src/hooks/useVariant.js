@@ -1,11 +1,12 @@
 import { useAuthContext } from "./useAuthContext";
 import { useProductsContext } from "./useProductContext";
 import api from "../utils/api";
-import { toast } from "react-hot-toast";
+import { useToast } from "../context/ToastContext";
 
 export const useVariant = () => {
   const { user } = useAuthContext();
   const { dispatch } = useProductsContext();
+  const setToast = useToast();
 
   // Create Variant
   const createVariant = async (productId, formData, hasColor) => {
@@ -30,10 +31,20 @@ export const useVariant = () => {
         },
       });
 
-      toast.success(res.data.message || "Variant created!");
+      setToast({
+        show: true,
+        color: "success-toast",
+        header: "Success",
+        message: res.data.message || "Variant created!",
+      });
       return res.data;
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create variant");
+      setToast({
+        show: true,
+        color: "error-toast",
+        header: "Error",
+        message: error.response?.data?.message || "Failed to create variant",
+      });
       throw error;
     }
   };
@@ -53,10 +64,20 @@ export const useVariant = () => {
         },
       });
 
-      toast.success(res.data.message || "Variant deleted!");
+      setToast({
+        show: true,
+        color: "error-toast",
+        header: "Deleted",
+        message: res.data.message || "Variant deleted!",
+      });
       return res.data;
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete variant");
+      setToast({
+        show: true,
+        color: "error-toast",
+        header: "Error",
+        message: error.response?.data?.message || "Failed to delete variant",
+      });
       throw error;
     }
   };
@@ -75,13 +96,59 @@ export const useVariant = () => {
         },
       });
 
-      toast.success(res.data.message || "Variant updated!");
+      setToast({
+        show: true,
+        color: "success-toast",
+        header: "Success",
+        message: res.data.message || "Variant updated!",
+      });
       return res.data;
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update variant");
+      setToast({
+        show: true,
+        color: "error-toast",
+        header: "Error",
+        message: error.response?.data?.message || "Failed to update variant",
+      });
       throw error;
     }
   };
 
-  return { createVariant, deleteVariant, updateVariant };
+  const restockVariant = async (variantId, formData) => {
+    try {
+      const res = await api.post(
+        `/product-variants/${variantId}/restock`,
+        formData,
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
+
+      dispatch({
+        type: "UPDATE_VARIANT",
+        payload: {
+          productId: res.data.productId,
+          variant: res.data.variant,
+        },
+      });
+
+      setToast({
+        show: true,
+        color: "success-toast",
+        header: "Success",
+        message: res.data.message || "Variant updated!",
+      });
+      return res.data;
+    } catch (error) {
+      setToast({
+        show: true,
+        color: "error-toast",
+        header: "Error",
+        message: error.response?.data?.message || "Failed to restock variant",
+      });
+      throw error;
+    }
+  };
+
+  return { createVariant, deleteVariant, updateVariant, restockVariant };
 };

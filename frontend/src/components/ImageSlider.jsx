@@ -1,36 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
 export default function ImageSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [paused, setPaused] = useState(false);
 
-  // Define your slides here - customize backgrounds, text, and buttons
   const slides = [
     {
-      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      title: "Welcome to Our Platform",
+      background: "url(/assets/carousel/c-1.jpeg) center/cover no-repeat",
+      title: "Welcome to BABA",
       subtitle: "Experience the future of digital innovation",
       buttonText: "Get Started",
       buttonLink: "#",
     },
     {
-      background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+      background: "url(/assets/carousel/c-2.jpg) center/cover no-repeat",
       title: "Beautiful Design",
       subtitle: "Crafted with attention to every detail",
       buttonText: "Learn More",
       buttonLink: "#",
     },
     {
-      background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+      background: "url(/assets/carousel/c-3.jpg) center/cover no-repeat",
       title: "Easy to Use",
       subtitle: "Get up and running in minutes",
       buttonText: "Try It Now",
-      buttonLink: "#",
-    },
-    {
-      background: "url(/assets/background-shadow.webp) center/cover no-repeat",
-      title: "Join Our Community",
-      subtitle: "Connect with thousands of users worldwide",
-      buttonText: "Sign Up Free",
       buttonLink: "#",
     },
   ];
@@ -47,8 +41,19 @@ export default function ImageSlider() {
     setCurrentSlide(index);
   };
 
+  // Auto-slide every 5 seconds, unless paused
+  useEffect(() => {
+    if (paused) return;
+    const interval = setInterval(nextSlide, 5000);
+    return () => clearInterval(interval);
+  }, [currentSlide, paused]);
+
   return (
-    <div className="relative w-full h-[500px] overflow-hidden">
+    <div
+      className="relative w-full h-[500px] overflow-hidden"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       {/* Slides */}
       <div className="relative w-full h-full">
         {slides.map((slide, index) => (
@@ -63,7 +68,7 @@ export default function ImageSlider() {
             }`}
             style={{ background: slide.background }}
           >
-            <div className="flex items-center justify-center h-full px-8">
+            <div className="flex items-center justify-center h-full px-8 bg-black/50">
               <div className="text-center text-white max-w-4xl">
                 <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
                   {slide.title}
@@ -83,36 +88,41 @@ export default function ImageSlider() {
         ))}
       </div>
 
-      {/* Navigation Arrows */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-30 hover:bg-opacity-50 text-white p-3 rounded-full transition-all backdrop-blur-sm"
-        aria-label="Previous slide"
-      >
-        <ChevronLeft size={32} />
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-30 hover:bg-opacity-50 text-white p-3 rounded-full transition-all backdrop-blur-sm"
-        aria-label="Next slide"
-      >
-        <ChevronRight size={32} />
-      </button>
+      {/* Bottom Navigation Section */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center gap-6 bg-black/40 backdrop-blur-sm px-6 py-3 rounded-full">
+        {/* Previous Button */}
+        <button
+          onClick={prevSlide}
+          className="bg-white/30 hover:bg-white/50 text-white p-3 rounded-full transition-all"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft size={28} />
+        </button>
 
-      {/* Dots Navigation */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`transition-all rounded-full ${
-              index === currentSlide
-                ? "bg-white w-12 h-3"
-                : "bg-white bg-opacity-50 w-3 h-3 hover:bg-opacity-75"
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
+        {/* Dots Navigation */}
+        <div className="flex gap-3">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`transition-all rounded-full ${
+                index === currentSlide
+                  ? "bg-white w-10 h-3"
+                  : "bg-white/50 w-3 h-3 hover:bg-white/70"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Next Button */}
+        <button
+          onClick={nextSlide}
+          className="bg-white/30 hover:bg-white/50 text-white p-3 rounded-full transition-all"
+          aria-label="Next slide"
+        >
+          <ChevronRight size={28} />
+        </button>
       </div>
     </div>
   );

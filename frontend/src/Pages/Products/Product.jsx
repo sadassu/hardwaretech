@@ -17,6 +17,7 @@ import Pagination from "../../components/Pagination";
 import Loading from "../../components/Loading";
 import SearchBar from "../../components/SearchBar";
 import CategoryFilter from "../../components/CategoryFilter";
+import RestockVariant from "../Variants/RestockVariant";
 
 const Product = () => {
   const { products, pages, dispatch } = useProductsContext();
@@ -141,7 +142,7 @@ const Product = () => {
 
   return (
     <div className="min-h-screen p-4 lg:p-2">
-      <div className="max-w-7xl mx-auto">
+      <div className="container mx-auto p-6">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 mb-8 text-primary-content shadow-xl">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -519,6 +520,7 @@ const Product = () => {
                                     }
                                   />
                                   <DeleteVariant variant={variant} />
+                                  <RestockVariant variantId={variant._id} />
                                 </div>
                               </div>
                             </div>

@@ -9,6 +9,7 @@ import {
   updateReservation,
 } from "../controllers/reservationsController.js";
 import requireAuth from "../middleware/requireAuth.js";
+import { requireRole } from "../middleware/requireRole.js";
 
 const router = express.Router();
 
@@ -29,9 +30,19 @@ router.delete("/:id", deleteReservation);
 router.get("/", getAllReservations);
 
 // @route   GET /api/reservations
-router.put("/:id/status", requireAuth, updateReservationStatus);
+router.put(
+  "/:id/status",
+  requireAuth,
+  requireRole(["admin", "manager", "cashier"]),
+  updateReservationStatus
+);
 
-router.patch("/:id/complete", requireAuth, completeReservation);
+router.patch(
+  "/:id/complete",
+  requireAuth,
+  requireRole(["admin", "manager", "cashier"]),
+  completeReservation
+);
 
 router.put("/:id", requireAuth, updateReservation);
 

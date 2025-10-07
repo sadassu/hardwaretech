@@ -1,12 +1,9 @@
 import React, { useState } from "react";
-import { useReservationsContext } from "../../hooks/useReservationContext";
 import Modal from "../../components/Modal";
-import { useAuthContext } from "../../hooks/useAuthContext";
-import api from "../../utils/api";
+import { useReservation } from "../../hooks/useReservation";
 
-function UpdateReservationStatus({ reservation, onUpdateSuccess }) {
-  const { dispatch } = useReservationsContext();
-  const { user } = useAuthContext();
+function UpdateReservationStatus({ reservation }) {
+  const { updateReservationStatus } = useReservation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
@@ -29,26 +26,9 @@ function UpdateReservationStatus({ reservation, onUpdateSuccess }) {
     setError(null);
 
     try {
-      const res = await api.put(
-        `/reservations/${reservation._id}/status`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
-
-      const updatedReservation = res.data.reservation || res.data;
-
-      dispatch({
-        type: "UPDATE_RESERVATION",
-        payload: updatedReservation,
-      });
+      await updateReservationStatus(reservation._id, formData);
 
       setIsOpen(false);
-      if (onUpdateSuccess) onUpdateSuccess(updatedReservation);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {
@@ -65,7 +45,11 @@ function UpdateReservationStatus({ reservation, onUpdateSuccess }) {
         Edit status
       </button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} className="w-[350px]">
+      <Modal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="w-[350px]"
+      >
         <h2 className="text-xl font-semibold mb-4">Edit Status</h2>
         <form onSubmit={handleSubmit}>
           <label className="block mb-2">

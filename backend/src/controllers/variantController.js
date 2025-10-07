@@ -141,34 +141,39 @@ export const restockVariant = asyncHandler(async (req, res) => {
   session.startTransaction();
 
   try {
+    const { id } = req.params; // assuming route: /product-variants/:id/restock
     const { quantity, supplier_price, notes } = req.body;
-    if (quantity <= 0) {
+
+    const parsedQuantity = Number(quantity);
+    if (parsedQuantity <= 0) {
       return res.status(400).json({ message: "Quantity must be positive" });
     }
 
-    const variant = await ProductVariant.findById(req.params.id).session(
-      session
-    );
+    // Fetch the variant inside the transaction
+    const variant = await ProductVariant.findById(id).session(session);
     if (!variant) {
-      await session.abortTransaction();
       return res.status(404).json({ message: "Variant not found" });
     }
 
     // Increase stock
-    variant.quantity += quantity;
+    variant.quantity += parsedQuantity;
+
     if (supplier_price !== undefined) {
-      variant.supplier_price = supplier_price; // optional update
+      variant.supplier_price = Number(supplier_price);
     }
+
     await variant.save({ session });
 
     // Log in supply history
-    const total_cost = quantity * (supplier_price ?? variant.supplier_price);
+    const effectiveSupplierPrice = supplier_price ?? variant.supplier_price;
+    const total_cost = parsedQuantity * effectiveSupplierPrice;
+
     await SupplyHistory.create(
       [
         {
           product_variant: variant._id,
-          quantity,
-          supplier_price: supplier_price ?? variant.supplier_price,
+          quantity: parsedQuantity,
+          supplier_price: effectiveSupplierPrice,
           total_cost,
           notes,
         },
@@ -177,7 +182,12 @@ export const restockVariant = asyncHandler(async (req, res) => {
     );
 
     await session.commitTransaction();
-    res.status(200).json({ message: "Restocked successfully", variant });
+
+    res.status(200).json({
+      message: "Restocked successfully",
+      productId: variant.product,
+      variant,
+    });
   } catch (err) {
     await session.abortTransaction();
     throw err;

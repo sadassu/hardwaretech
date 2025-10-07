@@ -1,4 +1,5 @@
 import React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const Pagination = ({ page, pages, onPageChange }) => {
   if (pages <= 1) return null;
@@ -13,64 +14,50 @@ const Pagination = ({ page, pages, onPageChange }) => {
 
   return (
     <div className="flex justify-center mt-8">
-      <div className="btn-group shadow-lg">
+      <nav className="flex items-center gap-1  p-2 text-white">
         {/* Previous button */}
         <button
-          className="btn btn-outline"
+          className={`flex items-center gap-2 px-4 py-2 bg-[#222831] rounded-md font-medium transition-all duration-200 ${
+            page === 1
+              ? "text-gray-300 cursor-not-allowed"
+              : "text-gray-700 hover:bg-[#F05454] hover:text-white"
+          }`}
           disabled={page === 1}
           onClick={() => onPageChange(page - 1)}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Previous
+          <ChevronLeft className="h-5 w-5" />
         </button>
 
         {/* Page numbers */}
-        {pageNumbers.map((num) => (
-          <button
-            key={num}
-            className={`btn ${page === num ? "btn-primary" : "btn-outline"}`}
-            onClick={() => onPageChange(num)}
-          >
-            {num}
-          </button>
-        ))}
+        <div className="flex items-center gap-1 px-2 ">
+          {pageNumbers.map((num) => (
+            <button
+              key={num}
+              className={`min-w-[40px] h-10 rounded-md bg-[#222831] font-medium transition-all duration-200 ${
+                page === num
+                  ? "bg-[#F05454] text-white shadow-md"
+                  : "text-white hover:bg-[#F05454]"
+              }`}
+              onClick={() => onPageChange(num)}
+            >
+              {num}
+            </button>
+          ))}
+        </div>
 
         {/* Next button */}
         <button
-          className="btn btn-outline"
+          className={`flex items-center gap-2 px-4 py-2 bg-[#222831] rounded-md font-medium transition-all duration-200 ${
+            page === pages
+              ? "text-gray-300 cursor-not-allowed"
+              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+          }`}
           disabled={page === pages}
           onClick={() => onPageChange(page + 1)}
         >
-          Next
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          <ChevronRight className="h-5 w-5" />
         </button>
-      </div>
+      </nav>
     </div>
   );
 };

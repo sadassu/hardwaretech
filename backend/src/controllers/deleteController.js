@@ -2,6 +2,8 @@ import Product from "../models/Product.js";
 import ProductVariant from "../models/ProductVariant.js";
 import Reservation from "../models/Reservation.js";
 import ReservationDetail from "../models/ReservationDetail.js";
+import SupplyHistory from "../models/SupplyHistory.js";
+
 import Sale from "../models/Sale.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -28,5 +30,13 @@ export const deleteAllSales = asyncHandler(async (req, res) => {
 
   return res.status(200).json({
     message: "All sales have been deleted successfully",
+  });
+});
+
+export const deleteAllSupplyHistory = asyncHandler(async (req, res) => {
+  await SupplyHistory.deleteMany({});
+
+  return res.status(200).json({
+    message: "All supply history have been deleted successfully",
   });
 });

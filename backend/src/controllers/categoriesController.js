@@ -1,27 +1,33 @@
 import Category from "../models/Category.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-export async function getAllCategories(req, res) {
-  try {
-    const categories = await Category.find();
-    res.status(200).json(categories);
-  } catch (error) {
-    console.log("error in getAllCategories in controller", error);
-    res.status(500).json({ message: "Internal server error" });
+// 🟢 Get all categories
+export const getAllCategories = asyncHandler(async (req, res) => {
+  const categories = await Category.find();
+  res.status(200).json(categories);
+});
+
+// 🟢 Create new category
+export const createCategory = asyncHandler(async (req, res) => {
+  const { name, description } = req.body;
+
+  const newCategory = new Category({ name, description });
+  const savedCategory = await newCategory.save();
+
+  res.status(201).json({
+    category: savedCategory,
+    message: "Category added successfully",
+  });
+});
+
+// 🟢 Delete category by ID
+export const deleteCategory = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const deletedCategory = await Category.findByIdAndDelete(id);
+  if (!deletedCategory) {
+    return res.status(404).json({ message: "Category not found" });
   }
-}
 
-export async function createCategory(req, res) {
-  try {
-    const { name, description } = req.body;
-    const newCategory = new Category({ name, description });
-
-    const savedCategory = await newCategory.save();
-    res
-      .status(201)
-      .json(savedCategory, { message: "category added successfully" });
-      
-  } catch (error) {
-    console.log("error in getAllCategories in controller", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
+  res.status(200).json({ message: "Category deleted successfully" });
+});

@@ -2,6 +2,7 @@ import express from "express";
 import {
   createVariant,
   deleteVariant,
+  restockVariant,
   updateVariant,
 } from "../controllers/variantController.js";
 
@@ -12,5 +13,7 @@ router.post("", createVariant);
 router.delete("/:id", deleteVariant);
 // update
 router.put("/:id", updateVariant);
+//restock
+router.post("/:id/restock", restockVariant);
 
 export default router;

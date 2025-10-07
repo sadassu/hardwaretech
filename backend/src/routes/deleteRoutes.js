@@ -3,6 +3,7 @@ import {
   deleteAllProducts,
   deleteAllResrvations,
   deleteAllSales,
+  deleteAllSupplyHistory,
 } from "../controllers/deleteController.js";
 import { requireRole } from "../middleware/requireRole.js";
 import requireAuth from "../middleware/requireAuth.js";
@@ -27,5 +28,10 @@ router.delete(
   requireRole(["admin", "manager"]),
   deleteAllSales
 );
-
+router.delete(
+  "/supply-histories",
+  requireAuth,
+  requireRole(["admin", "manager"]),
+  deleteAllSupplyHistory
+);
 export default router;

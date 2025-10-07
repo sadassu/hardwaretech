@@ -11,6 +11,9 @@ import saleRoutes from "./routes/saleRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import deleteRoutes from "./routes/deleteRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import supplyHistoryRoute from "./routes/supplyHistoriesRoute.js";
+import categoryRoutes from "./routes/categoriesRoute.js";
+
 
 import { connectDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
@@ -47,6 +50,8 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/sales", saleRoutes);
 app.use("/api/delete", deleteRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/supply-histories", supplyHistoryRoute);
+app.use("/api/categories", categoryRoutes)
 
 // ✅ Global error handler
 app.use((err, req, res, next) => {

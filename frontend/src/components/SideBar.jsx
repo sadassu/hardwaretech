@@ -12,6 +12,7 @@ import {
   Settings,
   X,
   Menu,
+  FileBox,
 } from "lucide-react";
 
 const SideBar = () => {
@@ -66,6 +67,12 @@ const SideBar = () => {
       name: "Sales",
       path: "/sales",
       icon: TrendingUp,
+      isLink: true,
+    },
+    {
+      name: "Supply History",
+      path: "/supply-histories",
+      icon: FileBox,
       isLink: true,
     },
     {

@@ -30,13 +30,14 @@ export const productsReducer = (state, action) => {
                 ...product,
                 variants: product.variants
                   ? [
-                      // check if variant already exists → update
                       ...product.variants.filter(
-                        (v) => v._id !== action.payload.variant._id
+                        (v) =>
+                          v._id.toString() !==
+                          action.payload.variant._id.toString()
                       ),
                       action.payload.variant,
                     ]
-                  : [action.payload.variant], // if no variants yet
+                  : [action.payload.variant],
               }
             : product
         ),
@@ -50,7 +51,8 @@ export const productsReducer = (state, action) => {
             ? {
                 ...product,
                 variants: product.variants.filter(
-                  (v) => v._id !== action.payload.variantId
+                  (v) =>
+                    v._id.toString() !== action.payload.variantId.toString()
                 ),
               }
             : product
