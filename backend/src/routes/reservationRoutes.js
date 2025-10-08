@@ -44,6 +44,11 @@ router.patch(
   completeReservation
 );
 
-router.put("/:id", requireAuth, updateReservation);
+router.put(
+  "/:id",
+  requireAuth,
+  requireRole(["admin", "manager", "cashier"]),
+  updateReservation
+);
 
 export default router;

@@ -44,44 +44,56 @@ const SideBar = () => {
       path: "/dashboard",
       icon: LayoutDashboard,
       isLink: true,
+      roles: ["admin", "staff"],
     },
     {
       name: "Reservations",
       path: "/reservations",
       icon: Calendar,
       isLink: true,
+      roles: ["admin", "staff", "cashier"],
     },
     {
       name: "Products",
       path: "/products",
       icon: Package,
       isLink: true,
+      roles: ["admin", "staff", "cashier"],
     },
     {
       name: "POS",
       path: "/pos",
       icon: ShoppingCart,
       isLink: true,
+      roles: ["admin", "cashier"],
     },
     {
       name: "Sales",
       path: "/sales",
       icon: TrendingUp,
       isLink: true,
+      roles: ["admin", "staff", "cashier"],
     },
     {
       name: "Supply History",
       path: "/supply-histories",
       icon: FileBox,
       isLink: true,
+      roles: ["admin", "staff", "cashier"],
     },
     {
       name: "Settings",
       path: "/settings",
       icon: Settings,
       isLink: true,
+      roles: ["admin"],
     },
   ];
+
+  // Filter menu items based on user roles
+  const filteredMenuItems = menuItems.filter((item) =>
+    item.roles.some((role) => user?.roles?.includes(role))
+  );
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -153,45 +165,43 @@ const SideBar = () => {
         {/* Menu */}
         <nav className="flex-1 p-4">
           <ul className="space-y-1">
-            {menuItems.map((item) => {
+            {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
 
               const baseClasses = `
-                flex items-center w-full p-3 rounded-lg transition-all duration-200
-                text-left hover:bg-red-500 hover:text-slate-50 active:bg-slate-600
-                ${
-                  active
-                    ? "bg-red-500 text-red-50 shadow-md border-l-4 border-blue-400"
-                    : "text-slate-200"
-                }
-                ${isCollapsed ? "justify-center" : "justify-start"}
-              `;
+      flex items-center w-full p-3 rounded-lg transition-all duration-200
+      text-left hover:bg-red-800 hover:text-slate-50 active:bg-slate-600
+      ${
+        active
+          ? "bg-red-800 text-red-50 shadow-md border-l-4 "
+          : "text-slate-200"
+      }
+      ${isCollapsed ? "justify-center" : "justify-start"}
+    `;
 
               return (
                 <li key={item.name}>
                   {item.isLink ? (
-                    <Link to={item.path} className={baseClasses}>
+                    <Link
+                      to={item.path}
+                      className={baseClasses}
+                      aria-label={item.name} // <-- added
+                    >
                       <Icon size={20} className="flex-shrink-0" />
                       {!isCollapsed && (
-                        <span className="ml-3 font-medium">{item.name}</span>
-                      )}
-                      {isCollapsed && (
-                        <div className="absolute left-16 ml-2 px-2 py-1 bg-slate-900 text-slate-100 text-sm rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 whitespace-nowrap">
+                        <span className="ml-3 font-medium text-white">
                           {item.name}
-                        </div>
+                        </span>
                       )}
                     </Link>
                   ) : (
                     <button className={`${baseClasses} group relative`}>
                       <Icon size={20} className="flex-shrink-0" />
                       {!isCollapsed && (
-                        <span className="ml-3 font-medium">{item.name}</span>
-                      )}
-                      {isCollapsed && (
-                        <div className="absolute left-16 ml-2 px-2 py-1 bg-slate-900 text-slate-100 text-sm rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 whitespace-nowrap">
+                        <span className="ml-3 font-medium text-white">
                           {item.name}
-                        </div>
+                        </span>
                       )}
                     </button>
                   )}

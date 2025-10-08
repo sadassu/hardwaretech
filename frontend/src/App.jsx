@@ -59,7 +59,7 @@ const App = () => {
             path="/products"
             element={
               <Suspense fallback={<div>Loading...</div>}>
-                <RoleRoute allowedRoles={["admin"]}>
+                <RoleRoute allowedRoles={["admin", "cashier"]}>
                   <Product />
                 </RoleRoute>
               </Suspense>
@@ -69,7 +69,7 @@ const App = () => {
             path="/reservations"
             element={
               <Suspense fallback={<div>Loading...</div>}>
-                <RoleRoute allowedRoles={["admin"]}>
+                <RoleRoute allowedRoles={["admin", "cashier"]}>
                   <Reservation />
                 </RoleRoute>
               </Suspense>
@@ -79,7 +79,7 @@ const App = () => {
             path="/pos"
             element={
               <Suspense fallback={<div>Loading...</div>}>
-                <RoleRoute allowedRoles={["admin"]}>
+                <RoleRoute allowedRoles={["admin", "cashier"]}>
                   <Pos />
                 </RoleRoute>
               </Suspense>
@@ -89,7 +89,7 @@ const App = () => {
             path="/sales"
             element={
               <Suspense fallback={<div>Loading...</div>}>
-                <RoleRoute allowedRoles={["admin"]}>
+                <RoleRoute allowedRoles={["admin", "cashier"]}>
                   <Sales />
                 </RoleRoute>
               </Suspense>
@@ -129,7 +129,7 @@ const App = () => {
             path="/supply-histories"
             element={
               <Suspense fallback={<div>Loading...</div>}>
-                <RoleRoute allowedRoles={["admin"]}>
+                <RoleRoute allowedRoles={["admin", "cashier"]}>
                   <SupplyHistories />
                 </RoleRoute>
               </Suspense>

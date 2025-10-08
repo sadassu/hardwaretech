@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useSupplyHistoryStore } from "../../store/supplyHistoryStore";
 import { useAuthContext } from "../../hooks/useAuthContext";
-import { Loader2, Package, Calendar, Tag, Boxes } from "lucide-react";
+import { Loader2, Package, Calendar, Boxes } from "lucide-react";
 
 function SupplyHistoryCard() {
   const { user } = useAuthContext();
@@ -16,24 +16,24 @@ function SupplyHistoryCard() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-6">
-        <Loader2 className="animate-spin w-6 h-6 mr-2" />
-        <span>Loading supply histories...</span>
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="animate-spin w-5 h-5 mr-2 text-gray-400" />
+        <span className="text-sm text-gray-600">Loading...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="alert alert-error flex items-center gap-3">
-        <span>Error: {error}</span>
+      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+        <span className="text-sm text-red-600">Error: {error}</span>
       </div>
     );
   }
 
   if (supplyHistories.length === 0) {
     return (
-      <div className="text-center text-base-content/60 py-6">
+      <div className="text-center text-sm text-gray-500 py-8">
         No supply history found.
       </div>
     );
@@ -42,63 +42,50 @@ function SupplyHistoryCard() {
   const last10 = supplyHistories.slice(0, 10);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <p>Last 10 Supply History</p>
-      <div className="grid gap-4">
+    <div className="space-y-3 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+        Recent Supply History
+      </h3>
+      <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
         {last10.map((h) => (
           <div
             key={h._id}
-            className="card bg-base-100 border border-base-200 shadow-md hover:shadow-lg transition-all duration-200"
+            className="p-3 border bg-base-200 border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
           >
-            <div className="card-body">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="card-title text-lg font-semibold truncate">
-                  {h.product_variant?.product?.name || "Unknown Product"}
-                </h2>
-                <Tag className="w-5 h-5 text-primary" />
-              </div>
+            <div className="flex items-start justify-between mb-2">
+              <h4 className="text-sm font-medium text-gray-900 line-clamp-1 flex-1">
+                {h.product_variant?.product?.name || "Unknown Product"}
+              </h4>
+              <span className="text-xs font-semibold text-gray-900 ml-2 whitespace-nowrap">
+                ₱
+                {h.total_cost?.toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                })}
+              </span>
+            </div>
 
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-base-content/70" />
-                  <span className="text-base-content/80">
-                    Variant:{" "}
-                    {h.product_variant?.size
-                      ? `${h.product_variant.size} ${
-                          h.product_variant.unit || ""
-                        }`
-                      : h.product_variant?.unit || ""}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Boxes className="w-4 h-4 text-base-content/70" />
-                  <span className="text-base-content/80">
-                    Quantity: {h.quantity} pcs
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-base-content/70" />
-                  <span className="text-base-content/80">
-                    Supplied on:{" "}
-                    {new Date(h.supplied_at).toLocaleDateString("en-PH", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-base-200 flex justify-between items-center">
-                <span className="text-sm text-base-content/70">
-                  Total Cost:
+            <div className="space-y-1 text-xs text-gray-600">
+              <div className="flex items-center gap-1.5">
+                <Package className="w-3.5 h-3.5 text-gray-400" />
+                <span>
+                  {h.product_variant?.size
+                    ? `${h.product_variant.size} ${
+                        h.product_variant.unit || ""
+                      }`
+                    : h.product_variant?.unit || "N/A"}
                 </span>
-                <span className="text-lg font-semibold text-primary">
-                  ₱
-                  {h.total_cost?.toLocaleString("en-PH", {
-                    minimumFractionDigits: 2,
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Boxes className="w-3.5 h-3.5 text-gray-400" />
+                <span>{h.quantity} pcs</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                <span>
+                  {new Date(h.supplied_at).toLocaleDateString("en-PH", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
                   })}
                 </span>
               </div>

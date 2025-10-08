@@ -262,7 +262,7 @@ export const getAllReservations = asyncHandler(async (req, res) => {
       model: "ReservationDetail",
       populate: {
         path: "productId",
-        model: "ProductVariant", 
+        model: "ProductVariant",
         populate: {
           path: "product",
           model: "Product",
@@ -273,15 +273,11 @@ export const getAllReservations = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(limit);
 
-  if (!reservations || reservations.length === 0) {
-    return res.status(404).json({ message: "No reservations found" });
-  }
-
   // Count filtered reservations
   const total = await Reservation.countDocuments(filter);
 
   // Get status counts for all statuses
-  const statusCounts = await Reservation.aggregate([
+  const statusCountsRaw = await Reservation.aggregate([
     {
       $group: {
         _id: "$status",
@@ -290,8 +286,8 @@ export const getAllReservations = asyncHandler(async (req, res) => {
     },
   ]);
 
-  // Format status counts
-  const counts = {
+  // Initialize counts with all statuses
+  const statusCounts = {
     all: await Reservation.countDocuments(),
     pending: 0,
     confirmed: 0,
@@ -300,18 +296,20 @@ export const getAllReservations = asyncHandler(async (req, res) => {
     completed: 0,
   };
 
-  statusCounts.forEach((item) => {
-    if (item._id && counts.hasOwnProperty(item._id)) {
-      counts[item._id] = item.count;
+  // Populate actual counts from aggregation
+  statusCountsRaw.forEach((item) => {
+    if (item._id && statusCounts.hasOwnProperty(item._id)) {
+      statusCounts[item._id] = item.count;
     }
   });
 
+  // Return 200 even if reservations array is empty
   res.status(200).json({
     total,
     page,
     pages: Math.ceil(total / limit),
-    reservations,
-    statusCounts: counts,
+    reservations: reservations || [],
+    statusCounts,
   });
 });
 

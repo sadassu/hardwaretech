@@ -29,7 +29,7 @@ export const createSale = asyncHandler(async (req, res) => {
   }
 
   // 2️⃣ Check if amountPaid matches the total amount
-  if (amountPaid !== totalAmount) {
+  if (amountPaid < totalAmount) {
     return res.status(400).json({
       error: `Insufficient amount. Total: ${totalAmount}, Paid: ${amountPaid}`,
     });

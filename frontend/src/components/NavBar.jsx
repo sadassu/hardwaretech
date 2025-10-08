@@ -161,6 +161,16 @@ const NavBar = () => {
                     </Link>
                   </li>
                 )}
+                {user.roles?.some((role) =>
+                  ["cashier"].includes(role)
+                ) && (
+                  <li>
+                    <Link to="/pos" className="flex items-center gap-2">
+                      <LayoutDashboard className="w-4 h-4" />
+                      Go to Point of Sale
+                    </Link>
+                  </li>
+                )}
 
                 <li>
                   <Link
@@ -179,11 +189,10 @@ const NavBar = () => {
                   >
                     <Calendar className="w-4 h-4" />
                     My Reservations
-                    <div className="badge badge-primary badge-xs">3</div>
                   </Link>
                 </li>
 
-                <li>
+                {/* <li>
                   <Link to="/orders" className="flex items-center gap-2">
                     <History className="w-4 h-4" />
                     Order History
@@ -195,7 +204,7 @@ const NavBar = () => {
                     <Settings className="w-4 h-4" />
                     Settings
                   </Link>
-                </li>
+                </li> */}
 
                 <div className="divider my-1"></div>
                 <li>

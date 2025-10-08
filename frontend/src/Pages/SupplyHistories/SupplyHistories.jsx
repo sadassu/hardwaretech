@@ -72,46 +72,118 @@ const SupplyHistories = () => {
       </div>
 
       {/* ===== ANALYTICS CARDS ===== */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {/* 💰 Total Spending (Last 7 Days) */}
-        <div className="card bg-primary text-primary-content shadow-lg">
-          <div className="card-body">
-            <h2 className="card-title text-sm uppercase opacity-80">
-              Money Spent (Last 7 Days)
-            </h2>
-            <p className="text-3xl font-bold">
-              ₱
-              {Number(last7DaysSpending || 0).toLocaleString("en-PH", {
-                minimumFractionDigits: 2,
-              })}
-            </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Money Spent (Last 7 Days) */}
+        <div
+          className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl overflow-hidden"
+          style={{ backgroundColor: "#30475E" }}
+        >
+          <div className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium mb-1 text-white">
+                Money Spent (Last 7 Days)
+              </p>
+              <h3 className="text-3xl font-bold text-white">
+                ₱
+                {Number(last7DaysSpending || 0).toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                })}
+              </h3>
+            </div>
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* 📦 Items Stocked (Last 7 Days) */}
-        <div className="card bg-secondary text-secondary-content shadow-lg">
-          <div className="card-body">
-            <h2 className="card-title text-sm uppercase opacity-80">
-              Items Stocked (Last 7 Days)
-            </h2>
-            <p className="text-3xl font-bold">
-              {Number(last7DaysItems || 0).toLocaleString()} 
-            </p>
+        {/* Items Stocked (Last 7 Days) */}
+        <div
+          className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl overflow-hidden"
+          style={{ backgroundColor: "#222831" }}
+        >
+          <div className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium mb-1 text-white">
+                Items Stocked (Last 7 Days)
+              </p>
+              <h3 className="text-3xl font-bold text-white">
+                {Number(last7DaysItems || 0).toLocaleString()}
+              </h3>
+            </div>
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                />
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* 🧮 Total Money Spent (All Time) */}
-        <div className="card bg-accent text-accent-content shadow-lg">
-          <div className="card-body">
-            <h2 className="card-title text-sm uppercase opacity-80">
-              Total Money Spent (All Time)
-            </h2>
-            <p className="text-3xl font-bold">
-              ₱
-              {Number(totalMoneySpent || 0).toLocaleString("en-PH", {
-                minimumFractionDigits: 2,
-              })}
-            </p>
+        {/* Total Money Spent (All Time) */}
+        <div
+          className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl overflow-hidden"
+          style={{ backgroundColor: "#F05454" }}
+        >
+          <div className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium mb-1 text-white">
+                Total Money Spent (All Time)
+              </p>
+              <h3 className="text-3xl font-bold text-white">
+                ₱
+                {Number(totalMoneySpent || 0).toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                })}
+              </h3>
+            </div>
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
