@@ -15,6 +15,7 @@ import { formatPrice } from "../../utils/formatPrice";
 import SalesCards from "./SalesCards";
 import StockCards from "./StockCards";
 import { formatDatePHT } from "../../utils/formatDate";
+import SupplyHistoryCard from "./SupplyHistoryCard";
 
 function Dashboard() {
   const [option, setOption] = useState("daily");
@@ -250,14 +251,7 @@ function Dashboard() {
               <StockCards />
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-              <ul className="space-y-2 text-gray-600 text-sm">
-                <li>✅ Order #1023 completed</li>
-                <li>✅ Order #1022 completed</li>
-                <li>❌ Order #1021 failed</li>
-              </ul>
-            </div>
+            <SupplyHistoryCard />
           </div>
         </div>
       </div>

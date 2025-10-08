@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import ImageSlider from "../components/ImageSlider";
 
 const HomePage = () => {
@@ -44,24 +45,24 @@ const HomePage = () => {
         <div className="hero-content text-center max-w-5xl">
           <div>
             <div className="flex justify-center mb-6">
-              <div className="text-6xl">🔨</div>
+              <img src="assets/logo.jpg" alt="" className="w-100 h-50" />
             </div>
             <h1 className="text-5xl md:text-7xl font-bold mb-6">
               <span className="bg-gradient-to-r from-orange-600 via-red-500 to-yellow-600 bg-clip-text text-transparent">
-                Hardware Tech
+                Electrical Supply Co.
               </span>
             </h1>
-            <p className="text-xl md:text-2xl mb-4 font-semibold text-orange-800">
-              Your Professional Tool & Hardware Reservation Center
-            </p>
             <p className="text-lg mb-8 opacity-80 max-w-3xl mx-auto">
               Reserve quality tools, hardware supplies, and equipment for your
               projects. From weekend DIY to commercial construction - we've got
               everything you need, when you need it.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <button className="btn btn-warning btn-lg px-8">
-                Browse Tools
+              <Link
+                to="/user/product-list"
+                className="btn btn-warning btn-lg px-8"
+              >
+                Browse Products
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -75,7 +76,7 @@ const HomePage = () => {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   ></path>
                 </svg>
-              </button>
+              </Link>
             </div>
           </div>
         </div>

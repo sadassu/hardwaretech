@@ -46,7 +46,7 @@ function CategoryFilter({
             key={category._id}
             onClick={() => onCategoryChange(category._id)}
             disabled={loading}
-            className={`btn btn-sm ${
+            className={`btn btn-sm capitalize ${
               selectedCategory === category._id ? "btn-primary" : "btn-outline"
             }`}
           >

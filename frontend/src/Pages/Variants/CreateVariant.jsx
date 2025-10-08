@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import Modal from "../../components/Modal";
 import { toast } from "react-hot-toast";
-import TextInput from "../../components/TextInput.jsx"; // ✅ import reusable component
+import TextInput from "../../components/TextInput.jsx"; 
 import { useVariant } from "../../hooks/useVariant.js";
+import { Plus } from "lucide-react";
 
 const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"];
 
@@ -51,22 +52,16 @@ const CreateVariant = ({ product }) => {
 
   return (
     <>
-      <button className="btn btn-primary" onClick={() => setIsOpen(true)}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="size-6"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 4.5v15m7.5-7.5h-15"
-          />
-        </svg>
-      </button>
+      <div className="relative group inline-block">
+        <button className="btn bg-red-500" onClick={() => setIsOpen(true)}>
+          <Plus className="size-5 text-white hover:scale-110 transition-transform" />
+        </button>
+
+        {/* Tooltip */}
+        <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
+          Add Variant
+        </span>
+      </div>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <h2 className="text-xl font-semibold mb-4">

@@ -1,11 +1,36 @@
 import React, { useState } from "react";
+import { ChevronDown, AlertTriangle } from "lucide-react";
 import CreateCart from "../Pages/UserPages/CreateCart";
 
 function ProductListVariant({ product, user, isMobile }) {
   const [showVariants, setShowVariants] = useState(false);
 
-  if (!product.variants?.length) {
-    return null;
+  const colorMap = {
+    red: "bg-red-500 border-red-500 text-white",
+    blue: "bg-blue-500 border-blue-500 text-white",
+    green: "bg-green-500 border-green-500 text-white",
+    yellow: "bg-yellow-500 border-yellow-500 text-black",
+    black: "bg-black border-black text-white",
+    white: "bg-white border-gray-200 text-black",
+    gray: "bg-gray-500 border-gray-500 text-white",
+  };
+
+  // Check if no variants or all variants have zero or no quantity
+  const hasNoVariants = !product.variants?.length;
+  const allOutOfStock = product.variants?.every(
+    (variant) => !variant.quantity || variant.quantity === 0
+  );
+
+  // If no variants or all out of stock, show message
+  if (hasNoVariants || allOutOfStock) {
+    return (
+      <div className="mt-4">
+        <div className="alert alert-warning">
+          <AlertTriangle className="h-6 w-6" />
+          <span>No stock available</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -18,21 +43,11 @@ function ProductListVariant({ product, user, isMobile }) {
             className="btn btn-outline btn-block"
           >
             {showVariants ? "Hide Options" : "View Options"}
-            <svg
+            <ChevronDown
               className={`w-4 h-4 transition-transform ${
                 showVariants ? "rotate-180" : ""
               }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </button>
 
           {showVariants && (
@@ -113,7 +128,12 @@ function ProductListVariant({ product, user, isMobile }) {
                             </div>
                           )}
                           {variant.color && (
-                            <div className={`text-white p-1 rounded px-2 text-xs bg-${variant.color.toLowerCase()}-500 border-${variant.color.toLowerCase()}-500`}>
+                            <div
+                              className={`capitalize p-1 rounded px-2 text-xs ${
+                                colorMap[variant.color.toLowerCase()] ||
+                                "bg-gray-200 border-gray-200 text-black"
+                              }`}
+                            >
                               {variant.color}
                             </div>
                           )}

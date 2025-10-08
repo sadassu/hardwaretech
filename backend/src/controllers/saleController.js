@@ -4,67 +4,91 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import ProductVariant from "../models/ProductVariant.js";
 
 // create sale to the sale and sale_details
-  export const createSale = asyncHandler(async (req, res) => {
-    const { items, amountPaid, cashier } = req.body;
+export const createSale = asyncHandler(async (req, res) => {
+  const { items, amountPaid, cashier } = req.body;
 
-    if (!items || items.length === 0) {
-      return res.status(400).json({ message: "Sale must include items." });
+  if (!items || items.length === 0) {
+    return res.status(400).json({ message: "Sale must include items." });
+  }
+
+  // 1️⃣ Calculate total sale amount first
+  let totalAmount = 0;
+  for (const item of items) {
+    const variant = await ProductVariant.findById(item.variantId).populate(
+      "product"
+    );
+    if (!variant) {
+      return res
+        .status(404)
+        .json({ error: `Variant not found for ${item.productId}` });
     }
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    // If you store price in the variant or product, adjust as needed
+    const price = variant.price ?? variant.product?.price ?? 0;
+    totalAmount += price * item.quantity;
+  }
 
-    try {
-      // 1. Update stock
-      for (const item of items) {
-        const variant = await ProductVariant.findById(item.variantId).session(
-          session
-        );
+  // 2️⃣ Check if amountPaid matches the total amount
+  if (amountPaid !== totalAmount) {
+    return res.status(400).json({
+      error: `Insufficient amount. Total: ${totalAmount}, Paid: ${amountPaid}`,
+    });
+  }
 
-        if (!variant) {
-          await session.abortTransaction();
-          return res
-            .status(404)
-            .json({ error: `Variant not found for ${item.productId}` });
-        }
+  // 3️⃣ Proceed with transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-        if (variant.quantity < item.quantity) {
-          await session.abortTransaction();
-          return res.status(400).json({
-            error: `Not enough stock for ${item.productId} (requested: ${item.quantity}, available: ${variant.quantity})`,
-          });
-        }
+  try {
+    // 4️⃣ Update stock
+    for (const item of items) {
+      const variant = await ProductVariant.findById(item.variantId).session(
+        session
+      );
 
-        variant.quantity -= item.quantity;
-        await variant.save({ session });
+      if (!variant) {
+        await session.abortTransaction();
+        return res
+          .status(404)
+          .json({ error: `Variant not found for ${item.productId}` });
       }
 
-      // 2. Create sale
-      const sale = new Sale({ items, amountPaid, cashier, type: "pos" });
-      await sale.save({ session });
+      if (variant.quantity < item.quantity) {
+        await session.abortTransaction();
+        return res.status(400).json({
+          error: `Not enough stock for ${item.productId} (requested: ${item.quantity}, available: ${variant.quantity})`,
+        });
+      }
 
-      // 3. Commit transaction
-      await session.commitTransaction();
-      session.endSession();
-
-      // 4. Fetch updated variants OUTSIDE transaction
-      const updatedVariants = await ProductVariant.find({
-        _id: { $in: items.map((i) => i.variantId) },
-      });
-
-      res.status(201).json({
-        message: "Sale created successfully.",
-        sale,
-        updatedVariants,
-      });
-    } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
-      console.error("Sale creation failed:", error);
-      res.status(500).json({ error: "Failed to create sale" });
+      variant.quantity -= item.quantity;
+      await variant.save({ session });
     }
-  });
-// fetch the sale per user
+
+    // 5️⃣ Create sale record
+    const sale = new Sale({ items, amountPaid, cashier, type: "pos" });
+    await sale.save({ session });
+
+    // 6️⃣ Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    // 7️⃣ Fetch updated variants
+    const updatedVariants = await ProductVariant.find({
+      _id: { $in: items.map((i) => i.variantId) },
+    });
+
+    res.status(201).json({
+      message: "Sale created successfully.",
+      sale,
+      updatedVariants,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Sale creation failed:", error);
+    res.status(500).json({ error: "Failed to create sale" });
+  }
+});
 
 // fetch all sale for admin
 export const getSales = asyncHandler(async (req, res) => {

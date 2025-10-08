@@ -15,17 +15,17 @@ export default function ImageSlider() {
     },
     {
       background: "url(/assets/carousel/c-2.jpg) center/cover no-repeat",
-      title: "Beautiful Design",
-      subtitle: "Crafted with attention to every detail",
-      buttonText: "Learn More",
-      buttonLink: "#",
+      title: "Create a Account",
+      // subtitle: "Crafted with attention to every detail",
+      buttonText: "Create here",
+      buttonLink: "/register",
     },
     {
       background: "url(/assets/carousel/c-3.jpg) center/cover no-repeat",
       title: "Easy to Use",
       subtitle: "Get up and running in minutes",
-      buttonText: "Try It Now",
-      buttonLink: "#",
+      buttonText: "Browse Products",
+      buttonLink: "/user/product-list",
     },
   ];
 

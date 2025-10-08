@@ -3,6 +3,8 @@ import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { toast } from "react-hot-toast";
 import { useAuthContext } from "../../hooks/useAuthContext";
+import { useCategoriesStore } from "../../store/categoriesStore.js";
+import { Edit } from "lucide-react";
 
 const UpdateProduct = ({ product, onUpdateSuccess }) => {
   const { user } = useAuthContext();
@@ -13,6 +15,15 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
     category: "",
   });
   const [image, setImage] = useState(null);
+
+  const { categories, fetchCategories, loading } = useCategoriesStore();
+
+  // Fetch categories when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [isOpen, fetchCategories]);
 
   // Populate form with existing product data when modal opens
   useEffect(() => {
@@ -58,7 +69,7 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
       setFormData({ name: "", description: "", category: "" });
       setImage(null);
       setIsOpen(false);
-      
+
       if (onUpdateSuccess) onUpdateSuccess(res.data.product);
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
@@ -67,60 +78,81 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
 
   return (
     <>
-      <button
-        className="btn btn-square btn-ghost"
-        onClick={() => setIsOpen(true)}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="size-6"
+      <div className="relative group inline-block">
+        <button
+          className="btn btn-square btn-ghost"
+          onClick={() => setIsOpen(true)}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-          />
-        </svg>
-      </button>
+          <Edit className="size-5 text-gray-700 hover:text-blue-500 transition-colors" />
+        </button>
+
+        {/* Tooltip */}
+        <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
+          Update Product
+        </span>
+      </div>
+
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <h2 className="text-xl font-semibold mb-4">Update Product</h2>
         <form onSubmit={handleSubmit} className="space-y-4 w-96">
+          {/* Product Name */}
           <input
             type="text"
             name="name"
             placeholder="Product Name"
             value={formData.name}
             onChange={handleChange}
-            className="input input-bordered w-full"
+            className="input input-bordered w-full bg-[#30475E] text-white"
             required
           />
+
+          {/* Description */}
           <textarea
             name="description"
             placeholder="Description"
             value={formData.description}
             onChange={handleChange}
-            className="textarea textarea-bordered w-full"
+            className="textarea textarea-bordered w-full bg-[#30475E] text-white"
           />
+
+          {/* Category Input with datalist */}
+          <label className="label">
+            <span className="label-text font-semibold text-gray-200">
+              Category
+            </span>
+          </label>
           <input
-            type="text"
+            list="categories-list"
             name="category"
-            placeholder="Category"
+            autoComplete="off"
+            placeholder="Select or type a category"
             value={formData.category}
             onChange={handleChange}
-            className="input input-bordered w-full"
+            className="input input-bordered w-full bg-[#30475E] text-white"
             required
           />
+          <datalist id="categories-list">
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat.name} />
+            ))}
+          </datalist>
+          {loading && (
+            <p className="text-gray-400 text-sm mt-1">Loading categories...</p>
+          )}
+
+          {/* Image Upload */}
           <input
             type="file"
             accept="image/*"
             onChange={handleFileChange}
-            className="file-input file-input-bordered w-full"
+            className="file-input file-input-bordered w-full bg-[#30475E] text-white"
           />
-          <button type="submit" className="btn btn-primary w-full">
+
+          {/* Submit */}
+          <button
+            type="submit"
+            className="btn bg-red-500 text-white border-red-500 w-full"
+          >
             Update
           </button>
         </form>

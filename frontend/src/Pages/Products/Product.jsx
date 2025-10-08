@@ -18,6 +18,7 @@ import Loading from "../../components/Loading";
 import SearchBar from "../../components/SearchBar";
 import CategoryFilter from "../../components/CategoryFilter";
 import RestockVariant from "../Variants/RestockVariant";
+import { useCategoriesStore } from "../../store/categoriesStore";
 
 const Product = () => {
   const { products, pages, dispatch } = useProductsContext();
@@ -28,8 +29,19 @@ const Product = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [categories, setCategories] = useState([]);
   const limit = 10;
+
+  // ✅ Get categories from Zustand store
+  const {
+    categories,
+    fetchCategories,
+    loading: categoriesLoading,
+  } = useCategoriesStore();
+
+  // ✅ Fetch categories only once
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   // Debounce search input
   useEffect(() => {
@@ -46,7 +58,7 @@ const Product = () => {
     return () => clearTimeout(handler);
   }, [search, debouncedSearch]);
 
-  // Fetch products whenever page or debouncedSearch changes
+  // ✅ Fetch products — categories now come from Zustand
   const { data, loading, error } = useFetch(
     "/products",
     {
@@ -75,17 +87,10 @@ const Product = () => {
           pages: data.pages,
         },
       });
-      // Store categories if returned
-      if (data.categories) {
-        setCategories(data.categories);
-      }
     }
   }, [data, dispatch]);
 
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-  };
-
+  const handleSearchChange = (e) => setSearch(e.target.value);
   const clearSearch = () => {
     setSearch("");
     setDebouncedSearch("");
@@ -107,7 +112,7 @@ const Product = () => {
   const calculateStats = () => {
     if (!products || products.length === 0) {
       return {
-        totalCategories: 0,
+        totalCategories: categories.length,
         totalProducts: 0,
         lowStockVariants: 0,
       };
@@ -121,7 +126,6 @@ const Product = () => {
       if (product.category?._id) {
         uniqueCategories.add(product.category._id);
       }
-
       if (product.variants) {
         product.variants.forEach((variant) => {
           if (variant.quantity <= lowStockThreshold) {
@@ -132,7 +136,7 @@ const Product = () => {
     });
 
     return {
-      totalCategories: uniqueCategories.size,
+      totalCategories: categories.length,
       totalProducts: data?.total || products.length,
       lowStockVariants: lowStockCount,
     };
@@ -144,7 +148,7 @@ const Product = () => {
     <div className="min-h-screen p-4 lg:p-2">
       <div className="container mx-auto p-6">
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 mb-8 text-primary-content shadow-xl">
+        <div className="bg-[#222831] rounded-2xl p-6 mb-8 text-primary-content shadow-xl">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
               <h1 className="text-3xl lg:text-4xl font-bold mb-2">
@@ -152,10 +156,9 @@ const Product = () => {
               </h1>
               <p className="opacity-90">Manage your inventory with ease</p>
               <p className="mt-2 text-sm text-white">
-                Products can have multiple <strong>variants</strong>
-                (e.g., different sizes, set). Variants let you track stock
-                levels, prices, and details separately without creating
-                duplicate products.
+                Products can have multiple <strong>variants</strong> (e.g.,
+                different sizes, set). Variants let you track stock levels,
+                prices, and details separately.
               </p>
             </div>
 
@@ -170,12 +173,13 @@ const Product = () => {
             />
           </div>
 
+          {/* ✅ Use Zustand categories */}
           <div className="mt-4">
             <CategoryFilter
               categories={categories}
               selectedCategory={selectedCategory}
               onCategoryChange={handleCategoryChange}
-              loading={loading}
+              loading={categoriesLoading}
             />
           </div>
         </div>

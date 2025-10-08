@@ -245,15 +245,29 @@ export const getAllReservations = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const sortBy = req.query.sortBy || "reservationDate";
   const sortOrder = req.query.sortOrder === "desc" ? -1 : 1;
-
+  const status = req.query.status; // Get status filter from query params
   const skip = (page - 1) * limit;
 
+  // Build query filter
+  const filter = {};
+  if (status && status !== "all") {
+    filter.status = status;
+  }
+
   // Fetch reservations with user details + reservation details
-  const reservations = await Reservation.find()
-    .populate("userId", "name email roles isActive") // show specific fields from user
+  const reservations = await Reservation.find(filter)
+    .populate("userId", "name email roles isActive")
     .populate({
       path: "reservationDetails",
       model: "ReservationDetail",
+      populate: {
+        path: "productId",
+        model: "ProductVariant", 
+        populate: {
+          path: "product",
+          model: "Product",
+        },
+      },
     })
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
@@ -263,14 +277,41 @@ export const getAllReservations = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "No reservations found" });
   }
 
-  // Count all reservations
-  const total = await Reservation.countDocuments();
+  // Count filtered reservations
+  const total = await Reservation.countDocuments(filter);
+
+  // Get status counts for all statuses
+  const statusCounts = await Reservation.aggregate([
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Format status counts
+  const counts = {
+    all: await Reservation.countDocuments(),
+    pending: 0,
+    confirmed: 0,
+    cancelled: 0,
+    failed: 0,
+    completed: 0,
+  };
+
+  statusCounts.forEach((item) => {
+    if (item._id && counts.hasOwnProperty(item._id)) {
+      counts[item._id] = item.count;
+    }
+  });
 
   res.status(200).json({
     total,
     page,
     pages: Math.ceil(total / limit),
     reservations,
+    statusCounts: counts,
   });
 });
 

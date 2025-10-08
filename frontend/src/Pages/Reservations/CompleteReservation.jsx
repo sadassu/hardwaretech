@@ -25,13 +25,23 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
       return;
     }
 
+    const paid = Number(amountPaid);
+    const total = Number(reservation.amount || reservation.totalAmount || 0);
+
+    if (paid !== total) {
+      setError(
+        "Insufficient amount. The amount paid must equal the total amount."
+      );
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const res = await api.patch(
         `/reservations/${reservation._id}/complete`,
-        { amountPaid: Number(amountPaid) },
+        { amountPaid: paid },
         {
           headers: {
             "Content-Type": "application/json",
@@ -79,6 +89,12 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
           value={amountPaid}
           onChange={(e) => setAmountPaid(e.target.value)}
         />
+
+        {reservation.amount && (
+          <p className="text-sm text-gray-500 mb-2">
+            Total Amount: ₱{reservation.amount}
+          </p>
+        )}
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
 

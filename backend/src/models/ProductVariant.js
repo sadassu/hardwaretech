@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import SupplyHistory from "./SupplyHistory.js";
 
 const productVariantSchema = new mongoose.Schema(
   {
@@ -21,6 +22,12 @@ const productVariantSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const ProductVariant = mongoose.model("ProductVariant", productVariantSchema);
+// 🧹 Cascade delete supply histories when a variant is deleted
+productVariantSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    const result = await SupplyHistory.deleteMany({ product_variant: doc._id });
+  }
+});
 
+const ProductVariant = mongoose.model("ProductVariant", productVariantSchema);
 export default ProductVariant;

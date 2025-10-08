@@ -11,7 +11,11 @@ export const useCategoriesStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await api.get("/categories");
-      set({ categories: res.data, loading: false });
+      // 👇 adjust this line based on your API shape
+      const categories = Array.isArray(res.data)
+        ? res.data
+        : res.data.categories;
+      set({ categories, loading: false });
     } catch (err) {
       set({
         error: err.response?.data?.message || err.message,

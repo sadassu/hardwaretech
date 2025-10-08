@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useFetch } from "../../hooks/useFetch";
+import {
+  ClipboardList,
+  Clock,
+  CheckCircle,
+  CheckCheck,
+  XCircle,
+  AlertTriangle,
+  ChevronRight,
+  FileWarning,
+  Loader2,
+} from "lucide-react";
 
 import UpdateReservationStatus from "./UpdateReservationStatus";
 import CompleteReservation from "./CompleteReservation";
@@ -10,6 +21,7 @@ import { useProductsContext } from "../../hooks/useProductContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
 
 import Pagination from "../../components/Pagination";
+
 const Reservation = () => {
   const { reservations, pages, dispatch } = useReservationsContext();
   const { products } = useProductsContext();
@@ -17,33 +29,65 @@ const Reservation = () => {
 
   const [page, setPage] = useState(1);
   const [expandedRow, setExpandedRow] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusCounts, setStatusCounts] = useState({
+    all: 0,
+    pending: 0,
+    confirmed: 0,
+    cancelled: 0,
+    failed: 0,
+    completed: 0,
+  });
   const limit = 20;
 
   const { data, loading, error } = useFetch(
     "/reservations",
     {
-      params: { page, limit, sortBy: "reservationDate", sortOrder: "asc" },
+      params: {
+        page,
+        limit,
+        sortBy: "reservationDate",
+        sortOrder: "asc",
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      },
       headers: { Authorization: `Bearer ${user?.token}` },
     },
-    [page, user?.token]
+    [page, statusFilter, user?.token]
   );
 
   useEffect(() => {
+    if (error) {
+      // If API says no data found, clear reservations
+      dispatch({
+        type: "SET_RESERVATIONS",
+        payload: { reservations: [], total: 0, page: 1, pages: 1 },
+      });
+      return;
+    }
+
     if (data) {
       dispatch({
         type: "SET_RESERVATIONS",
         payload: {
-          reservations: data.reservations,
-          total: data.total,
-          page: data.page,
-          pages: data.pages,
+          reservations: data.reservations || [],
+          total: data.total || 0,
+          page: data.page || 1,
+          pages: data.pages || 1,
         },
       });
+
+      if (data.statusCounts) setStatusCounts(data.statusCounts);
     }
-  }, [data, dispatch]);
+  }, [data, error, dispatch]);
 
   const toggleExpandedRow = (reservationId) => {
     setExpandedRow(expandedRow === reservationId ? null : reservationId);
+  };
+
+  const handleStatusFilterChange = (status) => {
+    setStatusFilter(status);
+    setPage(1);
+    setExpandedRow(null);
   };
 
   const getStatusBadge = (status) => {
@@ -57,31 +101,55 @@ const Reservation = () => {
     return `badge ${statusClasses[status] || "badge-neutral"}`;
   };
 
+  const statusCards = [
+    {
+      key: "all",
+      label: "All",
+      Icon: ClipboardList,
+      color: "bg-base-200 hover:bg-base-300",
+      activeColor: "bg-primary text-primary-content",
+    },
+    {
+      key: "pending",
+      label: "Pending",
+      Icon: Clock,
+      color: "bg-warning/10 hover:bg-warning/20",
+      activeColor: "bg-warning text-warning-content",
+    },
+    {
+      key: "confirmed",
+      label: "Confirmed",
+      Icon: CheckCircle,
+      color: "bg-info/10 hover:bg-info/20",
+      activeColor: "bg-info text-info-content",
+    },
+    {
+      key: "completed",
+      label: "Completed",
+      Icon: CheckCheck,
+      color: "bg-success/10 hover:bg-success/20",
+      activeColor: "bg-success text-success-content",
+    },
+    {
+      key: "cancelled",
+      label: "Cancelled",
+      Icon: XCircle,
+      color: "bg-error/10 hover:bg-error/20",
+      activeColor: "bg-error text-error-content",
+    },
+    {
+      key: "failed",
+      label: "Failed",
+      Icon: AlertTriangle,
+      color: "bg-error/10 hover:bg-error/20",
+      activeColor: "bg-error text-error-content",
+    },
+  ];
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="alert alert-error">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="stroke-current shrink-0 h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span>Error: {error}</span>
+        <Loader2 className="animate-spin w-10 h-10 text-primary" />
       </div>
     );
   }
@@ -95,6 +163,34 @@ const Reservation = () => {
         </p>
       </div>
 
+      {/* Status Filter Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        {statusCards.map((card) => {
+          const IconComponent = card.Icon;
+          return (
+            <button
+              key={card.key}
+              onClick={() => handleStatusFilterChange(card.key)}
+              className={`card ${
+                statusFilter === card.key ? card.activeColor : card.color
+              } shadow-md transition-all duration-200 hover:shadow-lg cursor-pointer`}
+            >
+              <div className="card-body p-4">
+                <div className="flex items-center justify-between">
+                  <IconComponent className="w-6 h-6" />
+                  <div className="text-right">
+                    <p className="text-2xl font-bold">
+                      {statusCounts[card.key] || 0}
+                    </p>
+                    <p className="text-xs opacity-80">{card.label}</p>
+                  </div>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body p-0">
           <div className="overflow-x-auto">
@@ -102,12 +198,12 @@ const Reservation = () => {
               <thead className="bg-base-200">
                 <tr>
                   <th></th>
-                  <th className="font-semibold">Customer</th>
-                  <th className="font-semibold">Contact</th>
-                  <th className="font-semibold">Reservation Date</th>
-                  <th className="font-semibold">Total Price</th>
-                  <th className="font-semibold">Status</th>
-                  <th className="font-semibold">Actions</th>
+                  <th>Customer</th>
+                  <th>Contact</th>
+                  <th>Reservation Date</th>
+                  <th>Total Price</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -120,49 +216,30 @@ const Reservation = () => {
                             className="btn btn-ghost btn-sm btn-circle"
                             onClick={() => toggleExpandedRow(res._id)}
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
+                            <ChevronRight
                               className={`h-4 w-4 transition-transform ${
                                 expandedRow === res._id ? "rotate-90" : ""
                               }`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
+                            />
                           </button>
                         </td>
                         <td>
-                          <div className="flex items-center space-x-3">
-                            <div>
-                              <div className="font-bold text-sm">
-                                {res.userId?.name || "Unknown User"}
-                              </div>
-                            </div>
+                          <div className="font-bold text-sm">
+                            {res.userId?.name || "Unknown User"}
                           </div>
                         </td>
-                        <td>
-                          <span className="text-sm">
-                            {res.userId?.email || "N/A"}
-                          </span>
+                        <td className="text-sm">
+                          {res.userId?.email || "N/A"}
                         </td>
-                        <td>
-                          <div className="text-sm">
-                            {new Date(res.reservationDate).toLocaleDateString(
-                              "en-PH",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
-                          </div>
+                        <td className="text-sm">
+                          {new Date(res.reservationDate).toLocaleDateString(
+                            "en-PH",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )}
                         </td>
                         <td>
                           <span className="font-mono font-semibold text-success">
@@ -200,50 +277,44 @@ const Reservation = () => {
                         </td>
                       </tr>
 
-                      {/* Expanded row for reservation details */}
                       {expandedRow === res._id && (
                         <tr>
                           <td colSpan="7" className="p-0">
                             <div className="bg-base-50 p-4 border-t">
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                                {/* Notes and Remarks */}
                                 <div className="space-y-3">
                                   <div>
-                                    <h4 className="font-semibold text-sm text-base-content mb-1">
+                                    <h4 className="font-semibold text-sm mb-1">
                                       Notes
                                     </h4>
-                                    <p className="text-sm text-base-content/70 bg-base-100 p-2 rounded">
+                                    <p className="text-sm bg-base-100 p-2 rounded">
                                       {res.notes || "No notes provided"}
                                     </p>
                                   </div>
                                   <div>
-                                    <h4 className="font-semibold text-sm text-base-content mb-1">
+                                    <h4 className="font-semibold text-sm mb-1">
                                       Remarks
                                     </h4>
-                                    <p className="text-sm text-base-content/70 bg-base-100 p-2 rounded">
+                                    <p className="text-sm bg-base-100 p-2 rounded">
                                       {res.remarks || "No remarks"}
                                     </p>
                                   </div>
                                 </div>
 
-                                {/* Reservation Details */}
                                 <div>
-                                  <h4 className="font-semibold text-sm text-base-content mb-2">
+                                  <h4 className="font-semibold text-sm mb-2">
                                     Order Details
                                   </h4>
-                                  {res.reservationDetails &&
-                                  res.reservationDetails.length > 0 ? (
+                                  {res.reservationDetails?.length > 0 ? (
                                     <div className="space-y-2">
                                       {res.reservationDetails.map(
                                         (detail, index) => {
-                                          // Find matching product
                                           const matchedProduct = products?.find(
                                             (p) =>
                                               p._id ===
                                               (detail.productId?._id ||
                                                 detail.productId)
                                           );
-
                                           return (
                                             <div
                                               key={index}
@@ -256,8 +327,7 @@ const Reservation = () => {
                                                       detail.productId?.name ||
                                                       `Product ID: ${detail.productId}`}
                                                   </h5>
-
-                                                  <div className="text-xs text-base-content/60 mt-1 space-y-1">
+                                                  <div className="text-xs mt-1 space-y-1 text-base-content/60">
                                                     <div className="flex gap-4">
                                                       <span>
                                                         Qty:{" "}
@@ -305,6 +375,7 @@ const Reservation = () => {
                                     </div>
                                   ) : (
                                     <div className="text-center py-4 text-base-content/50">
+                                      <FileWarning className="w-6 h-6 mx-auto mb-1 opacity-50" />
                                       <p className="text-sm">
                                         No order details available
                                       </p>
@@ -326,22 +397,10 @@ const Reservation = () => {
                   <tr>
                     <td colSpan="7" className="text-center py-12">
                       <div className="flex flex-col items-center space-y-2">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-12 w-12 text-base-content/20"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                          />
-                        </svg>
+                        <ClipboardList className="h-12 w-12 text-base-content/20" />
                         <p className="text-base-content/60">
-                          No reservations found
+                          No reservations found for{" "}
+                          {statusFilter === "all" ? "any status" : statusFilter}
                         </p>
                       </div>
                     </td>
@@ -353,7 +412,6 @@ const Reservation = () => {
         </div>
       </div>
 
-      {/* Pagination */}
       <Pagination page={page} pages={pages} onPageChange={setPage} />
     </div>
   );

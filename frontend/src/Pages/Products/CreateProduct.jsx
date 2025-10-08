@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { useAuthContext } from "../../hooks/useAuthContext.js";
 import { useProductsContext } from "../../hooks/useProductContext.js";
 import TextInput from "../../components/TextInput.jsx";
+import { useCategoriesStore } from "../../store/categoriesStore.js";
 
 const CreateProduct = () => {
   const { dispatch } = useProductsContext();
@@ -16,6 +17,14 @@ const CreateProduct = () => {
   });
   const [image, setImage] = useState(null);
   const { user } = useAuthContext();
+
+  const { categories, fetchCategories, loading } = useCategoriesStore();
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [isOpen, fetchCategories]);
 
   const handleChange = (e) => {
     setFormData({
@@ -95,16 +104,29 @@ const CreateProduct = () => {
             onChange={handleChange}
             className="textarea textarea-bordered w-full bg-[#30475E] text-white"
           />
-          <TextInput
-            label="Category"
-            type="text"
+          <label className="label">
+            <span className="label-text font-semibold text-gray-200">
+              Category
+            </span>
+          </label>
+          <input
+            list="categories-list"
             name="category"
-            placeholder="Category"
+            autoComplete="off"
+            placeholder="Select or type a category"
             value={formData.category}
             onChange={handleChange}
-            className="input input-bordered w-full"
+            className="input input-bordered w-full bg-[#30475E] text-white"
             required
           />
+          <datalist id="categories-list">
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat.name} />
+            ))}
+          </datalist>
+          {loading && (
+            <p className="text-gray-400 text-sm mt-1">Loading categories...</p>
+          )}
 
           <input
             type="file"
@@ -113,7 +135,10 @@ const CreateProduct = () => {
             className="file-input file-input-bordered w-full bg-[#30475E] text-white"
           />
 
-          <button type="submit" className="btn bg-red-500 text-white border-red-500 w-full">
+          <button
+            type="submit"
+            className="btn bg-red-500 text-white border-red-500 w-full"
+          >
             Create
           </button>
         </form>
