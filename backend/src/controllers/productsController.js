@@ -82,34 +82,32 @@ export const getProductById = asyncHandler(async (req, res) => {
 
 //  Create new product
 export const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, category } = req.body || {};
+  const { name, description, category, image } = req.body || {};
 
+  // ✅ Validate required fields
   if (!name || !category) {
-    if (req.file) fs.unlinkSync(req.file.path); // cleanup if invalid
     return res.status(400).json({ message: "Name and category are required" });
   }
 
-  // ✅ Check uploaded file type
-  if (req.file && !req.file.mimetype.startsWith("image/")) {
-    fs.unlinkSync(req.file.path);
-    return res.status(400).json({ message: "Only image files are allowed" });
+  // ✅ Validate image (optional)
+  if (image && typeof image !== "string") {
+    return res
+      .status(400)
+      .json({ message: "Image must be a text URL or base64 string" });
   }
 
-  // ✅ Ensure category exists
+  // ✅ Ensure category exists or create it
   let existingCategory = await Category.findOne({ name: category });
   if (!existingCategory) {
     existingCategory = await Category.create({ name: category });
   }
 
-  // ✅ Save FULL URL of image
-  const BASE_URL =
-    process.env.SERVER_URL || `${req.protocol}://${req.get("host")}`;
-
+  // ✅ Create product (no file handling)
   const newProduct = await Product.create({
     name,
     description: description || "",
     category: existingCategory._id,
-    image: req.file ? `${BASE_URL}/uploads/${req.file.filename}` : "",
+    image: image || "", // ← Just store the text
   });
 
   const populatedProduct = await newProduct.populate("category");
@@ -122,21 +120,21 @@ export const createProduct = asyncHandler(async (req, res) => {
 
 // Update product
 export const updateProduct = asyncHandler(async (req, res) => {
-  const { name, description, category } = req.body || {};
+  const { name, description, category, image } = req.body || {};
   const productId = req.params.id;
 
+  // ✅ Validate product ID
   if (!productId) {
-    if (req.file) fs.unlinkSync(req.file.path); // cleanup if invalid
     return res.status(400).json({ message: "Product ID is required" });
   }
 
+  // ✅ Find existing product
   const product = await Product.findById(productId);
   if (!product) {
-    if (req.file) fs.unlinkSync(req.file.path);
     return res.status(404).json({ message: "Product not found" });
   }
 
-  // ✅ Handle category
+  // ✅ Handle category (reuse or create)
   let categoryId = product.category;
   if (category) {
     let existingCategory = await Category.findOne({ name: category });
@@ -146,37 +144,18 @@ export const updateProduct = asyncHandler(async (req, res) => {
     categoryId = existingCategory._id;
   }
 
-  // ✅ Check uploaded file type
-  if (req.file && !req.file.mimetype.startsWith("image/")) {
-    fs.unlinkSync(req.file.path);
-    return res.status(400).json({ message: "Only image files are allowed" });
+  // ✅ Validate image (optional)
+  if (image && typeof image !== "string") {
+    return res
+      .status(400)
+      .json({ message: "Image must be a text URL or base64 string" });
   }
 
-  // ✅ If product already has an image, delete old file
-  if (req.file && product.image) {
-    try {
-      const oldPath = product.image.replace(
-        process.env.SERVER_URL || `${req.protocol}://${req.get("host")}`,
-        ""
-      );
-      const oldFile = path.join(process.cwd(), oldPath);
-      if (fs.existsSync(oldFile)) {
-        fs.unlinkSync(oldFile);
-      }
-    } catch (err) {
-      console.error("Error deleting old product image:", err.message);
-    }
-  }
-
-  const BASE_URL =
-    process.env.SERVER_URL || `${req.protocol}://${req.get("host")}`;
-
+  // ✅ Update fields
   product.name = name || product.name;
   product.description = description || product.description;
   product.category = categoryId;
-  if (req.file) {
-    product.image = `${BASE_URL}/uploads/${req.file.filename}`;
-  }
+  if (image) product.image = image;
 
   await product.save();
   await product.populate("category");

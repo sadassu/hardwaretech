@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-
-import { useProductsContext } from "../../hooks/useProductContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
-
-import { useFetch } from "../../hooks/useFetch";
+import { useProductStore } from "../../store/productStore";
+import { useCategoriesStore } from "../../store/categoriesStore";
+import { AlertCircle, Search } from "lucide-react";
 
 import Pagination from "../../components/Pagination";
 import Loading from "../../components/Loading";
@@ -13,9 +12,11 @@ import CategoryFilter from "../../components/CategoryFilter";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 function ProductList() {
-  const { products, pages, dispatch } = useProductsContext();
+  // Get state and actions from Zustand stores
+  const { products, pages, loading, error, fetchProducts } = useProductStore();
+  const { categories, fetchCategories } = useCategoriesStore();
   const { user } = useAuthContext();
-  
+
   const { isMobile } = useIsMobile();
 
   const [page, setPage] = useState(1);
@@ -23,7 +24,6 @@ function ProductList() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [categories, setCategories] = useState([]);
   const limit = 12;
 
   // Debounce search
@@ -41,42 +41,22 @@ function ProductList() {
     return () => clearTimeout(handler);
   }, [search, debouncedSearch]);
 
-  // Fetch products with category filter
-  const { data, loading, error } = useFetch(
-    "/products",
-    {
-      params: {
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Fetch products when dependencies change
+  useEffect(() => {
+    if (user?.token) {
+      fetchProducts(user.token, {
         page,
         limit,
-        sortBy: "name",
-        sortOrder: "asc",
         search: debouncedSearch,
         category: selectedCategory,
-        includeCategories: "true",
-      },
-      headers: { Authorization: `Bearer ${user?.token}` },
-    },
-    [page, debouncedSearch, selectedCategory]
-  );
-
-  // Update products and categories from API response
-  useEffect(() => {
-    if (data) {
-      dispatch({
-        type: "SET_PRODUCTS",
-        payload: {
-          products: data.products,
-          total: data.total,
-          page: data.page,
-          pages: data.pages,
-        },
       });
-      // Store categories if returned
-      if (data.categories) {
-        setCategories(data.categories);
-      }
     }
-  }, [data, dispatch]);
+  }, [page, debouncedSearch, selectedCategory, user?.token, fetchProducts]);
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -107,19 +87,7 @@ function ProductList() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <AlertCircle className="h-6 w-6 shrink-0" />
           <span className="text-base">Error loading products: {error}</span>
         </div>
       </div>
@@ -219,20 +187,10 @@ function ProductList() {
         <div className="text-center py-16">
           <div className="max-w-md mx-auto">
             <div className="mb-6">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
+              <Search
                 className="mx-auto h-16 w-16 text-base-content/30"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+                strokeWidth={1}
+              />
             </div>
             <h3 className="text-2xl font-bold text-base-content/80 mb-3">
               No products found

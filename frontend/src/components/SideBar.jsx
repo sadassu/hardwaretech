@@ -54,7 +54,7 @@ const SideBar = () => {
       roles: ["admin", "staff", "cashier"],
     },
     {
-      name: "Products",
+      name: "Inventory",
       path: "/products",
       icon: Package,
       isLink: true,

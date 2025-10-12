@@ -15,24 +15,32 @@ function LoginSuccess() {
     const rolesParam = params.get("roles");
     const name = params.get("name");
     const emailParam = params.get("email");
-    const avatar = params.get("avatar"); 
+    const avatar = params.get("avatar");
 
     if (token) {
       let roles = [];
       try {
-        roles = JSON.parse(rolesParam); 
+        roles = JSON.parse(rolesParam);
       } catch {
         roles = rolesParam ? [rolesParam] : ["user"]; // fallback
       }
 
-      const user = { userId, token, roles, name, email: emailParam, avatar }; // ✅ added avatar
+      const user = { userId, token, roles, name, email: emailParam, avatar };
 
       // Save full user object
       localStorage.setItem("user", JSON.stringify(user));
       dispatch({ type: "LOGIN", payload: user });
 
       setEmail(emailParam);
-      navigate("/");
+
+      // ✅ Redirect based on role
+      if (roles.includes("admin")) {
+        navigate("/dashboard");
+      } else if (roles.includes("cashier")) {
+        navigate("/pos");
+      } else {
+        navigate("/");
+      }
     } else {
       navigate("/login");
     }

@@ -24,21 +24,19 @@ router.get("/products/:id", getProductById);
 router.post(
   "/products",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
-  upload.single("image"),
+  requireRole(["admin", "cashier"]),
   createProduct
 );
 router.put(
   "/products/:id",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
-  upload.single("image"),
+  requireRole(["admin", "cashier"]),
   updateProduct
 );
 router.delete(
   "/products/:id",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   deleteProduct
 );
 

@@ -152,7 +152,7 @@ const NavBar = () => {
 
                 {/* Admin Dashboard */}
                 {user.roles?.some((role) =>
-                  ["admin", "manager", "staff"].includes(role)
+                  ["admin", "", "staff"].includes(role)
                 ) && (
                   <li>
                     <Link to="/dashboard" className="flex items-center gap-2">

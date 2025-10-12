@@ -2,23 +2,23 @@ import { useEffect, useState } from "react";
 import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { useAuthContext } from "../../hooks/useAuthContext.js";
-import { useProductsContext } from "../../hooks/useProductContext.js";
 import TextInput from "../../components/TextInput.jsx";
 import { useCategoriesStore } from "../../store/categoriesStore.js";
+import { useProductStore } from "../../store/productStore.js";
 
 const CreateProduct = () => {
-  const { dispatch } = useProductsContext();
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     category: "",
+    image: "", // now a text area input
   });
-  const [image, setImage] = useState(null);
-  const { user } = useAuthContext();
 
+  const { user } = useAuthContext();
   const { categories, fetchCategories, loading } = useCategoriesStore();
+  const { products, setProducts } = useProductStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -33,10 +33,6 @@ const CreateProduct = () => {
     });
   };
 
-  const handleFileChange = (e) => {
-    setImage(e.target.files[0]);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -46,26 +42,35 @@ const CreateProduct = () => {
     }
 
     try {
-      const form = new FormData();
-      form.append("name", formData.name);
-      form.append("description", formData.description);
-      form.append("category", formData.category);
-      if (image) form.append("image", image);
-
-      const { data } = await api.post("/products", form, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${user.token}`,
+      const { data } = await api.post(
+        "/products",
+        {
+          name: formData.name,
+          description: formData.description,
+          category: formData.category,
+          image: formData.image, // send text instead of file
         },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      // ✅ Update Zustand store immediately
+      setProducts({
+        products: [...products, data.product],
+        total: products.length + 1,
+        page: 1,
+        pages: 1,
       });
 
-      dispatch({ type: "CREATE_PRODUCT", payload: data.product });
-
-      setFormData({ name: "", description: "", category: "" });
-      setImage(null);
+      // Reset form
+      setFormData({ name: "", description: "", category: "", image: "" });
       setIsOpen(false);
     } catch (error) {
       console.log(error);
+      setError(error.response?.data?.message || "Failed to create product");
     }
   };
 
@@ -92,6 +97,7 @@ const CreateProduct = () => {
             onChange={handleChange}
             required
           />
+
           <label className="label">
             <span className="label-text font-semibold text-gray-200">
               Description
@@ -104,6 +110,7 @@ const CreateProduct = () => {
             onChange={handleChange}
             className="textarea textarea-bordered w-full bg-[#30475E] text-white"
           />
+
           <label className="label">
             <span className="label-text font-semibold text-gray-200">
               Category
@@ -128,11 +135,17 @@ const CreateProduct = () => {
             <p className="text-gray-400 text-sm mt-1">Loading categories...</p>
           )}
 
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="file-input file-input-bordered w-full bg-[#30475E] text-white"
+          <label className="label">
+            <span className="label-text font-semibold text-gray-200">
+              Image URL
+            </span>
+          </label>
+          <textarea
+            name="image"
+            placeholder="Paste image URL"
+            value={formData.image}
+            onChange={handleChange}
+            className="textarea textarea-bordered w-full bg-[#30475E] text-white"
           />
 
           <button

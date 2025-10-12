@@ -166,7 +166,6 @@ function EditUserData() {
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
-                    <option value="manager">Manager</option>
                     <option value="cashier">Cashier</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-2">

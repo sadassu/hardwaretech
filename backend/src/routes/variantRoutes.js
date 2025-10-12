@@ -10,31 +10,26 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = express.Router();
 // add
-router.post(
-  "",
-  requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
-  createVariant
-);
+router.post("", requireAuth, requireRole(["admin", "cashier"]), createVariant);
 // delete
 router.delete(
   "/:id",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   deleteVariant
 );
 // update
 router.put(
   "/:id",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   updateVariant
 );
 //restock
 router.post(
   "/:id/restock",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   restockVariant
 );
 

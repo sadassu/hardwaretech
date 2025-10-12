@@ -33,21 +33,21 @@ router.get("/", getAllReservations);
 router.put(
   "/:id/status",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   updateReservationStatus
 );
 
 router.patch(
   "/:id/complete",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   completeReservation
 );
 
 router.put(
   "/:id",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   updateReservation
 );
 

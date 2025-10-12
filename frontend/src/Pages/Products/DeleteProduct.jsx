@@ -1,19 +1,15 @@
 import React, { useState } from "react";
 import { Trash2, AlertTriangle } from "lucide-react";
-import api from "../../utils/api";
 import Modal from "../../components/Modal";
 import { useAuthContext } from "../../hooks/useAuthContext";
-import { useProductsContext } from "../../hooks/useProductContext";
+import { useProductStore } from "../../store/productStore";
 
 const DeleteProduct = ({ product }) => {
-  const { dispatch } = useProductsContext();
   const { user } = useAuthContext();
+  const { deleteProduct, loading } = useProductStore();
+
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDeleteSuccess = (deletedProductId) => {
-    dispatch({ type: "DELETE_PRODUCT", payload: deletedProductId });
-  };
 
   const handleDelete = async () => {
     if (!product?._id) {
@@ -23,14 +19,8 @@ const DeleteProduct = ({ product }) => {
 
     setIsDeleting(true);
     try {
-      await api.delete(`/products/${product._id}`, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-
+      await deleteProduct(user.token, product._id);
       setIsOpen(false);
-      handleDeleteSuccess(product._id);
     } catch (error) {
       console.error("Error deleting product:", error);
       alert("Failed to delete product. Please try again.");
@@ -89,7 +79,7 @@ const DeleteProduct = ({ product }) => {
               type="button"
               className="btn btn-error flex items-center gap-2 text-gray-200"
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={isDeleting || loading}
             >
               {isDeleting ? (
                 <>

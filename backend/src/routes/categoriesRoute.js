@@ -13,13 +13,13 @@ router.get("/", getAllCategories);
 router.post(
   "/",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   createCategory
 );
 router.delete(
   "/:id",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   deleteCategory
 );
 

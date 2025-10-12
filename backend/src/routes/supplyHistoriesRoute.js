@@ -11,13 +11,13 @@ const router = express.Router();
 router.get(
   "/",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   getSupplyHistory
 );
 router.post(
   "/:id/redo",
   requireAuth,
-  requireRole(["admin", "manager", "cashier"]),
+  requireRole(["admin", "cashier"]),
   redoSupplyHistory
 );
 

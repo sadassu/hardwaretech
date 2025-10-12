@@ -1,66 +1,35 @@
 import React, { useState } from "react";
-import { useReservationsContext } from "../../hooks/useReservationContext";
-import { useAuthContext } from "../../hooks/useAuthContext";
 import Modal from "../../components/Modal";
-import api from "../../utils/api";
 import TextInput from "../../components/TextInput";
+import { useReservation } from "../../hooks/useReservation";
 
 function CompleteReservation({ reservation, onCompleteSuccess }) {
-  const { dispatch } = useReservationsContext();
-  const { user } = useAuthContext();
-
+  const { completeReservation } = useReservation();
   const [isOpen, setIsOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleComplete = async () => {
-    if (!user) {
-      setError("You must be logged in.");
-      return;
-    }
-
-    if (!amountPaid || isNaN(amountPaid)) {
-      setError("Please enter a valid amount paid.");
-      return;
-    }
-
-    const paid = Number(amountPaid);
-    const total = Number(reservation.amount || reservation.totalAmount || 0);
-
-    if (paid !== total) {
-      setError(
-        "Insufficient amount. The amount paid must equal the total amount."
-      );
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
     try {
-      const res = await api.patch(
-        `/reservations/${reservation._id}/complete`,
-        { amountPaid: paid },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
+      setLoading(true);
+      setError(null);
 
-      const updatedReservation = res.data.reservation || res.data;
+      const total = Number(reservation.amount || reservation.totalAmount || 0);
+      const paid = Number(amountPaid);
 
-      dispatch({
-        type: "UPDATE_RESERVATION",
-        payload: updatedReservation,
-      });
+      if (paid !== total) {
+        setError("Insufficient amount. Must match total.");
+        setLoading(false);
+        return;
+      }
+
+      const updated = await completeReservation(reservation._id, paid);
 
       setIsOpen(false);
-      if (onCompleteSuccess) onCompleteSuccess(updatedReservation);
+      if (onCompleteSuccess) onCompleteSuccess(updated);
     } catch (err) {
-      setError(err.response?.data?.error || err.message);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -100,7 +69,6 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
 
         <div className="flex justify-end gap-2 mt-4">
           <button
-            type="button"
             className="btn btn-ghost"
             onClick={() => setIsOpen(false)}
             disabled={loading}
@@ -108,7 +76,6 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
             Cancel
           </button>
           <button
-            type="button"
             className="btn bg-red-500 text-white border-red-500"
             onClick={handleComplete}
             disabled={loading}

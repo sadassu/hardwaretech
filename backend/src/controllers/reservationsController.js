@@ -257,18 +257,7 @@ export const getAllReservations = asyncHandler(async (req, res) => {
   // Fetch reservations with user details + reservation details
   const reservations = await Reservation.find(filter)
     .populate("userId", "name email roles isActive")
-    .populate({
-      path: "reservationDetails",
-      model: "ReservationDetail",
-      populate: {
-        path: "productId",
-        model: "ProductVariant",
-        populate: {
-          path: "product",
-          model: "Product",
-        },
-      },
-    })
+    .populate("reservationDetails")
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit);

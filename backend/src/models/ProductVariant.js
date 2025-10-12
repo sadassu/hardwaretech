@@ -25,7 +25,7 @@ const productVariantSchema = new mongoose.Schema(
 // 🧹 Cascade delete supply histories when a variant is deleted
 productVariantSchema.post("findOneAndDelete", async function (doc) {
   if (doc) {
-    const result = await SupplyHistory.deleteMany({ product_variant: doc._id });
+    await SupplyHistory.deleteMany({ product_variant: doc._id });
   }
 });
 

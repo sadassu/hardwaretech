@@ -1,37 +1,39 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Modal from "../../components/Modal";
-import api from "../../utils/api.js";
-import { toast } from "react-hot-toast";
-import { useAuthContext } from "../../hooks/useAuthContext";
+import TextInput from "../../components/TextInput.jsx";
+import { useAuthContext } from "../../hooks/useAuthContext.js";
 import { useCategoriesStore } from "../../store/categoriesStore.js";
+import { useProductStore } from "../../store/productStore.js";
 import { Edit } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const UpdateProduct = ({ product, onUpdateSuccess }) => {
   const { user } = useAuthContext();
+  const { categories, fetchCategories, loading } = useCategoriesStore();
+  const { updateProduct } = useProductStore();
+
   const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     category: "",
+    image: "",
   });
-  const [image, setImage] = useState(null);
-
-  const { categories, fetchCategories, loading } = useCategoriesStore();
 
   // Fetch categories when modal opens
   useEffect(() => {
-    if (isOpen) {
-      fetchCategories();
-    }
+    if (isOpen) fetchCategories();
   }, [isOpen, fetchCategories]);
 
-  // Populate form with existing product data when modal opens
+  // Populate form when modal opens
   useEffect(() => {
     if (isOpen && product) {
       setFormData({
         name: product.name || "",
         description: product.description || "",
         category: product.category?.name || "",
+        image: product.image || "",
       });
     }
   }, [isOpen, product]);
@@ -43,36 +45,34 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
     });
   };
 
-  const handleFileChange = (e) => {
-    setImage(e.target.files[0]);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!product) return;
+    if (!user) {
+      setError("You must be logged in");
+      return;
+    }
 
     try {
-      const form = new FormData();
-      form.append("name", formData.name);
-      form.append("description", formData.description);
-      form.append("category", formData.category);
-      if (image) form.append("image", image);
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        image: formData.image, // plain string URL
+      };
 
-      const res = await api.put(`/products/${product._id}`, form, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-
-      toast.success(res.data.message || "Product updated!");
-      setFormData({ name: "", description: "", category: "" });
-      setImage(null);
+      const updatedProduct = await updateProduct(
+        user.token,
+        product._id,
+        payload
+      );
+      toast.success("Product updated successfully!");
+      setFormData({ name: "", description: "", category: "", image: "" });
       setIsOpen(false);
-
-      if (onUpdateSuccess) onUpdateSuccess(res.data.product);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
+      if (onUpdateSuccess) onUpdateSuccess(updatedProduct);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to update product");
+      toast.error("Failed to update product");
     }
   };
 
@@ -94,19 +94,24 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <h2 className="text-xl font-semibold mb-4">Update Product</h2>
+        {error && <div className="text-red-500 mb-4">{error}</div>}
+
         <form onSubmit={handleSubmit} className="space-y-4 w-96">
-          {/* Product Name */}
-          <input
+          <TextInput
+            label="Product Name"
             type="text"
             name="name"
             placeholder="Product Name"
             value={formData.name}
             onChange={handleChange}
-            className="input input-bordered w-full bg-[#30475E] text-white"
             required
           />
 
-          {/* Description */}
+          <label className="label">
+            <span className="label-text font-semibold text-gray-200">
+              Description
+            </span>
+          </label>
           <textarea
             name="description"
             placeholder="Description"
@@ -115,7 +120,6 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
             className="textarea textarea-bordered w-full bg-[#30475E] text-white"
           />
 
-          {/* Category Input with datalist */}
           <label className="label">
             <span className="label-text font-semibold text-gray-200">
               Category
@@ -140,15 +144,19 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
             <p className="text-gray-400 text-sm mt-1">Loading categories...</p>
           )}
 
-          {/* Image Upload */}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="file-input file-input-bordered w-full bg-[#30475E] text-white"
+          <label className="label">
+            <span className="label-text font-semibold text-gray-200">
+              Image URL
+            </span>
+          </label>
+          <textarea
+            name="image"
+            placeholder="Paste image URL"
+            value={formData.image}
+            onChange={handleChange}
+            className="textarea textarea-bordered w-full bg-[#30475E] text-white"
           />
 
-          {/* Submit */}
           <button
             type="submit"
             className="btn bg-red-500 text-white border-red-500 w-full"

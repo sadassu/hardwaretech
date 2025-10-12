@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 
 import { useAuthContext } from "../../hooks/useAuthContext";
-import { useProductsContext } from "../../hooks/useProductContext";
-
-import { useFetch } from "../../hooks/useFetch";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 import Loading from "../../components/Loading";
@@ -12,70 +9,68 @@ import Pagination from "../../components/Pagination";
 import ProductGrid from "../../components/ProductGrid";
 import CategoryFilter from "../../components/CategoryFilter";
 
+import { useProductStore } from "../../store/productStore";
+import { useCategoriesStore } from "../../store/categoriesStore";
+
 function Pos() {
   const { user } = useAuthContext();
-  const { products, pages, dispatch } = useProductsContext();
-
   const isMobile = useIsMobile();
 
+  // ✅ Zustand stores
+  const {
+    products,
+    pages,
+    loading: productLoading,
+    error: productError,
+    fetchProducts,
+  } = useProductStore();
+
+  const {
+    categories,
+    loading: categoryLoading,
+    error: categoryError,
+    fetchCategories,
+  } = useCategoriesStore();
+
+  // ✅ Local state
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const limit = 9;
 
-  // debounce search
+  // ✅ Debounce search input
   useEffect(() => {
     if (search !== debouncedSearch) setIsSearching(true);
 
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-      setPage(1);
+      setCurrentPage(1);
       setIsSearching(false);
     }, 500);
 
     return () => clearTimeout(handler);
   }, [search, debouncedSearch]);
 
-  // fetch products
-  const { data, loading, error } = useFetch(
-    "/products",
-    {
-      params: {
-        page,
+  // ✅ Fetch categories once
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // ✅ Fetch products when filters/search/page change
+  useEffect(() => {
+    if (user?.token) {
+      fetchProducts(user.token, {
+        page: currentPage,
         limit,
-        sortBy: "name",
-        sortOrder: "asc",
         search: debouncedSearch,
         category: selectedCategory,
-        includeCategories: "true",
-      },
-      headers: { Authorization: `Bearer ${user?.token}` },
-    },
-    [page, debouncedSearch, selectedCategory]
-  );
-
-  // update context when new data arrives
-  useEffect(() => {
-    if (data) {
-      dispatch({
-        type: "SET_PRODUCTS",
-        payload: {
-          products: data.products,
-          total: data.total,
-          page: data.page,
-          pages: data.pages,
-        },
       });
-      // Store categories if returned
-      if (data.categories) {
-        setCategories(data.categories);
-      }
     }
-  }, [data, dispatch]);
+  }, [user, currentPage, debouncedSearch, selectedCategory, fetchProducts]);
 
+  // ✅ Handlers
   const handleSearchChange = (e) => setSearch(e.target.value);
   const clearSearch = () => {
     setSearch("");
@@ -84,17 +79,20 @@ function Pos() {
 
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
-    setPage(1);
+    setCurrentPage(1);
   };
 
   const clearAllFilters = () => {
     setSearch("");
     setDebouncedSearch("");
     setSelectedCategory("");
-    setPage(1);
+    setCurrentPage(1);
   };
 
+  const loading = productLoading || categoryLoading;
+  const error = productError || categoryError;
 
+  // ✅ Error State
   if (error) {
     return (
       <div className="min-h-screen bg-base-100 flex items-center justify-center">
@@ -115,7 +113,7 @@ function Pos() {
             </svg>
             <div>
               <h3 className="font-bold">Error!</h3>
-              <div className="text-xs">{error.message || String(error)}</div>
+              <div className="text-xs">{error}</div>
             </div>
           </div>
         </div>
@@ -123,6 +121,7 @@ function Pos() {
     );
   }
 
+  // ✅ Main Render
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header */}
@@ -156,7 +155,7 @@ function Pos() {
             search={search}
             onSearchChange={handleSearchChange}
             onClear={clearSearch}
-            isSearching={isSearching || loading} // show spinner in search bar
+            isSearching={isSearching || loading}
             placeholder="Search products for POS..."
           />
           {(isSearching || loading) && (
@@ -210,37 +209,41 @@ function Pos() {
         />
 
         {/* Product Grid */}
-        {products?.length > 0 ? (
+        {loading ? (
+          <Loading />
+        ) : products?.length > 0 ? (
           <ProductGrid products={products} user={user} isMobile={isMobile} />
         ) : (
-          !loading && (
-            <div className="hero min-h-[400px]">
-              <div className="hero-content text-center">
-                <div className="max-w-md">
-                  <div className="text-6xl mb-4">📦</div>
-                  <h1 className="text-2xl font-bold text-base-content/70">
-                    No Products Found
-                  </h1>
-                  <p className="py-4 text-base-content/50">
-                    {search
-                      ? "Try adjusting your search terms"
-                      : "No products available at the moment"}
-                  </p>
-                  {search && (
-                    <button className="btn btn-primary" onClick={clearSearch}>
-                      Clear Search
-                    </button>
-                  )}
-                </div>
+          <div className="hero min-h-[400px]">
+            <div className="hero-content text-center">
+              <div className="max-w-md">
+                <div className="text-6xl mb-4">📦</div>
+                <h1 className="text-2xl font-bold text-base-content/70">
+                  No Products Found
+                </h1>
+                <p className="py-4 text-base-content/50">
+                  {search
+                    ? "Try adjusting your search terms"
+                    : "No products available at the moment"}
+                </p>
+                {search && (
+                  <button className="btn btn-primary" onClick={clearSearch}>
+                    Clear Search
+                  </button>
+                )}
               </div>
             </div>
-          )
+          </div>
         )}
 
         {/* Pagination */}
         {pages > 1 && (
           <div className="mt-8 flex justify-center">
-            <Pagination page={page} pages={pages} onPageChange={setPage} />
+            <Pagination
+              page={currentPage}
+              pages={pages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>

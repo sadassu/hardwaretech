@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useSignup } from "../../hooks/useSignup";
 
 function Register() {
@@ -12,6 +12,7 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signup, error, isLoading } = useSignup();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -23,7 +24,16 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) return;
-    await signup(formData.name, formData.email, formData.password);
+    const result = await signup(
+      formData.name,
+      formData.email,
+      formData.password,
+      formData.confirmPassword
+    );
+
+    if (result && !error) {
+      navigate("/login");
+    }
   };
 
   return (

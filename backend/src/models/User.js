@@ -28,12 +28,13 @@ const userSchema = new mongoose.Schema(
 
     avatar: {
       type: String,
-      default: null,
+      default:
+        "https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/no-profile-picture-icon.png",
     },
 
     roles: {
       type: [String],
-      enum: ["user", "admin", "manager", "cashier"],
+      enum: ["user", "admin", "cashier"],
       default: ["user"],
     },
 

@@ -13,25 +13,25 @@ const router = express.Router();
 router.delete(
   "/products",
   requireAuth,
-  requireRole(["admin", "manager"]),
+  requireRole("admin"),
   deleteAllProducts
 );
 router.delete(
   "/reservations",
   requireAuth,
-  requireRole(["admin", "manager"]),
+  requireRole("admin"),
   deleteAllResrvations
 );
 router.delete(
   "/sales",
   requireAuth,
-  requireRole(["admin", "manager"]),
+  requireRole("admin"),
   deleteAllSales
 );
 router.delete(
   "/supply-histories",
   requireAuth,
-  requireRole(["admin", "manager"]),
+  requireRole("admin"),
   deleteAllSupplyHistory
 );
 export default router;

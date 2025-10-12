@@ -114,7 +114,7 @@ export const updateUserRoles = asyncHandler(async (req, res) => {
   }
 
   // validate roles against allowed enum
-  const allowedRoles = ["user", "admin", "manager", "cashier"];
+  const allowedRoles = ["user", "admin", "cashier"];
   const invalidRoles = roles.filter((role) => !allowedRoles.includes(role));
   if (invalidRoles.length > 0) {
     return res.status(400).json({

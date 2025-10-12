@@ -33,7 +33,9 @@ function ProductGrid({ products, user, isMobile }) {
             <div className="card bg-base-200 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-300 hover:border-primary/30 group relative lg:h-[400px] overflow-hidden w-full">
               <div className="card-body p-6 flex flex-col h-full">
                 {/* Product Image or Fallback */}
-                {product.image && !hasImageError ? (
+                {product.image &&
+                product.image.trim() !== "" &&
+                !hasImageError ? (
                   <figure className="mb-4 -mx-6 -mt-6 flex-shrink-0 group-hover:opacity-0 transition-opacity duration-300">
                     <img
                       src={product.image}
@@ -42,14 +44,14 @@ function ProductGrid({ products, user, isMobile }) {
                       onError={() => handleImageError(product._id)}
                     />
                   </figure>
-                ) : product.image ? (
+                ) : (
                   <div className="mb-4 -mx-6 -mt-6 flex-shrink-0 group-hover:opacity-0 transition-opacity duration-300 bg-base-200 rounded-t-2xl h-48 flex items-center justify-center">
                     <div className="flex flex-col items-center gap-2 text-base-content/40">
                       <ImageOff size={48} strokeWidth={1.5} />
                       <span className="text-sm">Image unavailable</span>
                     </div>
                   </div>
-                ) : null}
+                )}
 
                 {/* Product Name */}
                 <h2 className="martian-mono card-title text-xl font-extrabold mb-3 text-base-content flex-shrink-0 justify-center uppercase group-hover:opacity-0 transition-opacity duration-300">

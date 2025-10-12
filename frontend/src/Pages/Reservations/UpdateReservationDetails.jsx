@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import api from "../../utils/api";
-import { useReservationsContext } from "../../hooks/useReservationContext";
 import Modal from "../../components/Modal";
 
-const UpdateReservationDetails = ({
-  reservation,
-  products,
-  onUpdateSuccess,
-}) => {
+import { useReservationStore } from "../../store/reservationStore";
+import { useProductStore } from "../../store/productStore";
+
+const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   const { user } = useAuthContext();
-  const { dispatch } = useReservationsContext();
+  const { updateReservation } = useReservationStore();
+  const { products } = useProductStore();
 
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -37,6 +36,7 @@ const UpdateReservationDetails = ({
 
     try {
       setLoading(true);
+
       const res = await api.put(
         `/reservations/${reservation._id}`,
         {
@@ -48,15 +48,15 @@ const UpdateReservationDetails = ({
             unit: d.unit,
           })),
         },
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${user.token}` } }
       );
 
-      if (onUpdateSuccess) onUpdateSuccess(res.data);
-      dispatch({ type: "UPDATE_RESERVATION", payload: res.data.reservation });
+      // ✅ Update global store
+      updateReservation(res.data.reservation);
+
+      // ✅ Optional callback for parent (already used in ReservationTable)
+      if (onUpdateSuccess) onUpdateSuccess(res.data.reservation);
+
       setIsOpen(false);
     } catch (error) {
       console.error("Update failed", error);
@@ -76,11 +76,13 @@ const UpdateReservationDetails = ({
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <h3 className="font-semibold text-lg">Update Reservation</h3>
+          <h3 className="font-semibold text-lg text-white">
+            Update Reservation
+          </h3>
 
           {/* Remarks */}
           <div>
-            <label className="block text-sm mb-1 text-white ">Remarks</label>
+            <label className="block text-sm mb-1 text-white">Remarks</label>
             <textarea
               value={formData.remarks}
               onChange={(e) =>
@@ -92,8 +94,7 @@ const UpdateReservationDetails = ({
           </div>
 
           {/* Reservation Details */}
-          {formData.reservationDetails &&
-          formData.reservationDetails.length > 0 ? (
+          {formData.reservationDetails?.length > 0 ? (
             <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
               {formData.reservationDetails.map((detail, index) => {
                 const matchedProduct = products?.find(
@@ -116,6 +117,7 @@ const UpdateReservationDetails = ({
 
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
+                        {/* Product Name */}
                         <h5 className="font-medium text-sm">
                           {matchedProduct?.name ||
                             detail.productId?.name ||
@@ -125,7 +127,7 @@ const UpdateReservationDetails = ({
                         <div className="text-xs text-base-content/60 mt-1 space-y-1">
                           <div className="flex gap-4 items-center flex-wrap">
                             <span>
-                              Qty:{" "}
+                              Qty:
                               <input
                                 type="number"
                                 min={1}
@@ -141,7 +143,7 @@ const UpdateReservationDetails = ({
                               />
                             </span>
                             <span>
-                              Unit:{" "}
+                              Unit:
                               <input
                                 type="text"
                                 value={detail.unit || ""}
@@ -156,7 +158,7 @@ const UpdateReservationDetails = ({
                               />
                             </span>
                             <span>
-                              Size:{" "}
+                              Size:
                               <input
                                 type="text"
                                 value={detail.size || ""}
@@ -174,7 +176,7 @@ const UpdateReservationDetails = ({
                         </div>
                       </div>
 
-                      {detail.productId?.price && (
+                      {matchedProduct?.price && (
                         <div className="text-right">
                           <div className="text-xs text-base-content/60">
                             Price
@@ -182,7 +184,7 @@ const UpdateReservationDetails = ({
                           <div className="font-mono text-sm font-medium">
                             ₱
                             {(
-                              detail.productId.price * detail.quantity
+                              matchedProduct.price * detail.quantity
                             ).toLocaleString()}
                           </div>
                         </div>

@@ -7,7 +7,7 @@ export const useSignup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { dispatch } = useAuthContext();
 
-  const signup = async (name, email, password) => {
+  const signup = async (name, email, password, confirmPassword) => {
     setIsLoading(true);
     setError(null);
 
@@ -16,8 +16,9 @@ export const useSignup = () => {
         name,
         email,
         password,
+        confirmPassword,
       });
-      
+
       const json = response.data;
 
       localStorage.setItem("user", JSON.stringify(json));
