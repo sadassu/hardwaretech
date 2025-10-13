@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import Modal from "../../components/Modal";
 import { toast } from "react-hot-toast";
-import TextInput from "../../components/TextInput.jsx"; 
+import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
 import { Plus } from "lucide-react";
 
-const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"];
+const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set", "W", "V"];
 
 const CreateVariant = ({ product }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -160,7 +160,7 @@ const CreateVariant = ({ product }) => {
             />
           )}
 
-          <button type="submit" className="btn btn-primary w-full">
+          <button type="submit" className="btn text-white border-red-500 bg-red-500 w-full">
             Create Variant
           </button>
         </form>

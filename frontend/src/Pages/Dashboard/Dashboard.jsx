@@ -16,6 +16,7 @@ import SalesCards from "./SalesCards";
 import StockCards from "./StockCards";
 import { formatDatePHT } from "../../utils/formatDate";
 import SupplyHistoryCard from "./SupplyHistoryCard";
+import SalesSupplyHistoryGraph from "./SalesSupplyHistoryGraph";
 
 function Dashboard() {
   const [option, setOption] = useState("daily");
@@ -221,6 +222,7 @@ function Dashboard() {
                 )}
               </div>
             </div>
+            <SalesSupplyHistoryGraph />
           </div>
 
           {/* RIGHT (1/3) */}

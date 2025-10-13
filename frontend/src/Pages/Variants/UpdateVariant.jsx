@@ -6,7 +6,7 @@ import { useVariant } from "../../hooks/useVariant.js";
 
 import { Edit } from "lucide-react";
 
-const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set"];
+const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set", "W", "V"];
 
 const UpdateVariant = ({ variant }) => {
   const { updateVariant } = useVariant();
