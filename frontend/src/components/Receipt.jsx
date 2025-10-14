@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 
-function Receipt({ sale, products, onClose }) {
+function Receipt({ sale, onClose }) {
   const receiptRef = useRef();
 
   const handlePrint = () => {
@@ -226,10 +226,10 @@ function Receipt({ sale, products, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header Actions */}
-        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center gap-2">
+        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
           <h2 className="text-lg font-bold">Receipt Preview</h2>
           <div className="flex gap-2">
             <button
@@ -256,62 +256,53 @@ function Receipt({ sale, products, onClose }) {
         {/* Receipt Content */}
         <div ref={receiptRef} className="p-6 font-mono">
           <div className="receipt">
-            {/* Header */}
+            {/* Store Header */}
             <div className="text-center mb-4 pb-3 border-b-2 border-dashed border-black">
               <h1 className="text-2xl font-bold mb-1">HARDWARE TECH</h1>
               <p className="text-xs leading-tight">Rizal Street Tuy Batangas</p>
-              <p className="text-xs leading-tight">Phone: </p>
               <p className="text-xs leading-tight">
                 Email: hardwaretech27@gmail.com
               </p>
             </div>
 
-            {/* Info */}
+            {/* Transaction Info */}
             <div className="my-3">
-              <div className="font-bold text-sm uppercase mb-2 pb-1 border-b border-black">
+              <div className="font-bold text-sm uppercase mb-2 border-b border-black">
                 TRANSACTION DETAILS
               </div>
-              <div className="flex justify-between my-1 text-sm">
+              <div className="flex justify-between text-sm">
                 <span>Receipt #:</span>
                 <span>#{sale._id?.slice(-8)}</span>
               </div>
-              <div className="flex justify-between my-1 text-sm">
+              <div className="flex justify-between text-sm">
                 <span>Date:</span>
                 <span>
-                  {new Date(sale.saleDate).toLocaleDateString("en-PH", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  {new Date(sale.saleDate).toLocaleDateString("en-PH")}
                 </span>
               </div>
-              <div className="flex justify-between my-1 text-sm">
+              <div className="flex justify-between text-sm">
                 <span>Time:</span>
                 <span>
-                  {new Date(sale.saleDate).toLocaleTimeString("en-PH", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {new Date(sale.saleDate).toLocaleTimeString("en-PH")}
                 </span>
               </div>
-              <div className="flex justify-between my-1 text-sm">
+              <div className="flex justify-between text-sm">
                 <span>Cashier:</span>
                 <span>{sale.cashier?.name || "Unknown"}</span>
               </div>
-              <div className="flex justify-between my-1 text-sm">
+              <div className="flex justify-between text-sm">
                 <span>Type:</span>
-                <span className="uppercase">{sale.type || "POS"}</span>
+                <span className="uppercase">{sale.type}</span>
               </div>
             </div>
 
             {/* Items */}
             <div className="my-3 border-t-2 border-b-2 border-dashed border-black py-3">
               <div className="font-bold text-sm uppercase mb-2">ITEMS</div>
-              {sale.items && sale.items.length > 0 ? (
+              {sale.items?.length > 0 ? (
                 sale.items.map((item, index) => {
-                  const matchedProduct = products?.find(
-                    (p) => p._id === (item.productId?._id || item.productId)
-                  );
+                  const variant = item.productVariantId;
+                  const product = variant?.product;
 
                   return (
                     <div
@@ -319,19 +310,20 @@ function Receipt({ sale, products, onClose }) {
                       className="my-2 pb-1 border-b border-dotted border-gray-400 last:border-0"
                     >
                       <div className="font-bold text-sm">
-                        {matchedProduct?.name ||
-                          item.productId?.name ||
-                          `Item ${index + 1}`}
+                        {product?.name || "Unnamed Product"}
                       </div>
                       <div className="text-xs text-gray-600 my-1">
-                        {item.quantity} {item.unit || "pc"}
-                        {item.size && ` (${item.size})`} × ₱
-                        {item.price?.toLocaleString() || "0"}
+                        {variant?.size ? `${variant.size} ` : ""}
+                        {variant?.color ? `${variant.color} ` : ""}
+                        {variant?.unit ? `(${variant.unit})` : ""}
+                      </div>
+                      <div className="text-xs text-gray-600 my-1">
+                        {item.quantity} × ₱{item.price?.toLocaleString()}
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Subtotal:</span>
                         <span className="font-bold">
-                          ₱{item.subtotal?.toLocaleString() || "0"}
+                          ₱{item.subtotal?.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -344,28 +336,27 @@ function Receipt({ sale, products, onClose }) {
 
             {/* Totals */}
             <div className="my-3 border-t-2 border-dashed border-black pt-2">
-              <div className="font-bold text-sm uppercase mb-2">SUMMARY</div>
               <div className="flex justify-between text-sm my-2">
                 <span>Subtotal:</span>
-                <span>₱{sale.totalPrice?.toLocaleString() || "0"}</span>
+                <span>₱{sale.totalPrice?.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-base font-bold my-2 pt-2 border-t-2 border-black">
                 <span>TOTAL:</span>
-                <span>₱{sale.totalPrice?.toLocaleString() || "0"}</span>
+                <span>₱{sale.totalPrice?.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm my-2">
                 <span>Amount Paid:</span>
-                <span>₱{sale.amountPaid?.toLocaleString() || "0"}</span>
+                <span>₱{sale.amountPaid?.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm my-2">
                 <span>Change:</span>
-                <span>₱{sale.change?.toLocaleString() || "0"}</span>
+                <span>₱{sale.change?.toLocaleString()}</span>
               </div>
             </div>
 
-            {/* Status */}
+            {/* Payment Status */}
             <div className="my-3">
-              <div className="font-bold text-sm uppercase mb-2 pb-1 border-b border-black">
+              <div className="font-bold text-sm uppercase mb-2 border-b border-black">
                 PAYMENT STATUS
               </div>
               <div className="flex justify-between text-sm">
@@ -381,10 +372,8 @@ function Receipt({ sale, products, onClose }) {
             {/* Footer */}
             <div className="text-center mt-4 pt-3 border-t-2 border-dashed border-black text-xs">
               <p className="font-bold mb-1">Thank you for your purchase!</p>
-              <p className="text-xs">
-                Please keep this receipt for your records
-              </p>
-              <p className="text-xs mt-2">Visit us again soon!</p>
+              <p>Please keep this receipt for your records.</p>
+              <p className="mt-2">Visit us again soon!</p>
             </div>
           </div>
         </div>
@@ -392,4 +381,5 @@ function Receipt({ sale, products, onClose }) {
     </div>
   );
 }
+
 export default Receipt;
