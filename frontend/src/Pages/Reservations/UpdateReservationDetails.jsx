@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import api from "../../utils/api";
 import Modal from "../../components/Modal";
-
-import { useReservationStore } from "../../store/reservationStore";
 import { useProductStore } from "../../store/productStore";
+import { useReservationStore } from "../../store/reservationStore";
 
 const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   const { user } = useAuthContext();
@@ -12,24 +11,31 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   const { products } = useProductStore();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     remarks: reservation?.remarks || "",
     reservationDetails: reservation?.reservationDetails || [],
   });
-  const [loading, setLoading] = useState(false);
 
+  // ✅ Update a detail field
   const handleDetailChange = (index, field, value) => {
-    const updated = [...formData.reservationDetails];
-    updated[index] = { ...updated[index], [field]: value };
-    setFormData({ ...formData, reservationDetails: updated });
+    setFormData((prev) => {
+      const updatedDetails = [...prev.reservationDetails];
+      updatedDetails[index] = { ...updatedDetails[index], [field]: value };
+      return { ...prev, reservationDetails: updatedDetails };
+    });
   };
 
+  // ✅ Remove a detail item
   const handleRemoveDetail = (index) => {
-    const updated = [...formData.reservationDetails];
-    updated.splice(index, 1);
-    setFormData({ ...formData, reservationDetails: updated });
+    setFormData((prev) => {
+      const updatedDetails = [...prev.reservationDetails];
+      updatedDetails.splice(index, 1);
+      return { ...prev, reservationDetails: updatedDetails };
+    });
   };
 
+  // ✅ Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!reservation) return;
@@ -37,29 +43,31 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
     try {
       setLoading(true);
 
-      const res = await api.put(
-        `/reservations/${reservation._id}`,
-        {
-          remarks: formData.remarks,
-          reservationDetails: formData.reservationDetails.map((d) => ({
-            productId: d.productId?._id || d.productId,
-            quantity: d.quantity,
-            size: d.size,
-            unit: d.unit,
-          })),
-        },
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
+      const payload = {
+        remarks: formData.remarks,
+        reservationDetails: formData.reservationDetails.map((d) => ({
+          productVariantId: d.productVariantId?._id || d.productVariantId,
+          quantity: d.quantity,
+          size: d.size,
+          unit: d.unit,
+        })),
+      };
 
-      // ✅ Update global store
-      updateReservation(res.data.reservation);
+      const res = await api.put(`/reservations/${reservation._id}`, payload, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      });
 
-      // ✅ Optional callback for parent (already used in ReservationTable)
-      if (onUpdateSuccess) onUpdateSuccess(res.data.reservation);
+      const updatedReservation = res.data.reservation;
+
+      // ✅ Update Zustand store
+      updateReservation(updatedReservation);
+
+      // ✅ Notify parent if needed
+      onUpdateSuccess?.(updatedReservation);
 
       setIsOpen(false);
     } catch (error) {
-      console.error("Update failed", error);
+      console.error("Update failed:", error);
     } finally {
       setLoading(false);
     }
@@ -86,7 +94,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
             <textarea
               value={formData.remarks}
               onChange={(e) =>
-                setFormData({ ...formData, remarks: e.target.value })
+                setFormData((prev) => ({ ...prev, remarks: e.target.value }))
               }
               className="textarea textarea-bordered w-full bg-[#30475E] text-white"
               rows={2}
@@ -117,7 +125,6 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
 
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        {/* Product Name */}
                         <h5 className="font-medium text-sm">
                           {matchedProduct?.name ||
                             detail.productId?.name ||
@@ -131,7 +138,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                               <input
                                 type="number"
                                 min={1}
-                                value={detail.quantity}
+                                value={detail.quantity || 1}
                                 onChange={(e) =>
                                   handleDetailChange(
                                     index,
@@ -184,7 +191,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                           <div className="font-mono text-sm font-medium">
                             ₱
                             {(
-                              matchedProduct.price * detail.quantity
+                              matchedProduct.price * (detail.quantity || 1)
                             ).toLocaleString()}
                           </div>
                         </div>

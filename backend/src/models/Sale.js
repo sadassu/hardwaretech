@@ -2,9 +2,9 @@
 import mongoose from "mongoose";
 
 const saleItemSchema = new mongoose.Schema({
-  productId: {
+  productVariantId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Product",
+    ref: "ProductVariant",
     required: true,
   },
   size: { type: String },

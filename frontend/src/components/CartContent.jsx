@@ -337,7 +337,7 @@ function CartContent() {
                       Continue Shopping
                     </button>
                     <button
-                      className="btn btn-lg flex-1 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl hover:scale-105 bg-[#F05454] hover:bg-[#F05454]/90 text-white border-none"
+                      className="btn cursor-pointer btn-lg flex-1 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl hover:scale-105 bg-[#F05454] hover:bg-[#F05454]/90 text-white border-none"
                       onClick={handleCheckout}
                       disabled={loading || (isRestricted && !amountPaid)}
                     >

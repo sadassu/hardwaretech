@@ -7,7 +7,7 @@ const ReservationDetailSchema = new mongoose.Schema({
     ref: "Reservation",
     required: true,
   },
-  productId: {
+  productVariantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "ProductVariant",
     required: true,

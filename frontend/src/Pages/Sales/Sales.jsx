@@ -22,6 +22,7 @@ const Sales = () => {
   const [expandedRow, setExpandedRow] = useState(null);
   const limit = 20;
 
+  console.log(sales);
   // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -278,6 +279,14 @@ const Sales = () => {
                                               item.productId)
                                         );
 
+                                        // ✅ Show product name from populated data
+                                        const productName =
+                                          item.productVariantId?.product
+                                            ?.name ||
+                                          matchedProduct?.name ||
+                                          item.productVariantId?.name ||
+                                          `Product ID: ${item.productVariantId?._id}`;
+
                                         return (
                                           <div
                                             key={index}
@@ -286,9 +295,7 @@ const Sales = () => {
                                             <div className="flex justify-between items-start">
                                               <div className="flex-1">
                                                 <h5 className="font-medium text-sm">
-                                                  {matchedProduct?.name ||
-                                                    item.productId?.name ||
-                                                    `Product ID: ${item.productId}`}
+                                                  {productName}
                                                 </h5>
                                                 <div className="text-xs text-base-content/60 mt-1 space-y-1">
                                                   <div className="flex gap-4">

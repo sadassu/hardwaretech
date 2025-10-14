@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 
 import { useReservationStore } from "../../store/reservationStore";
-import { useProductStore } from "../../store/productStore";
 import { useAuthContext } from "../../hooks/useAuthContext";
 
 import UpdateReservationStatus from "./UpdateReservationStatus";
@@ -26,23 +25,16 @@ const ReservationTable = () => {
     updateReservation,
   } = useReservationStore();
 
-  const { products } = useProductStore();
   const { user } = useAuthContext();
 
   const limit = 20;
 
-  // ✅ Fetch only when relevant values change
   useEffect(() => {
     if (user?.token) {
-      fetchReservations(user.token, {
-        page,
-        limit,
-        status: statusFilter,
-      });
+      fetchReservations(user.token, { page, limit, status: statusFilter });
     }
   }, [page, statusFilter, user?.token, fetchReservations]);
 
-  // Utility: badge style based on status
   const getStatusBadge = (status) => {
     const statusClasses = {
       pending: "badge-warning",
@@ -54,7 +46,6 @@ const ReservationTable = () => {
     return `badge ${statusClasses[status] || "badge-neutral"}`;
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -63,7 +54,6 @@ const ReservationTable = () => {
     );
   }
 
-  // Empty state
   if (!reservations?.length) {
     return (
       <div className="text-center py-12">
@@ -76,7 +66,6 @@ const ReservationTable = () => {
     );
   }
 
-  // ✅ Main table
   return (
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body p-0">
@@ -109,10 +98,8 @@ const ReservationTable = () => {
                         />
                       </button>
                     </td>
-                    <td>
-                      <div className="font-bold text-sm">
-                        {res.userId?.name || "Unknown User"}
-                      </div>
+                    <td className="text-sm font-bold">
+                      {res.userId?.name || "Unknown User"}
                     </td>
                     <td className="text-sm">{res.userId?.email || "N/A"}</td>
                     <td className="text-sm">
@@ -147,13 +134,13 @@ const ReservationTable = () => {
                     </td>
                   </tr>
 
-                  {/* Expanded Row */}
+                  {/* Expanded Details */}
                   {expandedRow === res._id && (
                     <tr>
                       <td colSpan="7" className="p-0">
                         <div className="bg-base-50 p-4 border-t">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                            {/* Notes and Remarks */}
+                            {/* Notes */}
                             <div className="space-y-3">
                               <div>
                                 <h4 className="font-semibold text-sm mb-1">
@@ -182,12 +169,8 @@ const ReservationTable = () => {
                                 <div className="space-y-2">
                                   {res.reservationDetails.map(
                                     (detail, index) => {
-                                      const matchedProduct = products?.find(
-                                        (p) =>
-                                          p._id ===
-                                          (detail.productId?._id ||
-                                            detail.productId)
-                                      );
+                                      const variant = detail.productVariantId;
+                                      const product = variant?.product;
 
                                       return (
                                         <div
@@ -197,12 +180,11 @@ const ReservationTable = () => {
                                           <div className="flex justify-between items-start">
                                             <div className="flex-1">
                                               <h5 className="font-medium text-sm">
-                                                {matchedProduct?.name ||
-                                                  detail.productId?.name ||
-                                                  `Product ID: ${detail.productId}`}
+                                                {product?.name ||
+                                                  "Unnamed Product"}
                                               </h5>
                                               <div className="text-xs mt-1 space-y-1 text-base-content/60">
-                                                <div className="flex gap-4">
+                                                <div className="flex gap-4 flex-wrap">
                                                   <span>
                                                     Qty:{" "}
                                                     <span className="font-mono">
@@ -212,14 +194,22 @@ const ReservationTable = () => {
                                                   <span>
                                                     Unit:{" "}
                                                     <span className="badge badge-outline badge-xs">
-                                                      {detail.unit}
+                                                      {variant?.unit || "pcs"}
                                                     </span>
                                                   </span>
-                                                  {detail.size && (
+                                                  {variant?.size && (
                                                     <span>
                                                       Size:{" "}
                                                       <span className="font-mono">
-                                                        {detail.size}
+                                                        {variant.size}
+                                                      </span>
+                                                    </span>
+                                                  )}
+                                                  {variant?.color && (
+                                                    <span>
+                                                      Color:{" "}
+                                                      <span className="font-mono">
+                                                        {variant.color}
                                                       </span>
                                                     </span>
                                                   )}
@@ -227,7 +217,7 @@ const ReservationTable = () => {
                                               </div>
                                             </div>
 
-                                            {detail.productId?.price && (
+                                            {variant?.price && (
                                               <div className="text-right">
                                                 <div className="text-xs text-base-content/60">
                                                   Price
@@ -235,7 +225,7 @@ const ReservationTable = () => {
                                                 <div className="font-mono text-sm font-medium">
                                                   ₱
                                                   {(
-                                                    detail.productId.price *
+                                                    variant.price *
                                                     detail.quantity
                                                   ).toLocaleString()}
                                                 </div>
@@ -254,8 +244,9 @@ const ReservationTable = () => {
                                     No order details available
                                   </p>
                                   <p className="text-xs mt-1">
-                                    Make sure to populate reservationDetails in
-                                    your API
+                                    Make sure to populate
+                                    reservationDetails.productVariantId.product
+                                    in your API
                                   </p>
                                 </div>
                               )}

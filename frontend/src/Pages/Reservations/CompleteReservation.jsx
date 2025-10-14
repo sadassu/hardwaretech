@@ -15,15 +15,13 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
       setLoading(true);
       setError(null);
 
-      const total = Number(reservation.amount || reservation.totalAmount || 0);
       const paid = Number(amountPaid);
 
-      if (paid !== total) {
-        setError("Insufficient amount. Must match total.");
+      if (paid < reservation.totalPrice) {
+        setError("Insufficient amount.");
         setLoading(false);
         return;
       }
-
       const updated = await completeReservation(reservation._id, paid);
 
       setIsOpen(false);
@@ -45,29 +43,32 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
       </button>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <h2 className="text-xl font-semibold mb-4">Complete Reservation</h2>
-        <p className="mb-4">
-          Enter payment to mark this reservation as{" "}
+        <h2 className="text-xl font-semibold mb-2">Complete Reservation</h2>
+        <p className="text-gray-600 mb-4">
+          Enter the payment amount to mark this reservation as{" "}
           <span className="font-semibold text-green-600">completed</span>.
         </p>
+
+        <div className="bg-gray-100 p-3 rounded-md mb-4 flex justify-between items-center">
+          <span className="text-sm text-gray-600 font-medium">
+            Total Amount:
+          </span>
+          <span className="text-lg font-semibold text-gray-800">
+            ₱{reservation.totalPrice.toLocaleString()}
+          </span>
+        </div>
 
         <TextInput
           label="Amount Paid"
           type="number"
-          placeholder="Amount Paid"
+          placeholder="Enter amount paid"
           value={amountPaid}
           onChange={(e) => setAmountPaid(e.target.value)}
         />
 
-        {reservation.amount && (
-          <p className="text-sm text-gray-500 mb-2">
-            Total Amount: ₱{reservation.amount}
-          </p>
-        )}
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-
-        <div className="flex justify-end gap-2 mt-4">
+        <div className="flex justify-end gap-2 mt-6">
           <button
             className="btn btn-ghost"
             onClick={() => setIsOpen(false)}
@@ -76,11 +77,11 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
             Cancel
           </button>
           <button
-            className="btn bg-red-500 text-white border-red-500"
+            className="btn bg-green-600 text-white border-green-600"
             onClick={handleComplete}
             disabled={loading}
           >
-            {loading ? "Processing..." : "Yes, Complete"}
+            {loading ? "Processing..." : "Confirm Payment"}
           </button>
         </div>
       </Modal>

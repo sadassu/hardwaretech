@@ -12,31 +12,39 @@ function ReservationDetailsModal({
   if (!selectedReservation) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-4xl w-full">
-      <h3 className="font-bold text-lg mb-6">Reservation Details</h3>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      className="max-w-4xl w-full text-white"
+    >
+      <h3 className="font-bold text-2xl mb-6 text-center">
+        Reservation Details
+      </h3>
 
-      {/* Reservation Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div>
-          <h4 className="font-semibold mb-2">Reservation Information</h4>
-          <div className="space-y-2">
+        {/* Reservation Info Card */}
+        <div className="bg-base-200/20 border border-gray-700 rounded-2xl shadow-lg p-5 backdrop-blur-sm">
+          <h4 className="font-semibold text-lg mb-3">Reservation Info</h4>
+          <div className="space-y-2 text-gray-300">
             <div>
-              <span className="text-base-content/70">ID: </span>
-              <span className="font-mono">{selectedReservation._id}</span>
+              <span className="text-gray-400">ID: </span>
+              <span className="font-mono text-white">
+                {selectedReservation._id}
+              </span>
             </div>
             <div>
-              <span className="text-base-content/70">Date: </span>
+              <span className="text-gray-400">Date: </span>
               <span>{formatDatePHT(selectedReservation.reservationDate)}</span>
             </div>
             <div>
-              <span className="text-base-content/70">Status: </span>
+              <span className="text-gray-400">Status: </span>
               <span className={getStatusBadge(selectedReservation.status)}>
                 {selectedReservation.status.charAt(0).toUpperCase() +
                   selectedReservation.status.slice(1)}
               </span>
             </div>
             <div>
-              <span className="text-base-content/70">Total: </span>
+              <span className="text-gray-400">Total: </span>
               <span className="text-xl font-bold text-primary">
                 {formatPrice(selectedReservation.totalPrice)}
               </span>
@@ -44,47 +52,53 @@ function ReservationDetailsModal({
           </div>
         </div>
 
+        {/* Notes Card */}
         {selectedReservation.notes && (
-          <div>
-            <h4 className="font-semibold mb-2">Notes</h4>
-            <div className="bg-base-200 p-4 rounded-lg">
-              <p>{selectedReservation.notes}</p>
-            </div>
+          <div className="bg-base-200/20 border border-gray-700 rounded-2xl shadow-lg p-5 backdrop-blur-sm">
+            <h4 className="font-semibold text-lg mb-3">Notes</h4>
+            <p className="text-gray-300 whitespace-pre-line leading-relaxed">
+              {selectedReservation.notes}
+            </p>
           </div>
         )}
       </div>
 
-      {/* Reservation Details */}
+      {/* Reserved Items Card */}
       {selectedReservation.reservationDetails?.length > 0 && (
-        <div>
-          <h4 className="font-semibold mb-4">Reserved Items</h4>
+        <div className="bg-base-200/20 border border-gray-700 rounded-2xl shadow-lg p-5 backdrop-blur-sm">
+          <h4 className="font-semibold text-lg mb-4">Reserved Items</h4>
           <div className="overflow-x-auto">
-            <table className="table table-zebra w-full">
+            <table className="table table-zebra w-full text-white">
               <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Unit</th>
+                <tr className="text-gray-400 border-b border-gray-700">
+                  <th className="py-2">Product</th>
+                  <th className="py-2">Quantity</th>
+                  <th className="py-2">Unit</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedReservation.reservationDetails.map((detail, index) => (
-                  <tr key={detail._id || index}>
-                    <td>
+                  <tr
+                    key={detail._id || index}
+                    className="hover:bg-base-200/30 transition-colors"
+                  >
+                    <td className="py-2">
                       <div>
-                        <div className="font-medium">
+                        <div className="font-medium text-white">
                           {detail.productId?.name || "Product"}
                         </div>
                         {detail.productId?.description && (
-                          <div className="text-base-content/70">
+                          <div className="text-gray-400 text-sm">
                             {detail.productId.description}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="font-medium">{detail.quantity}</td>
-                    <td>
-                      <span className="badge badge-outline">{detail.unit}</span>
+                    <td className="font-medium py-2">{detail.quantity}</td>
+                    <td className="py-2">
+                      <span className="badge badge-outline text-gray-200 border-gray-500">
+                        {detail.unit}
+                      </span>
                     </td>
                   </tr>
                 ))}

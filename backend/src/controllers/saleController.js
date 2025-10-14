@@ -11,7 +11,7 @@ export const createSale = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Sale must include items." });
   }
 
-  // 1️⃣ Calculate total sale amount first
+  // 1️⃣ Calculate total sale amount
   let totalAmount = 0;
   for (const item of items) {
     const variant = await ProductVariant.findById(item.variantId).populate(
@@ -23,29 +23,24 @@ export const createSale = asyncHandler(async (req, res) => {
         .json({ error: `Variant not found for ${item.productId}` });
     }
 
-    // If you store price in the variant or product, adjust as needed
     const price = variant.price ?? variant.product?.price ?? 0;
     totalAmount += price * item.quantity;
   }
 
-  // 2️⃣ Check if amountPaid matches the total amount
   if (amountPaid < totalAmount) {
     return res.status(400).json({
       error: `Insufficient amount. Total: ${totalAmount}, Paid: ${amountPaid}`,
     });
   }
 
-  // 3️⃣ Proceed with transaction
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // 4️⃣ Update stock
     for (const item of items) {
       const variant = await ProductVariant.findById(item.variantId).session(
         session
       );
-
       if (!variant) {
         await session.abortTransaction();
         return res
@@ -64,15 +59,28 @@ export const createSale = asyncHandler(async (req, res) => {
       await variant.save({ session });
     }
 
-    // 5️⃣ Create sale record
-    const sale = new Sale({ items, amountPaid, cashier, type: "pos" });
-    await sale.save({ session });
+    // ✅ Map variantId → productVariantId to match schema
+    const saleItems = items.map((item) => ({
+      productVariantId: item.variantId,
+      productId: item.productId,
+      quantity: item.quantity,
+      price: item.price,
+      total: item.total,
+      size: item.size,
+      unit: item.unit,
+    }));
 
-    // 6️⃣ Commit transaction
+    const sale = new Sale({
+      items: saleItems,
+      amountPaid,
+      cashier,
+      type: "pos",
+    });
+
+    await sale.save({ session });
     await session.commitTransaction();
     session.endSession();
 
-    // 7️⃣ Fetch updated variants
     const updatedVariants = await ProductVariant.find({
       _id: { $in: items.map((i) => i.variantId) },
     });
@@ -100,7 +108,14 @@ export const getSales = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const sales = await Sale.find()
-    .populate("cashier", "name email roles")
+    .populate({
+      path: "items.productVariantId", // populate the ProductVariant
+      populate: {
+        path: "product", // then populate the Product inside ProductVariant
+        select: "name category image", // optional: select only needed fields
+      },
+    })
+    .populate("cashier", "name email roles") // populate cashier info
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit);
@@ -108,6 +123,7 @@ export const getSales = asyncHandler(async (req, res) => {
   if (!sales || sales.length === 0) {
     return res.status(404).json({ message: "No sales found" });
   }
+
   const total = await Sale.countDocuments();
 
   res.status(200).json({

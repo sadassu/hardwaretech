@@ -43,6 +43,7 @@ export const createReservation = asyncHandler(async (req, res) => {
       const detailsWithReservationId = reservationDetails.map((d) => ({
         ...d,
         reservationId: reservation._id,
+        productVariantId: d.productVariantId || d.variantId || d._id,
       }));
 
       await ReservationDetail.insertMany(detailsWithReservationId, { session });
@@ -71,99 +72,97 @@ export const updateReservation = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Reservation ID is required" });
   }
 
+  // 🔍 Find reservation
   const reservation = await Reservation.findById(reservationId);
   if (!reservation) {
     return res.status(404).json({ message: "Reservation not found" });
   }
 
+  // 🔍 Existing details
   const existingDetails = await ReservationDetail.find({ reservationId });
-  if (!existingDetails.length) {
-    return res.status(400).json({ message: "No reservation details found" });
-  }
 
   const updatedDetails = [];
   const deletedDetails = [];
   const newDetails = [];
 
+  // 🗺️ Map incoming by variant ID
   const incomingMap = new Map(
-    reservationDetails.map((d) => [String(d.productId), d])
+    reservationDetails.map((d) => [String(d.productVariantId), d])
   );
 
+  // 🔁 Compare existing with incoming
   for (const detail of existingDetails) {
-    const incoming = incomingMap.get(String(detail.productId));
+    const incoming = incomingMap.get(String(detail.productVariantId));
 
     if (!incoming) {
+      // ❌ removed
       await ReservationDetail.findByIdAndDelete(detail._id);
-      deletedDetails.push(detail.productId);
-    } else {
-      let hasChanges = false;
-
-      if (incoming.quantity !== detail.quantity) {
-        detail.quantity = incoming.quantity;
-        hasChanges = true;
-      }
-      if (incoming.size && incoming.size !== detail.size) {
-        detail.size = incoming.size;
-        hasChanges = true;
-      }
-      if (incoming.unit && incoming.unit !== detail.unit) {
-        detail.unit = incoming.unit;
-        hasChanges = true;
-      }
-
-      if (hasChanges) {
-        await detail.save();
-        updatedDetails.push(detail.productId);
-      }
-
-      incomingMap.delete(String(detail.productId));
+      deletedDetails.push(detail.productVariantId);
+      continue;
     }
+
+    let hasChanges = false;
+
+    if (incoming.quantity !== detail.quantity) {
+      detail.quantity = incoming.quantity;
+      hasChanges = true;
+    }
+    if (incoming.size && incoming.size !== detail.size) {
+      detail.size = incoming.size;
+      hasChanges = true;
+    }
+    if (incoming.unit && incoming.unit !== detail.unit) {
+      detail.unit = incoming.unit;
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      await detail.save();
+      updatedDetails.push(detail.productVariantId);
+    }
+
+    // Remove from map
+    incomingMap.delete(String(detail.productVariantId));
   }
 
+  // ➕ Add new ones
   for (const incoming of incomingMap.values()) {
     const newDetail = new ReservationDetail({
       reservationId,
-      productId: incoming.productId,
+      productVariantId: incoming.productVariantId,
       quantity: incoming.quantity,
       size: incoming.size,
       unit: incoming.unit,
     });
     await newDetail.save();
-    newDetails.push(newDetail.productId);
+    newDetails.push(newDetail.productVariantId);
   }
 
-  // ✅ Recalculate totalPrice using ProductVariant
+  // 🧮 Recalculate total price
   const allDetails = await ReservationDetail.find({ reservationId });
+  const variantIds = allDetails.map((d) => d.productVariantId);
+
+  const variants = await ProductVariant.find({ _id: { $in: variantIds } });
+  const variantMap = new Map(variants.map((v) => [String(v._id), v]));
+
   let newTotalPrice = 0;
-
   for (const d of allDetails) {
-    const variant = await ProductVariant.findOne({
-      product: d.productId,
-      unit: d.unit,
-      size: d.size || null,
-    });
-
+    const variant = variantMap.get(String(d.productVariantId));
     if (variant) {
       newTotalPrice += variant.price * d.quantity;
     }
   }
 
   reservation.totalPrice = newTotalPrice;
-
-  if (remarks) {
-    reservation.remarks = remarks;
-  }
-
+  if (remarks) reservation.remarks = remarks;
   await reservation.save();
 
-  // ✅ Populate user and details
+  // 📦 Populate for frontend
   const updatedReservation = await Reservation.findById(reservationId)
-    .populate("userId", "name email role") // 👈 Add this
+    .populate("userId", "name email role")
     .populate({
       path: "reservationDetails",
-      populate: {
-        path: "productId",
-      },
+      populate: { path: "productVariantId" },
     });
 
   return res.status(200).json({
@@ -257,7 +256,16 @@ export const getAllReservations = asyncHandler(async (req, res) => {
   // Fetch reservations with user details + reservation details
   const reservations = await Reservation.find(filter)
     .populate("userId", "name email roles isActive")
-    .populate("reservationDetails")
+    .populate({
+      path: "reservationDetails",
+      populate: {
+        path: "productVariantId",
+        populate: {
+          path: "product", 
+          select: "name category image description",
+        },
+      },
+    })
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit);
@@ -325,7 +333,7 @@ export const completeReservation = asyncHandler(async (req, res) => {
   session.startTransaction();
 
   try {
-    // 1. Find reservation
+    // 1️⃣ Find reservation
     const reservation = await Reservation.findById(id).session(session);
     if (!reservation) {
       await session.abortTransaction();
@@ -333,101 +341,86 @@ export const completeReservation = asyncHandler(async (req, res) => {
       return res.status(404).json({ error: "Reservation not found" });
     }
 
-    // 2. Get reservation details
-    const details = await ReservationDetail.find({ reservationId: id }).session(
-      session
-    );
+    // 2️⃣ Find reservation details
+    const details = await ReservationDetail.find({ reservationId: id })
+      .populate({
+        path: "productVariantId",
+        populate: { path: "product" }, // include product info for name, etc.
+      })
+      .session(session);
+
     if (!details.length) {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({ error: "No reservation details found" });
     }
 
-    // 3. Update stock
+    // 3️⃣ Validate and update stock
     for (const detail of details) {
-      const variant = await ProductVariant.findOne({
-        product: detail.productId,
-        size: detail.size,
-        unit: detail.unit,
-      }).session(session);
+      const variant = detail.productVariantId;
 
       if (!variant) {
         await session.abortTransaction();
         session.endSession();
-        return res
-          .status(404)
-          .json({ error: `Variant not found for product ${detail.productId}` });
+        return res.status(404).json({
+          error: `Product variant not found for reservation detail ${detail._id}`,
+        });
       }
 
       if (variant.quantity < detail.quantity) {
         await session.abortTransaction();
         session.endSession();
-        return res
-          .status(400)
-          .json({ error: `Not enough stock for product ${detail.productId}` });
+        return res.status(400).json({
+          error: `Not enough stock for ${variant.product?.name || "variant"} (${
+            variant.size || "no size"
+          } ${variant.unit})`,
+        });
       }
 
       variant.quantity -= detail.quantity;
       await variant.save({ session });
     }
 
-    // 4. Build sale items with product lookup
-    const items = [];
-    for (const d of details) {
-      const variant = await ProductVariant.findOne({
-        product: d.productId,
-        size: d.size,
-        unit: d.unit,
-      })
-        .populate("product")
-        .session(session);
+    // 4️⃣ Build sale items
+    const items = details.map((d) => ({
+      productVariantId: d.productVariantId._id,
+      productId: d.productVariantId.product._id,
+      name: d.productVariantId.product.name,
+      size: d.productVariantId.size,
+      unit: d.productVariantId.unit,
+      quantity: d.quantity,
+      price: d.productVariantId.price,
+      subtotal: d.productVariantId.price * d.quantity,
+    }));
 
-      if (!variant) {
-        await session.abortTransaction();
-        session.endSession();
-        return res
-          .status(404)
-          .json({ error: `Variant not found for product ${d.productId}` });
-      }
-
-      items.push({
-        productId: d.productId,
-        name: variant.product.name,
-        size: d.size,
-        unit: d.unit,
-        quantity: d.quantity,
-        price: variant.price,
-      });
-    }
-
-    // 5. Create Sale
+    // 5️⃣ Create Sale document
     const sale = new Sale({
       items,
       amountPaid,
       cashier: cashierId,
       type: "reservation",
+      totalAmount: items.reduce((sum, item) => sum + item.subtotal, 0),
     });
 
     await sale.save({ session });
 
-    // 6. Update reservation status
+    // 6️⃣ Update reservation status
     reservation.status = "completed";
     await reservation.save({ session });
 
-    // ✅ Commit transaction
+    // ✅ Commit
     await session.commitTransaction();
     session.endSession();
 
-    res.json({
+    return res.status(200).json({
       message: "Reservation completed and sale recorded successfully",
       reservation,
       sale,
     });
   } catch (error) {
-    // ❌ Rollback on error
     await session.abortTransaction();
     session.endSession();
     console.error("Transaction failed:", error);
-    res.status(500).json({ error: "Failed to complete reservation" });
+    return res.status(500).json({ error: "Failed to complete reservation" });
   }
 });
