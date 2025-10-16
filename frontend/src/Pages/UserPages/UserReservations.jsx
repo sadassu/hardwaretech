@@ -1,62 +1,58 @@
 import React, { useEffect, useState } from "react";
-import { useReservationsContext } from "../../hooks/useReservationContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
-import { useFetch } from "../../hooks/useFetch";
 import { useParams } from "react-router";
 import Modal from "../../components/Modal";
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatPrice } from "../../utils/formatPrice";
 import Pagination from "../../components/Pagination";
 import ReservationDetailsModal from "./ReservationDetailsModal";
+import CancelReservation from "./CancelReservation";
+
+// ✅ Lucide React icons
+import { Search } from "lucide-react";
+import { useReservationStore } from "../../store/reservationStore";
 
 const UserReservations = () => {
-  const { reservations, pages, dispatch } = useReservationsContext();
+  const {
+    reservations,
+    pages,
+    page,
+    setPage,
+    fetchReservations,
+    setReservations,
+    loading,
+  } = useReservationStore();
+
   const { user } = useAuthContext();
-  const [page, setPage] = useState(1);
+  const { userId } = useParams();
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const limit = 12;
-  const { userId } = useParams();
 
+  // 🕒 Debounce Search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
     }, 500);
     return () => clearTimeout(handler);
-  }, [search]);
+  }, [search, setPage]);
 
-  const { data, loading, error } = useFetch(
-    `/reservations/user/${userId}`,
-    {
-      params: {
+  // 🔄 Fetch Reservations
+  useEffect(() => {
+    if (user?.token && userId) {
+      fetchReservations(user.token, {
         page,
         limit,
-        sortBy: "name",
-        sortOrder: "asc",
-        search: debouncedSearch,
-      },
-      headers: { Authorization: `Bearer ${user?.token}` },
-    },
-    [page, debouncedSearch, userId]
-  );
-
-  useEffect(() => {
-    if (data) {
-      dispatch({
-        type: "SET_RESERVATIONS",
-        payload: {
-          reservations: data.reservations,
-          total: data.total,
-          page: data.page,
-          pages: data.pages,
-        },
+        status: "all",
       });
     }
-  }, [data, dispatch]);
+  }, [user?.token, page, userId, fetchReservations, debouncedSearch]);
 
+  // 🏷️ Status Badge Styling
   const getStatusBadge = (status) => {
     const statusClasses = {
       pending: "badge-warning",
@@ -66,6 +62,7 @@ const UserReservations = () => {
     return `badge ${statusClasses[status] || "badge-neutral"}`;
   };
 
+  // 🔍 View Reservation Details
   const handleViewDetails = (reservation) => {
     setSelectedReservation(reservation);
     setIsModalOpen(true);
@@ -93,20 +90,7 @@ const UserReservations = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
             <button className="btn btn-square btn-outline">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <Search className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -118,7 +102,6 @@ const UserReservations = () => {
           <span className="loading loading-spinner loading-lg"></span>
         </div>
       )}
-
 
       {/* Empty State */}
       {!loading && reservations && reservations.length === 0 && (
@@ -191,6 +174,7 @@ const UserReservations = () => {
 
                   {/* Actions */}
                   <div className="card-actions justify-end">
+                    <CancelReservation reservationId={reservation._id} />
                     <button
                       className="btn btn-primary btn-outline"
                       onClick={() => handleViewDetails(reservation)}
@@ -203,6 +187,7 @@ const UserReservations = () => {
             ))}
           </div>
 
+          {/* Pagination */}
           <Pagination page={page} pages={pages} onPageChange={setPage} />
         </>
       )}

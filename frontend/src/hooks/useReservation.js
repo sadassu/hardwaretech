@@ -50,6 +50,50 @@ export const useReservation = () => {
     }
   };
 
+  const cancelReservation = async (reservationId) => {
+    if (!user) throw new Error("You must be logged in.");
+
+    try {
+      const res = await api.patch(
+        `/reservations/${reservationId}/cancel`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      const updatedReservation = res.data.reservation || res.data;
+      updateReservation(updatedReservation);
+      await fetchReservations(user.token);
+
+      setToast({
+        show: true,
+        color: "success-toast",
+        header: "Success",
+        message: res.data.message || "Reservation cancelled successfully!",
+      });
+
+      return updatedReservation;
+    } catch (error) {
+      console.error("Failed to cancel reservation:", error);
+
+      setToast({
+        show: true,
+        color: "error-toast",
+        header: "Error",
+        message:
+          error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Failed to cancel reservation",
+      });
+
+      throw error;
+    }
+  };
+
   // ✅ Complete reservation (new)
   const completeReservation = async (reservationId, amountPaid) => {
     if (!user) throw new Error("You must be logged in.");
@@ -102,5 +146,5 @@ export const useReservation = () => {
     }
   };
 
-  return { updateReservationStatus, completeReservation };
+  return { updateReservationStatus, completeReservation, cancelReservation };
 };

@@ -64,6 +64,41 @@ export const createReservation = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc cancel the reservation
+// @route PUT /api/reservation/:id/cancel
+// @access requir auth, same user._id with reservation.user._id
+export const cancelReservation = asyncHandler(async (req, res) => {
+  const reservationId = req.params.id;
+
+  // 🔍 Reservation required!
+  if (!reservationId) {
+    return res.status(400).json({ message: "Reservation ID is required" });
+  }
+
+  // 🔍 Find reservation
+  const reservation = await Reservation.findById(reservationId);
+  if (!reservation) {
+    return res.status(404).json({ message: "Reservation not found" });
+  }
+
+  // ✅ Check if the reservation is from the user requested
+  if (reservation.userId.toString() != req.user._id.toString()) {
+    return res
+      .status(404)
+      .json({ message: "This reservation is not your reservation" });
+  }
+
+  reservation.status = "cancelled";
+  await reservation.save();
+
+  return res
+    .status(200)
+    .json({ message: "Reservation cancelled successfully." });
+});
+
+// @desc update reservation change reservation status (pending, confirmed, cancelled)
+// @route PUT /api/reservations/:id
+// @access require auth and role (admin, cashier)
 export const updateReservation = asyncHandler(async (req, res) => {
   const { reservationDetails = [], remarks } = req.body || {};
   const reservationId = req.params.id;
@@ -261,7 +296,7 @@ export const getAllReservations = asyncHandler(async (req, res) => {
       populate: {
         path: "productVariantId",
         populate: {
-          path: "product", 
+          path: "product",
           select: "name category image description",
         },
       },

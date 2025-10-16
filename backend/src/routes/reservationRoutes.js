@@ -7,6 +7,7 @@ import {
   updateReservationStatus,
   completeReservation,
   updateReservation,
+  cancelReservation,
 } from "../controllers/reservationsController.js";
 import requireAuth from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -23,7 +24,16 @@ router.get("/user/:userId", getReservationByUserId);
 
 // @route   DELETE /api/reservations/:id
 // @desc    Delete a reservation by ID
-router.delete("/:id", deleteReservation);
+router.delete(
+  "/:id",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  deleteReservation
+);
+
+// @route PUT /api/reservation/:id/cancel
+// @desc Update the reservation status to cancel
+router.patch("/:id/cancel", requireAuth, cancelReservation);
 
 // @route   GET /api/reservations
 // @desc    Get all reservations (with pagination)
