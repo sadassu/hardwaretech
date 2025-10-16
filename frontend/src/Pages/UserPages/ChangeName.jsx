@@ -3,6 +3,7 @@ import { useAuthContext } from "../../hooks/useAuthContext";
 import Modal from "../../components/Modal";
 import api from "../../utils/api";
 import { SquarePen } from "lucide-react";
+import TextInput from "../../components/TextInput.jsx";
 
 function ChangeName({ onUpdateSuccess }) {
   const { user, dispatch } = useAuthContext();
@@ -57,7 +58,7 @@ function ChangeName({ onUpdateSuccess }) {
         <div>
           <form onSubmit={handleSubmit} className="space-y-4 w-96">
             <h2 className="text-xl font-semibold">Change Name</h2>
-            <input
+            <TextInput
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
