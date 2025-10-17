@@ -10,6 +10,8 @@ import {
 
 const router = express.Router();
 
+const CLIENT_URL = process.env.CLIENT_URL; 
+
 const createToken = (_id) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "3d" });
 };
@@ -37,9 +39,8 @@ router.get(
       ? req.user.roles[0]
       : req.user.roles;
 
-    // Redirect to frontend with query params
     res.redirect(
-      `http://localhost:5173/login/success?token=${token}&userId=${
+      `${CLIENT_URL}/login/success?token=${token}&userId=${
         req.user._id
       }&roles=${encodeURIComponent(roles)}&name=${encodeURIComponent(
         req.user.name

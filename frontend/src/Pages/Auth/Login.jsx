@@ -23,9 +23,7 @@ function Login() {
   };
 
   return (
-    <div
-      className="bg-[url(assets/bg.jpg)] min-h-screen flex items-center justify-center bg-cover bg-center px-4"
-    >
+    <div className="bg-[url(assets/bg.jpg)] min-h-screen flex items-center justify-center bg-cover bg-center px-4">
       <div
         className="backdrop-blur-md bg-gray-800/80 rounded-xl p-8 w-full max-w-sm"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
@@ -103,7 +101,7 @@ function Login() {
 
         {/* Google OAuth */}
         <a
-          href="http://localhost:5001/api/auth/google"
+          href={`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/auth/google`}
           className="w-full bg-white text-gray-800 font-semibold py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-200 transition"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

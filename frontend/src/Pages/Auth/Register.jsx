@@ -162,7 +162,7 @@ function Register() {
 
         {/* Google OAuth */}
         <a
-          href="http://localhost:5001/api/auth/google"
+          href={`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/auth/google`}
           className="w-full bg-white text-gray-800 font-semibold py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-200 transition"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
