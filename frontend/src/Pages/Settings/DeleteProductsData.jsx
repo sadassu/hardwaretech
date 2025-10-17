@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import Modal from "../../components/Modal";
 import { useAuthContext } from "../../hooks/useAuthContext";
-import { useProductsContext } from "../../hooks/useProductContext";
-import api from "../../utils/api"; // make sure you import your axios instance
+import { useProductStore } from "../../store/productStore"; // ✅ import store
+import api from "../../utils/api";
 import StatusToast from "../../components/StatusToast";
 
 function DeleteProductsData() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuthContext();
-  const { dispatch } = useProductsContext();
+  const { setProducts } = useProductStore(); // ✅ get setter from store
 
-  const [loading, setLoading] = useState(false); // <-- loading state
-
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({
     show: false,
     color: "",
@@ -20,17 +19,24 @@ function DeleteProductsData() {
   });
 
   const handleDelete = async () => {
-    setLoading(true); // start loading
+    setLoading(true);
     try {
-      await api.delete("delete/products", {
+      await api.delete("/delete/products", {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       });
-      // Close modal after success
+
+      // ✅ Clear products in Zustand store
+      setProducts({
+        products: [],
+        total: 0,
+        page: 1,
+        pages: 1,
+      });
+
+      // ✅ Close modal after success
       setIsOpen(false);
-      // Clear products from context state
-      dispatch({ type: "CLEAR_PRODUCTS" });
 
       setToast({
         show: true,
@@ -48,7 +54,7 @@ function DeleteProductsData() {
         }`,
       });
     } finally {
-      setLoading(false); // stop loading after success or failure
+      setLoading(false);
     }
   };
 
