@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useAuthorize } from "../../hooks/useAuthorize";
 import { formatDatePHT } from "../../utils/formatDate";
@@ -14,25 +14,29 @@ import {
 } from "lucide-react";
 import { useReservationStore } from "../../store/reservationStore";
 
-// ✅ Zustand store
-
 const Profile = () => {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuthContext();
-  const { reservations, total, loading, statusCounts, fetchReservations } =
-    useReservationStore();
 
-  // Ensure the user viewing the page is authorized
+  const {
+    reservations = [],
+    total = 0,
+    loading,
+    statusCounts = {},
+    fetchUserReservations,
+  } = useReservationStore();
+
+  // ✅ Restrict unauthorized access
   useAuthorize(userId);
 
-  // ✅ Fetch data when userId or token changes
+  // ✅ Fetch only the current user's reservations
   useEffect(() => {
     if (user?.token && userId) {
-      fetchReservations(user.token, { page: 1, limit: 30 });
+      fetchUserReservations(user.token, userId, { page: 1, limit: 30 });
     }
-  }, [user?.token, userId, fetchReservations]);
+  }, [user?.token, userId, fetchUserReservations]);
 
-  // ✅ Get status badge color
   const getStatusBadgeColor = (status) => {
     const statusClasses = {
       pending: "badge-warning",
@@ -55,10 +59,10 @@ const Profile = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          {/* User Information Card */}
+          {/* User Information */}
           <UserInformationCard user={user} statusCounts={statusCounts} />
 
-          {/* Transactions History */}
+          {/* Transaction History */}
           <div className="lg:col-span-2">
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
@@ -72,16 +76,16 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {/* Loading State */}
+                {/* Loading */}
                 {loading && (
                   <div className="flex justify-center py-8">
                     <span className="loading loading-spinner loading-md"></span>
                   </div>
                 )}
 
-                {/* Transactions List */}
+                {/* Transaction List */}
                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {!loading && reservations && reservations.length > 0 ? (
+                  {!loading && reservations.length > 0 ? (
                     reservations.map((reservation) => (
                       <div
                         key={reservation._id}
@@ -157,6 +161,7 @@ const Profile = () => {
                               )}
                           </div>
 
+                          {/* Dropdown */}
                           <div className="dropdown dropdown-left">
                             <button
                               type="button"
@@ -171,12 +176,12 @@ const Profile = () => {
                               className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
                             >
                               <li>
-                                <a className="flex items-center gap-2">
+                                <a className="flex items-center gap-2 hover:bg-base-200">
                                   <Eye className="h-4 w-4" /> View Details
                                 </a>
                               </li>
                               <li>
-                                <a className="flex items-center gap-2">
+                                <a className="flex items-center gap-2 hover:bg-base-200">
                                   <FileDown className="h-4 w-4" /> Download
                                   Receipt
                                 </a>
@@ -200,14 +205,12 @@ const Profile = () => {
                   ) : null}
                 </div>
 
-                {/* View All Reservations Button */}
-                {!loading && reservations && reservations.length > 0 && (
+                {/* View All */}
+                {!loading && reservations.length > 0 && (
                   <div className="card-actions justify-center mt-4">
                     <button
                       className="btn btn-outline"
-                      onClick={() =>
-                        (window.location.href = `/reservations/user/${userId}`)
-                      }
+                      onClick={() => navigate(`/reservations/user/${userId}`)}
                     >
                       View All Reservations
                       {total > reservations.length && (

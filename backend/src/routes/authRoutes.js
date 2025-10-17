@@ -7,10 +7,13 @@ import {
   register,
   updateUserRoles,
 } from "../controllers/authController.js";
+import dotenv from "dotenv";
 
 const router = express.Router();
 
-const CLIENT_URL = process.env.CLIENT_URL; 
+dotenv.config();
+
+const CLIENT_URL = process.env.CLIENT_URL;
 
 const createToken = (_id) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "3d" });
@@ -38,6 +41,13 @@ router.get(
     const roles = Array.isArray(req.user.roles)
       ? req.user.roles[0]
       : req.user.roles;
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+    });
 
     res.redirect(
       `${CLIENT_URL}/login/success?token=${token}&userId=${

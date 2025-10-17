@@ -74,6 +74,41 @@ export const useReservationStore = create(
         }
       },
 
+      fetchUserReservations: async (
+        token,
+        userId,
+        { page = 1, limit = 20, status = "all" } = {}
+      ) => {
+        set({ loading: true, error: null });
+        try {
+          const params = { page, limit };
+          if (status !== "all") params.status = status;
+
+          const res = await api.get(`/reservations/user/${userId}`, {
+            params,
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const data = res.data;
+          set({
+            reservations: data.reservations || [],
+            total: data.total || 0,
+            page: data.page || 1,
+            pages: data.pages || 1,
+            statusCounts: data.statusCounts || get().statusCounts,
+            loading: false,
+            error: null,
+          });
+        } catch (err) {
+          console.error("Fetch user reservations failed:", err);
+          set({
+            reservations: [],
+            error: err.response?.data?.message || err.message,
+            loading: false,
+          });
+        }
+      },
+
       // ✅ Set reservations manually (used after successful update)
       setReservations: ({ reservations, total, page, pages }) =>
         set({ reservations, total, page, pages }),

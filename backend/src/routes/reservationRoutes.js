@@ -14,16 +14,10 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = express.Router();
 
-// @route   POST /api/reservations
-// @desc    Create a new reservation with details
 router.post("/", requireAuth, createReservation);
 
-// @route   GET /api/reservations/user/:userId
-// @desc    Get all reservations for a specific user (with pagination)
 router.get("/user/:userId", requireAuth, getReservationByUserId);
 
-// @route   DELETE /api/reservations/:id
-// @desc    Delete a reservation by ID
 router.delete(
   "/:id",
   requireAuth,
@@ -31,12 +25,8 @@ router.delete(
   deleteReservation
 );
 
-// @route PUT /api/reservation/:id/cancel
-// @desc Update the reservation status to cancel
 router.patch("/:id/cancel", requireAuth, cancelReservation);
 
-// @route   GET /api/reservations
-// @desc    Get all reservations (with pagination)
 router.get(
   "/",
   requireAuth,
@@ -44,7 +34,6 @@ router.get(
   getAllReservations
 );
 
-// @route   GET /api/reservations
 router.put(
   "/:id/status",
   requireAuth,
