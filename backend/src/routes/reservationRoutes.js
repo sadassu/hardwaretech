@@ -20,7 +20,7 @@ router.post("/", requireAuth, createReservation);
 
 // @route   GET /api/reservations/user/:userId
 // @desc    Get all reservations for a specific user (with pagination)
-router.get("/user/:userId", getReservationByUserId);
+router.get("/user/:userId", requireAuth, getReservationByUserId);
 
 // @route   DELETE /api/reservations/:id
 // @desc    Delete a reservation by ID
@@ -37,7 +37,12 @@ router.patch("/:id/cancel", requireAuth, cancelReservation);
 
 // @route   GET /api/reservations
 // @desc    Get all reservations (with pagination)
-router.get("/", getAllReservations);
+router.get(
+  "/",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  getAllReservations
+);
 
 // @route   GET /api/reservations
 router.put(

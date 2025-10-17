@@ -1,87 +1,38 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAuthContext } from "../../hooks/useAuthContext";
-import { useReservationsContext } from "../../hooks/useReservationContext";
-import { useFetch } from "../../hooks/useFetch";
+import { useAuthorize } from "../../hooks/useAuthorize";
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatPrice } from "../../utils/formatPrice";
-import ChangeName from "./ChangeName";
-import { useAuthorize } from "../../hooks/useAuthorize";
-import ChangePassword from "./ChangePassword";
-import ChangeAvatar from "./ChangeAvatar"; // ✅ import
-
-// lucide-react icons
+import UserInformationCard from "./UserInformationCard";
 import {
-  User,
-  BarChart3,
   ClipboardList,
   EllipsisVertical,
   FileDown,
   Eye,
   Receipt,
 } from "lucide-react";
-import UserInformationCard from "./UserInformationCard";
+import { useReservationStore } from "../../store/reservationStore";
+
+// ✅ Zustand store
 
 const Profile = () => {
   const { userId } = useParams();
   const { user } = useAuthContext();
-  const { reservations, dispatch } = useReservationsContext();
-  const [page] = useState(1);
-  const limit = 30;
+  const { reservations, total, loading, statusCounts, fetchReservations } =
+    useReservationStore();
 
-  //check if the params userid is actually the user logged in
+  // Ensure the user viewing the page is authorized
   useAuthorize(userId);
 
-  const { data, loading } = useFetch(
-    `/reservations/user/${userId}`,
-    {
-      params: {
-        page,
-        limit,
-        sortBy: "reservationDate",
-        sortOrder: "desc",
-      },
-      headers: { Authorization: `Bearer ${user?.token}` },
-    },
-    [page, userId]
-  );
-
+  // ✅ Fetch data when userId or token changes
   useEffect(() => {
-    if (data) {
-      dispatch({
-        type: "SET_RESERVATIONS",
-        payload: {
-          reservations: data.reservations,
-          total: data.total,
-          page: data.page,
-          pages: data.pages,
-        },
-      });
+    if (user?.token && userId) {
+      fetchReservations(user.token, { page: 1, limit: 30 });
     }
-  }, [data, dispatch]);
+  }, [user?.token, userId, fetchReservations]);
 
-  // Calculate status counts
-  const getStatusCounts = () => {
-    const counts = {
-      pending: 0,
-      confirmed: 0,
-      cancelled: 0,
-      failed: 0,
-      completed: 0,
-    };
-
-    if (reservations) {
-      reservations.forEach((reservation) => {
-        counts[reservation.status] = (counts[reservation.status] || 0) + 1;
-      });
-    }
-
-    return counts;
-  };
-
-  const statusCounts = getStatusCounts();
-
-  // Get status badge color
+  // ✅ Get status badge color
   const getStatusBadgeColor = (status) => {
     const statusClasses = {
       pending: "badge-warning",
@@ -98,16 +49,14 @@ const Profile = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-base-content mb-2 fira-code">My Profile</h1>
+          <h1 className="text-2xl font-bold text-base-content mb-2 fira-code">
+            My Profile
+          </h1>
         </div>
 
         <div className="grid grid-cols-1 gap-6">
           {/* User Information Card */}
-          <UserInformationCard
-            user={user}
-            data={data}
-            statusCounts={statusCounts}
-          />
+          <UserInformationCard user={user} statusCounts={statusCounts} />
 
           {/* Transactions History */}
           <div className="lg:col-span-2">
@@ -119,7 +68,7 @@ const Profile = () => {
                     Transaction History
                   </h2>
                   <div className="text-sm text-base-content/70">
-                    {data?.total || 0} total transactions
+                    {total || 0} total transactions
                   </div>
                 </div>
 
@@ -172,7 +121,6 @@ const Profile = () => {
                               </div>
                             </div>
 
-                            {/* Items Count */}
                             {reservation.reservationDetails && (
                               <div className="mt-2">
                                 <span className="text-sm font-medium">
@@ -262,9 +210,9 @@ const Profile = () => {
                       }
                     >
                       View All Reservations
-                      {data?.total > reservations.length && (
+                      {total > reservations.length && (
                         <span className="badge badge-primary ml-2">
-                          +{data.total - reservations.length} more
+                          +{total - reservations.length} more
                         </span>
                       )}
                     </button>
