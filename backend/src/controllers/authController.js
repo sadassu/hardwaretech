@@ -50,6 +50,13 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = createToken(user._id);
 
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // use HTTPS in production
+    sameSite: "Strict",
+    maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+  });
+
   res.status(201).json({
     userId: user._id,
     roles: user.roles,

@@ -3,7 +3,6 @@ import Modal from "./Modal";
 import { useCart } from "../hooks/useCart";
 import { useCheckout } from "../hooks/useCheckout";
 import { useAuthContext } from "../hooks/useAuthContext";
-import { useProductsContext } from "../hooks/useProductContext";
 import StatusToast from "./StatusToast";
 
 import {
@@ -18,6 +17,7 @@ import {
   PackageX,
   ClipboardList,
 } from "lucide-react";
+import { useProductStore } from "../store/productStore";
 
 function CartContent() {
   const { checkout, loading, adminCheckout } = useCheckout();
@@ -25,7 +25,10 @@ function CartContent() {
   const [notes, setNotes] = useState("");
   const [amountPaid, setAmountPaid] = useState("");
   const { user } = useAuthContext();
-  const { dispatch } = useProductsContext();
+
+  // ✅ Zustand store functions
+  const { products, setProducts } = useProductStore();
+
   const [toast, setToast] = useState({
     show: false,
     color: "",
@@ -66,18 +69,30 @@ function CartContent() {
 
       setIsOpen(false);
 
+      // ✅ Update product variants in Zustand
       if (Array.isArray(data?.updatedVariants)) {
-        data.updatedVariants.forEach((variant) => {
-          dispatch({
-            type: "UPDATE_VARIANT",
-            payload: {
-              productId:
-                variant.product && variant.product.toString
-                  ? variant.product.toString()
-                  : variant.product,
-              variant,
-            },
-          });
+        const updatedProducts = products.map((product) => {
+          const updatedVariant = data.updatedVariants.find(
+            (variant) =>
+              variant.product?.toString?.() === product._id ||
+              variant.product === product._id
+          );
+
+          if (!updatedVariant) return product;
+
+          return {
+            ...product,
+            variants: product.variants.map((v) =>
+              v._id === updatedVariant._id ? updatedVariant : v
+            ),
+          };
+        });
+
+        setProducts({
+          products: updatedProducts,
+          total: updatedProducts.length,
+          page: 1,
+          pages: 1,
         });
       }
 
@@ -96,7 +111,7 @@ function CartContent() {
         show: true,
         color: "error-toast",
         header: "Failed 🥲",
-        message: `Failed to reserve ${error}`,
+        message: `Failed to reserve ${error.message || error}`,
       });
     }
   };

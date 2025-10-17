@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useParams } from "react-router";
+import { Search } from "lucide-react";
 import Modal from "../../components/Modal";
-import { formatDatePHT } from "../../utils/formatDate";
-import { formatPrice } from "../../utils/formatPrice";
 import Pagination from "../../components/Pagination";
 import ReservationDetailsModal from "./ReservationDetailsModal";
 import CancelReservation from "./CancelReservation";
-
-// ✅ Lucide React icons
-import { Search } from "lucide-react";
+import { formatDatePHT } from "../../utils/formatDate";
+import { formatPrice } from "../../utils/formatPrice";
 import { useReservationStore } from "../../store/reservationStore";
 
 const UserReservations = () => {
@@ -18,8 +16,7 @@ const UserReservations = () => {
     pages,
     page,
     setPage,
-    fetchReservations,
-    setReservations,
+    fetchUserReservations,
     loading,
   } = useReservationStore();
 
@@ -32,7 +29,7 @@ const UserReservations = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const limit = 12;
 
-  // 🕒 Debounce Search
+  // 🕒 Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -41,18 +38,18 @@ const UserReservations = () => {
     return () => clearTimeout(handler);
   }, [search, setPage]);
 
-  // 🔄 Fetch Reservations
+  // 🔄 Fetch user-specific reservations
   useEffect(() => {
     if (user?.token && userId) {
-      fetchReservations(user.token, {
+      fetchUserReservations(user.token, userId, {
         page,
         limit,
         status: "all",
       });
     }
-  }, [user?.token, page, userId, fetchReservations, debouncedSearch]);
+  }, [user?.token, userId, page, debouncedSearch, fetchUserReservations]);
 
-  // 🏷️ Status Badge Styling
+  // 🏷️ Badge style helper
   const getStatusBadge = (status) => {
     const statusClasses = {
       pending: "badge-warning",
@@ -62,7 +59,7 @@ const UserReservations = () => {
     return `badge ${statusClasses[status] || "badge-neutral"}`;
   };
 
-  // 🔍 View Reservation Details
+  // 🔍 Modal Handlers
   const handleViewDetails = (reservation) => {
     setSelectedReservation(reservation);
     setIsModalOpen(true);
@@ -79,7 +76,7 @@ const UserReservations = () => {
       <div className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-4">
         <h1 className="text-3xl font-bold">My Reservations</h1>
 
-        {/* Search */}
+        {/* Search bar */}
         <div className="form-control w-full max-w-md">
           <div className="input-group">
             <input
@@ -192,7 +189,7 @@ const UserReservations = () => {
         </>
       )}
 
-      {/* Reservation Details Modal */}
+      {/* Details Modal */}
       <ReservationDetailsModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}

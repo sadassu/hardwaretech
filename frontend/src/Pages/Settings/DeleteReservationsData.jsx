@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
-import { useReservationsContext } from "../../hooks/useReservationContext";
 import api from "../../utils/api";
 import StatusToast from "../../components/StatusToast";
 import Modal from "../../components/Modal";
+import { useReservationStore } from "../../store/reservationStore";
 
 function DeleteReservationsData() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuthContext();
-  const { dispatch } = useReservationsContext();
-
-  const [loading, setLoading] = useState(false); // <-- loading state
+  const { reset } = useReservationStore();
+  const [loading, setLoading] = useState(false);
 
   const [toast, setToast] = useState({
     show: false,
@@ -20,16 +19,17 @@ function DeleteReservationsData() {
   });
 
   const handleDelete = async () => {
-    setLoading(true); // start loading
+    setLoading(true);
     try {
       await api.delete("delete/reservations", {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       });
-      setIsOpen(false);
 
-      dispatch({ type: "CLEAR_RESERVATIONS" });
+      // ✅ Reset Zustand reservation state
+      reset();
+      setIsOpen(false);
 
       setToast({
         show: true,
@@ -47,7 +47,7 @@ function DeleteReservationsData() {
         }`,
       });
     } finally {
-      setLoading(false); // stop loading
+      setLoading(false);
     }
   };
 

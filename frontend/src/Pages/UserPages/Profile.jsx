@@ -1,87 +1,42 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../hooks/useAuthContext";
-import { useReservationsContext } from "../../hooks/useReservationContext";
-import { useFetch } from "../../hooks/useFetch";
+import { useAuthorize } from "../../hooks/useAuthorize";
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatPrice } from "../../utils/formatPrice";
-import ChangeName from "./ChangeName";
-import { useAuthorize } from "../../hooks/useAuthorize";
-import ChangePassword from "./ChangePassword";
-import ChangeAvatar from "./ChangeAvatar"; // ✅ import
-
-// lucide-react icons
+import UserInformationCard from "./UserInformationCard";
 import {
-  User,
-  BarChart3,
   ClipboardList,
   EllipsisVertical,
   FileDown,
   Eye,
   Receipt,
 } from "lucide-react";
-import UserInformationCard from "./UserInformationCard";
+import { useReservationStore } from "../../store/reservationStore";
 
 const Profile = () => {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuthContext();
-  const { reservations, dispatch } = useReservationsContext();
-  const [page] = useState(1);
-  const limit = 30;
 
-  //check if the params userid is actually the user logged in
+  const {
+    reservations = [],
+    total = 0,
+    loading,
+    statusCounts = {},
+    fetchUserReservations,
+  } = useReservationStore();
+
+  // ✅ Restrict unauthorized access
   useAuthorize(userId);
 
-  const { data, loading } = useFetch(
-    `/reservations/user/${userId}`,
-    {
-      params: {
-        page,
-        limit,
-        sortBy: "reservationDate",
-        sortOrder: "desc",
-      },
-      headers: { Authorization: `Bearer ${user?.token}` },
-    },
-    [page, userId]
-  );
-
+  // ✅ Fetch only the current user's reservations
   useEffect(() => {
-    if (data) {
-      dispatch({
-        type: "SET_RESERVATIONS",
-        payload: {
-          reservations: data.reservations,
-          total: data.total,
-          page: data.page,
-          pages: data.pages,
-        },
-      });
+    if (user?.token && userId) {
+      fetchUserReservations(user.token, userId, { page: 1, limit: 30 });
     }
-  }, [data, dispatch]);
+  }, [user?.token, userId, fetchUserReservations]);
 
-  // Calculate status counts
-  const getStatusCounts = () => {
-    const counts = {
-      pending: 0,
-      confirmed: 0,
-      cancelled: 0,
-      failed: 0,
-      completed: 0,
-    };
-
-    if (reservations) {
-      reservations.forEach((reservation) => {
-        counts[reservation.status] = (counts[reservation.status] || 0) + 1;
-      });
-    }
-
-    return counts;
-  };
-
-  const statusCounts = getStatusCounts();
-
-  // Get status badge color
   const getStatusBadgeColor = (status) => {
     const statusClasses = {
       pending: "badge-warning",
@@ -98,18 +53,16 @@ const Profile = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-base-content mb-2 fira-code">My Profile</h1>
+          <h1 className="text-2xl font-bold text-base-content mb-2 fira-code">
+            My Profile
+          </h1>
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          {/* User Information Card */}
-          <UserInformationCard
-            user={user}
-            data={data}
-            statusCounts={statusCounts}
-          />
+          {/* User Information */}
+          <UserInformationCard user={user} statusCounts={statusCounts} />
 
-          {/* Transactions History */}
+          {/* Transaction History */}
           <div className="lg:col-span-2">
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
@@ -119,20 +72,20 @@ const Profile = () => {
                     Transaction History
                   </h2>
                   <div className="text-sm text-base-content/70">
-                    {data?.total || 0} total transactions
+                    {total || 0} total transactions
                   </div>
                 </div>
 
-                {/* Loading State */}
+                {/* Loading */}
                 {loading && (
                   <div className="flex justify-center py-8">
                     <span className="loading loading-spinner loading-md"></span>
                   </div>
                 )}
 
-                {/* Transactions List */}
+                {/* Transaction List */}
                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {!loading && reservations && reservations.length > 0 ? (
+                  {!loading && reservations.length > 0 ? (
                     reservations.map((reservation) => (
                       <div
                         key={reservation._id}
@@ -172,7 +125,6 @@ const Profile = () => {
                               </div>
                             </div>
 
-                            {/* Items Count */}
                             {reservation.reservationDetails && (
                               <div className="mt-2">
                                 <span className="text-sm font-medium">
@@ -209,6 +161,7 @@ const Profile = () => {
                               )}
                           </div>
 
+                          {/* Dropdown */}
                           <div className="dropdown dropdown-left">
                             <button
                               type="button"
@@ -223,12 +176,12 @@ const Profile = () => {
                               className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
                             >
                               <li>
-                                <a className="flex items-center gap-2">
+                                <a className="flex items-center gap-2 hover:bg-base-200">
                                   <Eye className="h-4 w-4" /> View Details
                                 </a>
                               </li>
                               <li>
-                                <a className="flex items-center gap-2">
+                                <a className="flex items-center gap-2 hover:bg-base-200">
                                   <FileDown className="h-4 w-4" /> Download
                                   Receipt
                                 </a>
@@ -252,19 +205,17 @@ const Profile = () => {
                   ) : null}
                 </div>
 
-                {/* View All Reservations Button */}
-                {!loading && reservations && reservations.length > 0 && (
+                {/* View All */}
+                {!loading && reservations.length > 0 && (
                   <div className="card-actions justify-center mt-4">
                     <button
                       className="btn btn-outline"
-                      onClick={() =>
-                        (window.location.href = `/reservations/user/${userId}`)
-                      }
+                      onClick={() => navigate(`/reservations/user/${userId}`)}
                     >
                       View All Reservations
-                      {data?.total > reservations.length && (
+                      {total > reservations.length && (
                         <span className="badge badge-primary ml-2">
-                          +{data.total - reservations.length} more
+                          +{total - reservations.length} more
                         </span>
                       )}
                     </button>
