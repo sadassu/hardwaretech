@@ -14,11 +14,9 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import supplyHistoryRoute from "./routes/supplyHistoriesRoute.js";
 import categoryRoutes from "./routes/categoriesRoute.js";
 
-
 import { connectDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 import passport from "passport";
-// Register passport strategies
 import "./config/passport.js";
 
 dotenv.config();
@@ -36,13 +34,10 @@ app.use(
 );
 
 app.use(passport.initialize());
-
-// ✅ Serve uploads folder as static (important for images)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Routes
 app.use("/api/reservations", reservationRoutes);
-
 app.use("/", authRoutes);
 app.use("/api", productsRoutes);
 app.use("/api/product-variants", variantRoutes);
@@ -51,19 +46,23 @@ app.use("/api/sales", saleRoutes);
 app.use("/api/delete", deleteRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/supply-histories", supplyHistoryRoute);
-app.use("/api/categories", categoryRoutes)
+app.use("/api/categories", categoryRoutes);
 
-// ✅ Global error handler
+// Error handler
 app.use((err, req, res, next) => {
   console.error("Error:", err.message);
-  res.status(500).json({
-    message: err.message || "Internal Server Error",
-  });
+  res.status(500).json({ message: err.message || "Internal Server Error" });
 });
 
-// Connect DB and start server
-connectDB().then(() => {
+// ✅ Connect DB (for both local + Vercel)
+await connectDB();
+
+// ✅ Start server locally (only if NOT on Vercel)
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log(`Server listening on port: ${PORT}`);
+    console.log(`✅ Server running locally on port ${PORT}`);
   });
-});
+}
+
+// ✅ Always export app for Vercel
+export default app;
