@@ -23,10 +23,10 @@ const Modal = ({ children, isOpen, onClose, className = "" }) => {
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 bg-gray-950/50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-gray-950/50 flex justify-center items-center z-50 p-4">
       <div
         ref={modalRef}
-        className={`bg-[#222831] text-white rounded-2xl p-6 relative max-w-1/2 ${className}`}
+        className={`bg-[#222831] text-white rounded-2xl p-4 sm:p-6 relative w-full max-w-md sm:max-w-lg ${className}`}
       >
         {children}
       </div>

@@ -33,11 +33,9 @@ function ChangeName({ onUpdateSuccess }) {
       );
 
       dispatch({ type: "UPDATED_USER", payload: res.data.user });
-
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       setIsOpen(false);
-
       if (onUpdateSuccess) onUpdateSuccess(res.data.user);
     } catch (error) {
       console.error("Failed to update name:", error);
@@ -46,26 +44,38 @@ function ChangeName({ onUpdateSuccess }) {
 
   return (
     <>
+      {/* Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="btn bg-red-500 text-white rounded-xl"
+        className="btn bg-red-500 text-white rounded-xl flex items-center gap-2 px-4 py-2 text-sm sm:text-base w-full sm:w-auto"
       >
-        <SquarePen />
+        <SquarePen className="h-4 w-4 sm:h-5 sm:w-5" />
         Change Name
       </button>
 
+      {/* Modal */}
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <div>
-          <form onSubmit={handleSubmit} className="space-y-4 w-96">
-            <h2 className="text-xl font-semibold">Change Name</h2>
+        <div className="p-4 sm:p-6">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4 w-11/12 sm:w-96 mx-auto"
+          >
+            <h2 className="text-lg sm:text-xl font-semibold text-center">
+              Change Name
+            </h2>
+
             <TextInput
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="input input-bordered w-full"
               required
+              className="w-full"
             />
-            <button type="submit" className="btn btn-primary w-full">
+
+            <button
+              type="submit"
+              className="btn btn-primary w-full text-sm sm:text-base py-2 sm:py-3"
+            >
               Update
             </button>
           </form>

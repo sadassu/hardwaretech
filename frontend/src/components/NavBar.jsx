@@ -10,10 +10,7 @@ import {
   Calendar,
   User,
   Menu,
-  Settings,
   LogOut,
-  ShoppingCart,
-  History,
   LayoutDashboard,
 } from "lucide-react";
 
@@ -29,8 +26,8 @@ const NavBar = () => {
       {/* Logo / Brand */}
       <div className="navbar-start">
         <Link to="/" className="btn btn-ghost text-xl font-bold text-white">
-          <img src="/assets/logo.jpg" alt="cog.svg" className="h-7 w-12" />
-          Hardware Tech
+          <img src="/assets/logo.jpg" alt="logo" className="h-7 w-12" />
+          <span className="hidden sm:inline">Hardware Tech</span>
         </Link>
 
         {/* Mobile Menu Dropdown */}
@@ -40,7 +37,7 @@ const NavBar = () => {
           </div>
           <ul
             tabIndex={0}
-            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg border border-base-300"
+            className="menu menu-sm dropdown-content bg-base-100 text-gray-800 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg border border-base-300"
           >
             <li>
               <Link to="/" className="flex items-center gap-2">
@@ -49,7 +46,7 @@ const NavBar = () => {
               </Link>
             </li>
             <li>
-              <Link to="/products" className="flex items-center gap-2">
+              <Link to="/user/product-list" className="flex items-center gap-2">
                 <Wrench className="h-5 w-5" />
                 Products
               </Link>
@@ -58,15 +55,12 @@ const NavBar = () => {
               <>
                 <div className="divider my-1"></div>
                 <li>
-                  <Link to="/reservations" className="flex items-center gap-2">
+                  <Link
+                    to={`/reservations/user/${user.userId}`}
+                    className="flex items-center gap-2"
+                  >
                     <Calendar className="h-5 w-5" />
                     My Reservations
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/profile" className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Profile
                   </Link>
                 </li>
               </>
@@ -161,9 +155,7 @@ const NavBar = () => {
                     </Link>
                   </li>
                 )}
-                {user.roles?.some((role) =>
-                  ["cashier"].includes(role)
-                ) && (
+                {user.roles?.some((role) => ["cashier"].includes(role)) && (
                   <li>
                     <Link to="/pos" className="flex items-center gap-2">
                       <LayoutDashboard className="w-4 h-4" />
