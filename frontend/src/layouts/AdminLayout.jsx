@@ -9,14 +9,13 @@ const AdminLayout = () => {
 
       {/* Main Content Area */}
       <div
-        className={`flex flex-col min-h-screen bg-base-100 w-full transition-all duration-300
-      `}
+        className={`flex flex-col min-h-screen bg-base-100 w-full transition-all duration-300`}
       >
         {/* Navbar */}
         <AdminNavbar />
 
         {/* Page Content */}
-        <main className="flex-1">
+        <main className="flex-1 p-2 md:p-6">
           <Outlet />
         </main>
       </div>

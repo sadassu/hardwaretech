@@ -9,9 +9,9 @@ export const getAllCategories = asyncHandler(async (req, res) => {
 
 // 🟢 Create new category
 export const createCategory = asyncHandler(async (req, res) => {
-  const { name, description } = req.body;
+  const { name } = req.body;
 
-  const newCategory = new Category({ name, description });
+  const newCategory = new Category({ name });
   const savedCategory = await newCategory.save();
 
   res.status(201).json({

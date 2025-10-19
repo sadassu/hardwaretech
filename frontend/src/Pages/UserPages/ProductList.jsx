@@ -12,7 +12,6 @@ import CategoryFilter from "../../components/CategoryFilter";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 function ProductList() {
-  // Get state and actions from Zustand stores
   const { products, pages, loading, error, fetchProducts } = useProductStore();
   const { categories, fetchCategories } = useCategoriesStore();
   const { user } = useAuthContext();
