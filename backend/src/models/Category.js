@@ -8,18 +8,13 @@ const categorySchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
-    description: {
-      type: String,
-      default: "",
-      trim: true,
-    },
     isActive: {
       type: Boolean,
       default: true,
     },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 

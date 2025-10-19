@@ -37,7 +37,14 @@ function Register() {
   };
 
   return (
-    <div className="bg-[url('assets/bg.jpg')] min-h-screen flex items-center justify-center bg-cover bg-center px-4">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{
+        backgroundImage: "url('assets/bg.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <div
         className="backdrop-blur-md bg-gray-800/80 rounded-xl p-8 w-full max-w-sm"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}

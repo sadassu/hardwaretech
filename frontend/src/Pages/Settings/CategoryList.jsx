@@ -121,7 +121,6 @@ function CategoryList() {
                 <tr>
                   <th className="font-semibold">#</th>
                   <th className="font-semibold">Name</th>
-                  <th className="font-semibold">Description</th>
                   <th className="font-semibold text-center">Actions</th>
                 </tr>
               </thead>
@@ -131,9 +130,6 @@ function CategoryList() {
                     <tr key={cat._id} className="hover">
                       <td className="text-sm">{index + 1}</td>
                       <td className="font-semibold text-sm">{cat.name}</td>
-                      <td className="text-sm text-base-content/70">
-                        {cat.description || "—"}
-                      </td>
                       <td className="text-center">
                         <button
                           onClick={() => openDeleteModal(cat)}
