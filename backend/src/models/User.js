@@ -28,8 +28,6 @@ const userSchema = new mongoose.Schema(
 
     avatar: {
       type: String,
-      default:
-        "https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/no-profile-picture-icon.png",
     },
 
     roles: {
@@ -40,7 +38,7 @@ const userSchema = new mongoose.Schema(
 
     isActive: {
       type: Boolean,
-      default: true, 
+      default: true,
     },
 
     isVerified: {

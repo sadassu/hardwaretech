@@ -3,6 +3,7 @@ import { useAuthContext } from "../../hooks/useAuthContext";
 import Modal from "../../components/Modal";
 import api from "../../utils/api";
 import { LockKeyhole } from "lucide-react";
+import TextInput from "../../components/TextInput";
 
 function ChangePassword() {
   const { user } = useAuthContext();
@@ -74,35 +75,40 @@ function ChangePassword() {
           setError(null);
           setSuccess(null);
         }}
-        className="btn bg-red-500 text-white rounded-xl"
+        className="btn bg-red-500 text-white rounded-xl flex items-center gap-2 px-4 py-2 text-sm sm:text-base w-full sm:w-auto"
       >
-        <LockKeyhole />
-        Change Password
+        <LockKeyhole className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="hidden sm:inline">Change Password</span>
+        <span className="sm:hidden">Password</span>
       </button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} className="w-1/4">
-        <form onSubmit={handleSubmit} className="space-y-4 p-4">
-          <h2 className="text-lg font-bold">Change Password</h2>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <h2 className="text-lg sm:text-xl font-bold">Change Password</h2>
 
           <div>
-            <label className="block mb-1">New Password</label>
-            <input
+            <label className="block mb-1 text-sm sm:text-base">
+              New Password
+            </label>
+            <TextInput
               type={showPassword ? "text" : "password"}
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 text-sm sm:text-base text-gray-900"
             />
           </div>
 
           <div>
-            <label className="block mb-1">Confirm Password</label>
-            <input
+            <label className="block mb-1 text-sm sm:text-base">
+              Confirm Password
+            </label>
+            <TextInput
               type={showPassword ? "text" : "password"}
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 text-sm sm:text-base text-gray-900"
             />
           </div>
 
@@ -112,24 +118,29 @@ function ChangePassword() {
               id="showPassword"
               checked={showPassword}
               onChange={() => setShowPassword(!showPassword)}
+              className="w-4 h-4"
             />
-            <label htmlFor="showPassword">Show Password</label>
+            <label htmlFor="showPassword" className="text-sm sm:text-base">
+              Show Password
+            </label>
           </div>
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          {success && <p className="text-green-600 text-sm">{success}</p>}
+          {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
+          {success && (
+            <p className="text-green-400 text-xs sm:text-sm">{success}</p>
+          )}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 pt-2">
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="px-4 py-2 border rounded-md"
+              className="cursor-pointer w-full sm:w-auto px-4 py-2 border border-gray-500 rounded-md text-sm sm:text-base order-2 sm:order-1"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md"
+              className="cursor-pointer w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md text-sm sm:text-base order-1 sm:order-2"
             >
               Update
             </button>

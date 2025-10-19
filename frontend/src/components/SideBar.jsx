@@ -21,6 +21,22 @@ const SideBar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+        setIsCollapsed(true); // auto-collapse on md
+      } else if (window.innerWidth >= 1024) {
+        setIsCollapsed(false); // expand on large screens
+      } else {
+        setIsCollapsed(false); // mobile mode handled separately
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Close mobile sidebar when route changes
   useEffect(() => {
     setIsMobileOpen(false);
