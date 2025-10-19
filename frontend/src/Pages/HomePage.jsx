@@ -4,34 +4,24 @@ import ImageSlider from "../components/ImageSlider";
 const HomePage = () => {
   const categories = [
     {
-      icon: "🔨",
       title: "Hand Tools",
       desc: "Hammers, screwdrivers, wrenches",
-      count: "500+",
     },
     {
-      icon: "⚡",
       title: "Power Tools",
       desc: "Drills, saws, sanders & more",
-      count: "300+",
     },
     {
-      icon: "🔩",
       title: "Fasteners",
       desc: "Screws, bolts, nuts & washers",
-      count: "1000+",
     },
     {
-      icon: "📏",
       title: "Measuring",
       desc: "Levels, tape measures, squares",
-      count: "150+",
     },
     {
-      icon: "🔧",
       title: "Specialty Tools",
       desc: "Plumbing, electrical, HVAC",
-      count: "400+",
     },
   ];
 
@@ -98,26 +88,17 @@ const HomePage = () => {
             {categories.map((category, index) => (
               <div
                 key={index}
-                className="card border-2 border-orange-200 hover:border-orange-300 transition-all duration-300 hover:scale-105 cursor-pointer"
+                className="card border-2 border-orange-200 hover:border-orange-300 transition-all duration-300 hover:scale-105"
               >
                 <div className="card-body">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="text-4xl">{category.icon}</div>
                     <div>
-                      <h3 className="card-title text-xl text-red-500">
+                      <h3 className="card-title text-xl text-white">
                         {category.title}
                       </h3>
-                      <div className="badge badge-warning">
-                        {category.count} items
-                      </div>
                     </div>
                   </div>
                   <p className="text-sm opacity-70 mb-4">{category.desc}</p>
-                  <div className="card-actions">
-                    <button className="btn btn-sm btn-outline btn-warning w-full">
-                      Browse Category
-                    </button>
-                  </div>
                 </div>
               </div>
             ))}
@@ -136,21 +117,18 @@ const HomePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-5xl mb-4">⚡</div>
               <h3 className="text-xl font-bold mb-2">Same-Day Service</h3>
               <p className="text-sm opacity-70">
                 Reserve and pickup the same day
               </p>
             </div>
             <div className="text-center">
-              <div className="text-5xl mb-4">✅</div>
               <h3 className="text-xl font-bold mb-2">Quality Guaranteed</h3>
               <p className="text-sm opacity-70">
                 All tools tested and maintained
               </p>
             </div>
             <div className="text-center">
-              <div className="text-5xl mb-4">💰</div>
               <h3 className="text-xl font-bold mb-2">Best Prices</h3>
               <p className="text-sm opacity-70">
                 Competitive rates and bulk discounts
@@ -205,17 +183,12 @@ const HomePage = () => {
       {/* Footer */}
       <footer className="footer footer-center p-10 bg-base-300 text-base-content">
         <nav className="grid grid-flow-col gap-4">
-          <a className="link link-hover">Tool Catalog</a>
-          <a className="link link-hover">Rental Terms</a>
           <a className="link link-hover">Store Locations</a>
           <a className="link link-hover">Contact Us</a>
         </nav>
 
         <aside>
-          <p>Copyright © 2024 - Hardware Tech Tool & Supply Rental</p>
-          <p className="text-sm opacity-60">
-            Your trusted partner for quality tools since 1995
-          </p>
+          <p>Copyright © 2025 - Hardware Tech Tool & Supply Rental</p>
         </aside>
       </footer>
     </div>
