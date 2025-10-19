@@ -11,7 +11,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback",
+      callbackURL: `${process.env.SERVER_URL}/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, cb) => {
       try {
@@ -35,7 +35,7 @@ passport.use(
             email: profile.emails[0].value,
             googleId: profile.id,
             avatar: profile.photos[0]?.value,
-            roles: ["user"], 
+            roles: ["user"],
           });
         }
 
