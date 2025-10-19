@@ -27,17 +27,26 @@ const createToken = (_id) => {
 // register
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
-  const user = await User.signup(name, email, password, confirmPassword);
+  const defaultAvatar =
+    "https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/no-profile-picture-icon.png";
+
+  const user = await User.signup({
+    name,
+    email,
+    password,
+    confirmPassword,
+    avatar: defaultAvatar,
+  });
 
   const token = createToken(user._id);
 
   res.status(201).json({
     userId: user._id,
     roles: user.roles,
-    name,
-    email,
+    name: user.name,
+    email: user.email,
     token,
-    avatar,
+    avatar: user.avatar,
     message: "User registered successfully!",
   });
 });
