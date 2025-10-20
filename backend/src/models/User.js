@@ -49,8 +49,12 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.statics.signup = async (name, email, password, confirmPassword) => {
-  //! validation
+userSchema.statics.signup = async ({
+  name,
+  email,
+  password,
+  confirmPassword,
+}) => {
   if (!email || !password || !name || !confirmPassword) {
     throw Error("All fields must be filled");
   }
@@ -70,7 +74,6 @@ userSchema.statics.signup = async (name, email, password, confirmPassword) => {
   }
 
   const exists = await User.findOne({ email });
-
   if (exists) {
     throw Error("Email already in use");
   }
@@ -79,7 +82,6 @@ userSchema.statics.signup = async (name, email, password, confirmPassword) => {
   const hash = await bcrypt.hash(password, salt);
 
   const user = await User.create({ name, email, password: hash });
-
   return user;
 };
 

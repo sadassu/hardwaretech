@@ -12,6 +12,7 @@ import LoginSuccess from "./Pages/LoginSuccess";
 
 import RoleRoute from "./routes/RoleRoute";
 import Unauthorized from "./Pages/errors/Unanthorized";
+import NotFound from "./Pages/errors/NotFound";
 
 import ProductList from "./Pages/UserPages/ProductList";
 import UserReservations from "./Pages/UserPages/UserReservations";
@@ -53,6 +54,7 @@ const App = () => {
             path="/profile/:userId"
             element={user ? <Profile /> : <Navigate to="/login" />}
           />
+          <Route path="*" element={<NotFound />} />
         </Route>
         <Route element={<AdminLayout />}>
           <Route

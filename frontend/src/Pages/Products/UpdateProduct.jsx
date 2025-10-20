@@ -93,10 +93,15 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
       </div>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <h2 className="text-xl font-semibold mb-4">Update Product</h2>
+        <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
+          Update Product
+        </h2>
         {error && <div className="text-red-500 mb-4">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="space-y-4 w-96">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 w-full max-w-md sm:max-w-lg mx-auto px-4 sm:px-0"
+        >
           <TextInput
             label="Product Name"
             type="text"
@@ -105,6 +110,7 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
             value={formData.name}
             onChange={handleChange}
             required
+            className="w-full"
           />
 
           <label className="label">

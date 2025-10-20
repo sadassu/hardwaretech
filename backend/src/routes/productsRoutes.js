@@ -11,6 +11,7 @@ import upload from "../middleware/upload.js";
 import requireAuth from "../middleware/requireAuth.js";
 import { queryOptions } from "../middleware/queryOption.js";
 import { requireRole } from "../middleware/requireRole.js";
+import requireAuthCookies from "../middleware/requireAuthCookies.js";
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ router.get(
 router.get("/products/:id", getProductById);
 router.post(
   "/products",
-  requireAuth,
+  requireAuthCookies,
   requireRole(["admin", "cashier"]),
   createProduct
 );
