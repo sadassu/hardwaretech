@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import {
   fetchUserData,
   login,
+  logout,
   register,
   updateUserRoles,
 } from "../controllers/authController.js";
@@ -24,6 +25,7 @@ router.post("/api/auth/register", register);
 router.post("/api/auth/login", login);
 router.get("/api/user/fetchUser", fetchUserData);
 router.put("/api/user/updateRoles/:id", updateUserRoles);
+router.post("/api/auth/logout", logout);
 
 // Google OAuth route - step 1
 router.get(
@@ -45,8 +47,8 @@ router.get(
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+      sameSite: "lax", 
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.redirect(

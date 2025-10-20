@@ -213,34 +213,64 @@ export const updateReservation = asyncHandler(async (req, res) => {
 
 // Get reservations by userID
 export const getReservationByUserId = asyncHandler(async (req, res) => {
+  const userId = req.params.userId;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const sortBy = req.query.sortBy || "reservationDate";
   const sortOrder = req.query.sortOrder === "desc" ? -1 : 1;
-
   const skip = (page - 1) * limit;
 
-  // Fetch reservations
-  const reservations = await Reservation.find({ userId: req.params.userId })
+  // ✅ Fetch paginated reservations
+  const reservations = await Reservation.find({ userId })
     .populate("reservationDetails")
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit);
 
+  // ✅ Count total reservations
+  const total = await Reservation.countDocuments({ userId });
+
+  // ✅ Compute status counts per user
+  const statusAggregation = await Reservation.aggregate([
+    { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+    { $group: { _id: "$status", count: { $sum: 1 } } },
+  ]);
+
+  const statusCounts = {
+    all: total,
+    pending: 0,
+    confirmed: 0,
+    cancelled: 0,
+    failed: 0,
+    completed: 0,
+  };
+
+  // ✅ Map aggregation results to the object
+  statusAggregation.forEach((s) => {
+    if (statusCounts[s._id] !== undefined) {
+      statusCounts[s._id] = s.count;
+    }
+  });
+
+  // ✅ Handle no reservations gracefully
   if (!reservations || reservations.length === 0) {
-    return res
-      .status(404)
-      .json({ message: "There are no reservations for this user" });
+    return res.status(200).json({
+      message: "There are no reservations for this user",
+      total: 0,
+      page,
+      pages: 0,
+      reservations: [],
+      statusCounts, 
+    });
   }
 
-  // Count total reservations for this user
-  const total = await Reservation.countDocuments({ userId: req.params.userId });
-
+  // ✅ Return full data with status counts
   res.status(200).json({
     total,
     page,
     pages: Math.ceil(total / limit),
     reservations,
+    statusCounts, 
   });
 });
 

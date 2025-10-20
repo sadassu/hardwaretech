@@ -64,11 +64,14 @@ const CreateVariant = ({ product }) => {
       </div>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <h2 className="text-xl font-semibold mb-4">
+        <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
           Add Variant for "{product?.name}"
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4 w-96">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 w-full max-w-md sm:max-w-lg mx-auto px-4 sm:px-0"
+        >
           {/* Unit dropdown */}
           <div>
             <label htmlFor="unit" className="block text-sm font-medium mb-1">
@@ -97,6 +100,7 @@ const CreateVariant = ({ product }) => {
             placeholder="e.g., small, medium"
             value={formData.size}
             onChange={handleChange}
+            className="w-full"
           />
 
           {/* Supplier Price */}
@@ -108,6 +112,7 @@ const CreateVariant = ({ product }) => {
             value={formData.supplier_price}
             onChange={handleChange}
             required
+            className="w-full"
           />
 
           {/* Price */}
@@ -119,6 +124,7 @@ const CreateVariant = ({ product }) => {
             value={formData.price}
             onChange={handleChange}
             required
+            className="w-full"
           />
 
           {/* Quantity */}
@@ -130,6 +136,7 @@ const CreateVariant = ({ product }) => {
             value={formData.quantity}
             onChange={handleChange}
             required
+            className="w-full"
           />
 
           {/* Checkbox: has color */}
@@ -141,7 +148,6 @@ const CreateVariant = ({ product }) => {
               onChange={(e) => setHasColor(e.target.checked)}
               className="w-5 h-5 accent-[#f05454] border-2 border-[#f05454] rounded"
             />
-
             <label htmlFor="hasColor" className="text-sm font-medium">
               This variant has a color
             </label>
@@ -157,10 +163,14 @@ const CreateVariant = ({ product }) => {
               value={formData.color}
               onChange={handleChange}
               required={hasColor}
+              className="w-full"
             />
           )}
 
-          <button type="submit" className="btn text-white border-red-500 bg-red-500 w-full">
+          <button
+            type="submit"
+            className="btn text-white border-red-500 bg-red-500 w-full"
+          >
             Create Variant
           </button>
         </form>

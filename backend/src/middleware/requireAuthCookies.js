@@ -3,29 +3,31 @@ import User from "../models/User.js";
 
 const requireAuthCookies = async (req, res, next) => {
   try {
-    // Check for JWT in cookies
+    // 1️⃣ Get token from cookies
     const token = req.cookies?.token;
 
     if (!token) {
-      return res.status(401).json({ error: "Authorization token required" });
+      return res.status(401).json({ error: "Authentication cookie required" });
     }
 
-    // Verify token
-    const { _id } = jwt.verify(token, process.env.JWT_SECRET);
+    // 2️⃣ Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find user
-    const user = await User.findById(_id).select("_id name email roles");
+    // 3️⃣ Fetch user details
+    const user = await User.findById(decoded._id).select(
+      "_id name email roles"
+    );
 
     if (!user) {
       return res.status(401).json({ error: "User not found" });
     }
 
-    // Attach user to request
+    // 4️⃣ Attach user to the request
     req.user = user;
     next();
   } catch (error) {
-    console.error("Auth (cookies) error:", error.message);
-    return res.status(401).json({ error: "Request is not authorized" });
+    console.error("Cookie Auth error:", error.message);
+    return res.status(401).json({ error: "Invalid or expired cookie token" });
   }
 };
 
