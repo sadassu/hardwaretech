@@ -14,7 +14,7 @@ import { useCategoriesStore } from "../../store/categoriesStore";
 
 function Pos() {
   const { user } = useAuthContext();
-  const isMobile = useIsMobile();
+  const { isMobile } = useIsMobile();
 
   // ✅ Zustand stores
   const {

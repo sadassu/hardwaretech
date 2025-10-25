@@ -19,6 +19,11 @@ import validator from "validator";
 import User from "../models/User.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import Reservation from "../models/Reservation.js";
+import axios from "axios";
+
+import crypto from "crypto";
+import { sendEmail } from "../utils/sendEmail.js";
+import { verificationLimiter } from "../config/upstash.js";
 
 const createToken = (_id) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "3d" });
@@ -26,7 +31,26 @@ const createToken = (_id) => {
 
 // register
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
+  const { name, email, password, confirmPassword, captchaToken } = req.body;
+
+  if (!captchaToken) {
+    return res.status(400).json({ error: "Captcha verification required" });
+  }
+
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  try {
+    const { data } = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
+    );
+
+    if (!data.success) {
+      return res.status(400).json({ error: "Captcha verification failed" });
+    }
+  } catch (error) {
+    console.error("reCAPTCHA verification error:", error);
+    return res.status(500).json({ error: "Captcha verification error" });
+  }
+
   const defaultAvatar =
     "https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/no-profile-picture-icon.png";
 
@@ -47,13 +71,32 @@ export const register = asyncHandler(async (req, res) => {
     email: user.email,
     token,
     avatar: user.avatar,
+    isVerified: user.isVerified,
     message: "User registered successfully!",
   });
 });
 
 // login
 export const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, captchaToken } = req.body;
+
+  if (!captchaToken) {
+    return res.status(400).json({ error: "Captcha verification required" });
+  }
+
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  try {
+    const { data } = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
+    );
+
+    if (!data.success) {
+      return res.status(400).json({ error: "Captcha verification failed" });
+    }
+  } catch (error) {
+    console.error("reCAPTCHA verification error:", error);
+    return res.status(500).json({ error: "Captcha verification error" });
+  }
 
   const user = await User.login(email, password);
 
@@ -62,8 +105,9 @@ export const login = asyncHandler(async (req, res) => {
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax", // or 'none' if frontend on another domain
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 24 * 60 * 60 * 1000,
+    path: "/",
   });
 
   res.status(201).json({
@@ -72,6 +116,7 @@ export const login = asyncHandler(async (req, res) => {
     name: user.name,
     email: user.email,
     avatar: user.avatar,
+    isVerified: user.isVerified,
     token,
   });
 });
@@ -161,9 +206,84 @@ export const updateUserRoles = asyncHandler(async (req, res) => {
 export const logout = asyncHandler(async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // match cookie options from login
-    sameSite: "Strict",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
   });
 
   res.status(200).json({ message: "User logged out successfully." });
+});
+
+export const sendVerificationCode = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  // rate limit based on email (per user)
+  const identifier = email || req.ip;
+  const { success, reset } = await verificationLimiter.limit(identifier);
+
+  if (!success) {
+    const retryAfter = Math.ceil((reset - Date.now()) / 1000); // seconds
+    console.warn(`⚠️ Rate limit hit for ${email}. Retry after ${retryAfter}s.`);
+    return res.status(429).json({
+      error: `You can request another code in ${retryAfter} seconds.`,
+    });
+  }
+
+  // check if user exists
+  const user = await User.findOne({ email });
+  if (!user) {
+    console.warn("❌ User not found:", email);
+    return res.status(404).json({ error: "User not found." });
+  }
+
+  // generate 6-digit code
+  const code = crypto.randomInt(100000, 999999).toString();
+
+  // save code + expiration
+  user.verificationCode = code;
+  user.verificationCodeExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  await user.save();
+
+  // email template
+  const html = `
+    <h2>Email Verification</h2>
+    <p>Use the code below to verify your email address:</p>
+    <h1>${code}</h1>
+    <p>This code will expire in 10 minutes.</p>
+  `;
+
+  try {
+    await sendEmail(user.email, "Verify Your Email", html);
+
+    res.status(200).json({
+      message: "Verification code sent successfully.",
+    });
+  } catch (error) {
+    console.error("❌ Email sending failed:", error);
+    res.status(500).json({
+      error: "Failed to send verification email.",
+    });
+  }
+});
+
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const { email, code } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ error: "User not found." });
+
+  if (
+    !user.verificationCode ||
+    user.verificationCode !== code ||
+    user.verificationCodeExpires < Date.now()
+  ) {
+    return res.status(400).json({ error: "Invalid or expired code." });
+  }
+
+  user.isVerified = true;
+  user.verificationCode = undefined;
+  user.verificationCodeExpires = undefined;
+  await user.save();
+
+  res.status(200).json({ message: "Email verified successfully." });
 });

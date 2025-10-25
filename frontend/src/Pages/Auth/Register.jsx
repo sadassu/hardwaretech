@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSignup } from "../../hooks/useSignup";
+import ReCAPTCHA from "react-google-recaptcha";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -12,23 +13,33 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signup, error, isLoading } = useSignup();
+  const [captchaToken, setCaptchaToken] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
+      captchaToken,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (formData.password !== formData.confirmPassword) return;
+    
+    if (!captchaToken) {
+      alert("Please complete the reCAPTCHA.");
+      return;
+    }
+
     const result = await signup(
       formData.name,
       formData.email,
       formData.password,
-      formData.confirmPassword
+      formData.confirmPassword,
+      captchaToken
     );
 
     if (result && !error) {
@@ -149,6 +160,11 @@ function Register() {
                 Passwords do not match
               </p>
             )}
+
+          <ReCAPTCHA
+            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+            onChange={(token) => setCaptchaToken(token)}
+          />
 
           {/* Submit */}
           <button

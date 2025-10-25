@@ -9,15 +9,22 @@ export const useLogin = () => {
   const { dispatch } = useAuthContext();
   const navigate = useNavigate();
 
-  const login = async (email, password) => {
+  // ✅ Added captchaToken parameter
+  const login = async (email, password, captchaToken) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await api.post("/auth/login", { email, password });
+      // Send captchaToken to backend
+      const response = await api.post("/auth/login", {
+        email,
+        password,
+        captchaToken,
+      });
+
       const json = response.data;
 
-      // Save user and update context 
+      // Save user and update context
       localStorage.setItem("user", JSON.stringify(json));
       dispatch({ type: "LOGIN", payload: json });
 
@@ -34,7 +41,12 @@ export const useLogin = () => {
       setIsLoading(false);
     } catch (err) {
       setIsLoading(false);
-      setError(err.response?.data?.message || "Login failed");
+      // Handle captcha or login errors
+      if (err.response?.data?.error === "Invalid reCAPTCHA") {
+        setError("Captcha verification failed. Please try again.");
+      } else {
+        setError(err.response?.data?.message || "Login failed");
+      }
     }
   };
 

@@ -22,6 +22,8 @@ import Dashboard from "./Pages/Dashboard/Dashboard";
 import EditUserData from "./Pages/Auth/EditUserData";
 import SupplyHistories from "./Pages/SupplyHistories/SupplyHistories";
 import CategoryList from "./Pages/Settings/CategoryList";
+import Verification from "./Pages/Verification";
+import ProtectedRoute from "./routes/ProtectedRoutes";
 
 const Product = lazy(() => import("./Pages/Products/Product"));
 const Sales = lazy(() => import("./Pages/Sales/Sales"));
@@ -34,8 +36,10 @@ const App = () => {
     <div>
       <Routes>
         <Route element={<PublicLayout />}>
+          <Route path="/verification" element={<Verification />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/" element={<HomePage />} />
+
           <Route
             path="/login"
             element={!user ? <Login /> : <Navigate to="/" />}
@@ -48,11 +52,19 @@ const App = () => {
           <Route path="/user/product-list" element={<ProductList />} />
           <Route
             path="/reservations/user/:userId"
-            element={user ? <UserReservations /> : <Navigate to="/login" />}
+            element={
+              <ProtectedRoute requireVerification={true}>
+                <UserReservations />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/profile/:userId"
-            element={user ? <Profile /> : <Navigate to="/login" />}
+            element={
+              <ProtectedRoute requireVerification={true}>
+                <Profile />
+              </ProtectedRoute>
+            }
           />
           <Route path="*" element={<NotFound />} />
         </Route>

@@ -6,7 +6,9 @@ import {
   login,
   logout,
   register,
+  sendVerificationCode,
   updateUserRoles,
+  verifyEmail,
 } from "../controllers/authController.js";
 import dotenv from "dotenv";
 
@@ -26,6 +28,8 @@ router.post("/api/auth/login", login);
 router.get("/api/user/fetchUser", fetchUserData);
 router.put("/api/user/updateRoles/:id", updateUserRoles);
 router.post("/api/auth/logout", logout);
+router.post("/api/auth/send-verification-code", sendVerificationCode);
+router.post("/api/auth/confirm-verification-code", verifyEmail);
 
 // Google OAuth route - step 1
 router.get(
@@ -47,9 +51,12 @@ router.get(
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax", 
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+
+    // include isVerified
+    const isVerified = req.user.isVerified || false;
 
     res.redirect(
       `${CLIENT_URL}/login/success?token=${token}&userId=${
@@ -58,7 +65,9 @@ router.get(
         req.user.name
       )}&email=${encodeURIComponent(
         req.user.email
-      )}&avatar=${encodeURIComponent(req.user.avatar || "")}`
+      )}&avatar=${encodeURIComponent(
+        req.user.avatar || ""
+      )}&isVerified=${encodeURIComponent(isVerified)}`
     );
   }
 );

@@ -5,7 +5,20 @@ import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
 import { Plus } from "lucide-react";
 
-const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set", "W", "V"];
+const UNIT_OPTIONS = [
+  "pcs",
+  "kg",
+  "g",
+  "lb",
+  "m",
+  "cm",
+  "ft",
+  "set",
+  "W",
+  "V",
+  "amphere", 
+  "gang",
+];
 
 const CreateVariant = ({ product }) => {
   const [isOpen, setIsOpen] = useState(false);

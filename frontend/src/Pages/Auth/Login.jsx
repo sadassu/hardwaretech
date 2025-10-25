@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useLogin } from "../../hooks/useLogin";
+import ReCAPTCHA from "react-google-recaptcha";
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -9,6 +10,7 @@ function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const { login, error, isLoading } = useLogin();
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -19,7 +21,13 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await login(formData.email, formData.password);
+
+    if (!captchaToken) {
+      alert("Please complete the reCAPTCHA.");
+      return;
+    }
+
+    await login(formData.email, formData.password, captchaToken);
   };
 
   return (
@@ -89,6 +97,12 @@ function Login() {
             </span>
           </div>
 
+          {/* ✅ reCAPTCHA */}
+          <ReCAPTCHA
+            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+            onChange={(token) => setCaptchaToken(token)}
+          />
+
           {/* Submit */}
           <button
             type="submit"
@@ -111,6 +125,7 @@ function Login() {
           href={`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/auth/google`}
           className="w-full bg-white text-gray-800 font-semibold py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-200 transition"
         >
+          {/* Google SVG */}
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
               fill="currentColor"
