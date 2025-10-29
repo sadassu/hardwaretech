@@ -182,13 +182,8 @@ const HomePage = () => {
 
       {/* Footer */}
       <footer className="footer footer-center p-10 bg-base-300 text-base-content">
-        <nav className="grid grid-flow-col gap-4">
-          <a className="link link-hover">Store Locations</a>
-          <a className="link link-hover">Contact Us</a>
-        </nav>
-
         <aside>
-          <p>Copyright © 2025 - Hardware Tech Tool & Supply Rental</p>
+          <p>Copyright © 2025 - Hardware Tech Tool</p>
         </aside>
       </footer>
     </div>
