@@ -3,7 +3,6 @@ import Modal from "../../components/Modal";
 import { toast } from "react-hot-toast";
 import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
-
 import { Edit } from "lucide-react";
 
 const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set", "W", "V"];
@@ -44,7 +43,6 @@ const UpdateVariant = ({ variant }) => {
     e.preventDefault();
     if (!variant?._id) return toast.error("No variant selected");
 
-    // Clean up optional fields
     const payload = { ...formData };
     if (!payload.unit) delete payload.unit;
     if (!payload.color) delete payload.color;
@@ -70,10 +68,18 @@ const UpdateVariant = ({ variant }) => {
       </div>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <h2 className="text-xl font-semibold mb-4">Update Variant</h2>
+        <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
+          Update Variant
+        </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4 w-96">
-          {/* Unit dropdown - optional */}
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 w-full max-w-md sm:max-w-lg mx-auto px-4 sm:px-0"
+        >
+          {/* Unit dropdown */}
+          <label className="label">
+            <span className="label-text font-semibold text-gray-200">Unit</span>
+          </label>
           <select
             name="unit"
             value={formData.unit}
@@ -89,12 +95,12 @@ const UpdateVariant = ({ variant }) => {
             ))}
           </select>
 
-          {/* Size input */}
+          {/* Size */}
           <TextInput
             label="Size"
             type="text"
             name="size"
-            placeholder="Size (e.g., small, medium)"
+            placeholder="Size (e.g., Small, Medium)"
             value={formData.size}
             onChange={handleChange}
           />
@@ -110,7 +116,7 @@ const UpdateVariant = ({ variant }) => {
             required
           />
 
-          {/* Price input */}
+          {/* Price */}
           <TextInput
             label="Price"
             type="number"
@@ -121,6 +127,7 @@ const UpdateVariant = ({ variant }) => {
             required
           />
 
+          {/* Quantity */}
           <TextInput
             label="Quantity"
             type="number"
@@ -131,7 +138,7 @@ const UpdateVariant = ({ variant }) => {
             required
           />
 
-          {/* Color input */}
+          {/* Color */}
           <TextInput
             label="Color (if only applicable)"
             type="text"
@@ -143,7 +150,7 @@ const UpdateVariant = ({ variant }) => {
 
           <button
             type="submit"
-            className="rounded-2xl p-2 cursor-pointer bg-[#f05454] w-full"
+            className="btn bg-red-500 text-white border-red-500 w-full"
           >
             Update Variant
           </button>

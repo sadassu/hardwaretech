@@ -73,38 +73,50 @@ export const useSupplyHistoryStore = create((set, get) => ({
     }
   },
 
-  // 💰 Total money spent in the last 7 days
-  getLast7DaysSpending: () => {
-    const { supplyHistories } = get();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  fetchMoneySpentSevenDays: async (token) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await api.get("/supply-histories/money-spent-seven-days", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    return supplyHistories
-      .filter((h) => new Date(h.supplied_at) >= sevenDaysAgo)
-      .reduce((sum, h) => sum + (h.total_cost || 0), 0);
+      return res.data.data; // This is your daily spending array
+    } catch (err) {
+      console.error("Fetch money spent (7 days) failed:", err);
+      set({
+        error:
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to fetch 7-day spending data",
+        loading: false,
+      });
+      throw err;
+    } finally {
+      set({ loading: false });
+    }
   },
 
-  // 📦 Total supply history count in the last 7 days
-  getLast7DaysItems: () => {
-    const { supplyHistories } = get();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    // just count entries instead of summing quantities
-    return supplyHistories.filter(
-      (h) => new Date(h.supplied_at) >= sevenDaysAgo
-    ).length;
+  fetchItemsStockedSevenDays: async (token) => {
+    try {
+      const res = await api.get("/supply-histories/items-stocked-seven-days", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.data; // array of last 7 days [{ date, totalItems }]
+    } catch (err) {
+      console.error("Fetch items stocked 7 days failed:", err);
+      throw err;
+    }
   },
 
-  // 🧮 Overall total money spent (all time)
-  getTotalMoneySpent: () => {
-    const { supplyHistories } = get();
-    return supplyHistories.reduce((sum, h) => sum + (h.total_cost || 0), 0);
-  },
-
-  // 🧾 Overall count of all supply histories (all time)
-  getTotalItemsStocked: () => {
-    const { supplyHistories } = get();
-    return supplyHistories.length;
+  fetchTotalMoneySpent: async (token) => {
+    try {
+      const res = await api.get("/supply-histories/total-money-spent", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.total; // number
+    } catch (err) {
+      console.error("Fetch total money spent failed:", err);
+      throw err;
+    }
   },
 }));

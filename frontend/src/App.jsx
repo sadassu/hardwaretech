@@ -1,5 +1,11 @@
-import React, { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import React, { lazy, Suspense, useEffect } from "react";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { useAuthContext } from "./hooks/useAuthContext";
 
 import HomePage from "./Pages/HomePage";
@@ -32,6 +38,20 @@ const Reservation = lazy(() => import("./Pages/Reservations/Reservation"));
 
 const App = () => {
   const { user } = useAuthContext();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (
+      user &&
+      user.isVerified === false &&
+      location.pathname !== "/verification" &&
+      location.pathname !== "/logout"
+    ) {
+      navigate("/verification", { replace: true });
+    }
+  }, [user, location, navigate]);
+
   return (
     <div>
       <Routes>

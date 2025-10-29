@@ -15,11 +15,14 @@ const SupplyHistories = () => {
     loading,
     fetchSupplyHistories,
     redoSupplyHistory,
-    getLast7DaysSpending,
-    getLast7DaysItems,
-    getTotalMoneySpent,
+    fetchMoneySpentSevenDays,
+    fetchItemsStockedSevenDays,
+    fetchTotalMoneySpent,
   } = useSupplyHistoryStore();
 
+  const [last7DaysSpending, setLast7DaysSpending] = useState(0);
+  const [last7DaysItems, setLast7DaysItems] = useState(0);
+  const [totalMoneySpent, setTotalMoneySpent] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -27,6 +30,30 @@ const SupplyHistories = () => {
   const limit = 10;
 
   const isMobile = useIsMobile(768); // 👈 dynamically detect screen size
+
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      if (!user?.token) return;
+      try {
+        const [spending, items, total] = await Promise.all([
+          fetchMoneySpentSevenDays(user.token),
+          fetchItemsStockedSevenDays(user.token),
+          fetchTotalMoneySpent(user.token),
+        ]);
+
+        // Calculate totals for 7 days
+        setLast7DaysSpending(
+          spending.reduce((sum, day) => sum + day.totalSpent, 0)
+        );
+        setLast7DaysItems(items.reduce((sum, day) => sum + day.totalItems, 0));
+        setTotalMoneySpent(total);
+      } catch (err) {
+        console.error("Failed to load analytics:", err);
+      }
+    };
+
+    loadAnalytics();
+  }, [user?.token]);
 
   // Debounce search input
   useEffect(() => {
@@ -45,11 +72,6 @@ const SupplyHistories = () => {
       fetchSupplyHistories({ token: user.token, page, limit, search: query });
     }
   }, [page, query, user?.token]);
-
-  // 💰 Computed stats
-  const last7DaysSpending = getLast7DaysSpending()?.toFixed(2);
-  const last7DaysItems = getLast7DaysItems();
-  const totalMoneySpent = getTotalMoneySpent()?.toFixed(2);
 
   return (
     <div className="container mx-auto p-6">

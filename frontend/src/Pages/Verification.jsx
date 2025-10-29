@@ -119,9 +119,6 @@ function Verification() {
       setMessage(data.message);
       setCode("");
       localStorage.removeItem("verificationCooldown");
-
-      // Optionally redirect or update user context here
-      // Example: window.location.href = "/dashboard";
     } catch (err) {
       setError(err.response?.data?.error || "Failed to verify code.");
     } finally {
@@ -130,24 +127,24 @@ function Verification() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="bg-white shadow-lg rounded-2xl p-6 w-96">
-        <h2 className="text-2xl font-bold mb-4 text-center">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 w-full max-w-md">
+        <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">
           Email Verification
         </h2>
 
-        <p className="text-gray-700 text-center mb-4">
+        <p className="text-sm sm:text-base text-gray-700 text-center mb-3 sm:mb-4">
           We'll send a verification code to:
         </p>
 
-        <div className="text-center font-semibold text-blue-700 mb-4">
+        <div className="text-center font-semibold text-blue-700 mb-4 text-sm sm:text-base break-words">
           {email || "No email found"}
         </div>
 
         <button
           onClick={handleSendCode}
           disabled={loading || !email}
-          className={`w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition ${
+          className={`w-full bg-blue-600 text-white py-2.5 sm:py-2 rounded-lg hover:bg-blue-700 transition text-sm sm:text-base ${
             loading ? "opacity-70 cursor-not-allowed" : ""
           }`}
         >
@@ -155,8 +152,8 @@ function Verification() {
         </button>
 
         {codeSent && (
-          <form onSubmit={handleVerifyCode} className="mt-6">
-            <label className="block text-gray-700 font-medium mb-2">
+          <form onSubmit={handleVerifyCode} className="mt-4 sm:mt-6">
+            <label className="block text-gray-700 font-medium mb-2 text-sm sm:text-base">
               Enter Verification Code
             </label>
             <input
@@ -164,13 +161,13 @@ function Verification() {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="Enter code"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 text-sm sm:text-base"
               disabled={verifying}
             />
             <button
               type="submit"
               disabled={verifying || !code}
-              className={`w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition ${
+              className={`w-full bg-green-600 text-white py-2.5 sm:py-2 rounded-lg hover:bg-green-700 transition text-sm sm:text-base ${
                 verifying || !code ? "opacity-70 cursor-not-allowed" : ""
               }`}
             >
@@ -180,12 +177,14 @@ function Verification() {
         )}
 
         {message && (
-          <p className="mt-4 text-green-600 text-center font-medium">
+          <p className="mt-4 text-green-600 text-center font-medium text-sm sm:text-base">
             {message}
           </p>
         )}
         {error && (
-          <p className="mt-4 text-red-600 text-center font-medium">{error}</p>
+          <p className="mt-4 text-red-600 text-center font-medium text-sm sm:text-base">
+            {error}
+          </p>
         )}
       </div>
     </div>

@@ -340,6 +340,35 @@ function CartContent() {
                       onChange={(e) => setAmountPaid(e.target.value)}
                     />
                   </div>
+
+                  {/* Change Display */}
+                  {amountPaid && parseFloat(amountPaid) >= totalPrice && (
+                    <div className="bg-green-500/20 border border-green-500/40 p-4 rounded-xl mb-4 sm:mb-6">
+                      <div className="flex justify-between items-center">
+                        <span className="text-base font-semibold text-green-100">
+                          Change:
+                        </span>
+                        <span className="text-xl font-bold text-green-300">
+                          ₱{(parseFloat(amountPaid) - totalPrice).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Insufficient Payment Warning */}
+                  {amountPaid && parseFloat(amountPaid) < totalPrice && (
+                    <div className="bg-red-500/20 border border-red-500/40 p-4 rounded-xl mb-4 sm:mb-6">
+                      <div className="flex justify-between items-center">
+                        <span className="text-base font-semibold text-red-100">
+                          Insufficient:
+                        </span>
+                        <span className="text-xl font-bold text-red-300">
+                          ₱{(totalPrice - parseFloat(amountPaid)).toFixed(2)}{" "}
+                          short
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
               <div className="space-y-4">
@@ -365,7 +394,11 @@ function CartContent() {
                   <button
                     className="btn cursor-pointer btn-md sm:btn-lg flex-1 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl hover:scale-105 bg-[#F05454] hover:bg-[#F05454]/90 text-white border-none"
                     onClick={handleCheckout}
-                    disabled={loading || (isRestricted && !amountPaid)}
+                    disabled={
+                      loading ||
+                      (isRestricted &&
+                        (!amountPaid || parseFloat(amountPaid) < totalPrice))
+                    }
                   >
                     {loading ? (
                       <>

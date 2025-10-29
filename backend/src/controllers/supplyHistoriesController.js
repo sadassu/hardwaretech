@@ -117,3 +117,123 @@ export const redoSupplyHistory = asyncHandler(async (req, res) => {
     session.endSession();
   }
 });
+
+export const getMoneySpentSevenDays = asyncHandler(async (req, res) => {
+  // Get date range for the last 7 days
+  const today = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(today.getDate() - 6); // include today (7 total days)
+
+  // Aggregate by day
+  const result = await SupplyHistory.aggregate([
+    {
+      $match: {
+        supplied_at: {
+          $gte: sevenDaysAgo,
+          $lte: today,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%Y-%m-%d", date: "$supplied_at" },
+        },
+        totalSpent: { $sum: "$total_cost" },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  // Fill missing days with 0
+  const data = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(sevenDaysAgo);
+    date.setDate(sevenDaysAgo.getDate() + i);
+    const dateString = date.toISOString().slice(0, 10);
+
+    const dayData = result.find((r) => r._id === dateString);
+    data.push({
+      date: dateString,
+      totalSpent: dayData ? dayData.totalSpent : 0,
+    });
+  }
+
+  res.json({
+    success: true,
+    data,
+  });
+});
+
+export const getItemsStockedSevenDays = asyncHandler(async (req, res) => {
+  const today = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(today.getDate() - 6); // includes today = 7 days total
+
+  // Group by date and count total items stocked
+  const items = await SupplyHistory.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: sevenDaysAgo, $lte: today },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+        },
+        totalItems: { $sum: "$quantity" },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  // Fill missing days with zero
+  const result = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(sevenDaysAgo);
+    date.setDate(sevenDaysAgo.getDate() + i);
+    const formatted = date.toISOString().split("T")[0];
+    const found = items.find((item) => item._id === formatted);
+    result.push({
+      date: formatted,
+      totalItems: found ? found.totalItems : 0,
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: result, // 👈 you’ll access this via res.data.data
+  });
+});
+
+export const getTotalMoneySpent = asyncHandler(async (req, res) => {
+  try {
+    const result = await SupplyHistory.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalSpent: { $sum: "$total_cost" },
+        },
+      },
+    ]);
+
+    const total = result.length > 0 ? result[0].totalSpent : 0;
+
+    res.status(200).json({
+      success: true,
+      message: "Total money spent on all stocked items retrieved successfully.",
+      total,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to calculate total money spent.",
+      error: error.message,
+    });
+  }
+});
