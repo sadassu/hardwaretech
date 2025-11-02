@@ -123,7 +123,7 @@ export const login = asyncHandler(async (req, res) => {
 
 // fetch user and reservations
 export const fetchUserData = asyncHandler(async (req, res) => {
-  const userEmail = req.query.email; // ✅ correct way
+  const userEmail = req.query.email; 
 
   if (!userEmail || !validator.isEmail(userEmail)) {
     throw Error("The email is either empty or not valid.");

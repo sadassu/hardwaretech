@@ -10,6 +10,9 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const change =
+    Number(amountPaid) > 0 ? Number(amountPaid) - reservation.totalPrice : 0;
+
   const handleComplete = async () => {
     try {
       setLoading(true);
@@ -65,6 +68,19 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
           value={amountPaid}
           onChange={(e) => setAmountPaid(e.target.value)}
         />
+
+        {Number(amountPaid) > 0 && (
+          <div className="bg-gray-100 p-3 rounded-md mt-4 flex justify-between items-center">
+            <span className="text-sm text-gray-600 font-medium">Change:</span>
+            <span
+              className={`text-lg font-semibold ${
+                change >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              ₱{change.toLocaleString()}
+            </span>
+          </div>
+        )}
 
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 

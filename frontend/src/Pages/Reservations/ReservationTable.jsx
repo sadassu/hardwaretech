@@ -126,10 +126,12 @@ const ReservationTable = () => {
                           reservation={res}
                           onUpdateSuccess={updateReservation}
                         />
-                        <CompleteReservation
-                          reservation={res}
-                          onUpdateSuccess={updateReservation}
-                        />
+                        {!['completed', 'cancelled'].includes(res.status?.toLowerCase()) && (
+                          <CompleteReservation
+                            reservation={res}
+                            onUpdateSuccess={updateReservation}
+                          />
+                        )}
                       </div>
                     </td>
                   </tr>
