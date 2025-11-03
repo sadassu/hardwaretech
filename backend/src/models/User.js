@@ -42,8 +42,11 @@ const userSchema = new mongoose.Schema(
     },
 
     verificationCode: { type: String },
-    
+
     verificationCodeExpires: { type: Date },
+
+    verificationTokenHash: String,
+    verificationTokenExpires: Date,
 
     isVerified: {
       type: Boolean,
@@ -58,6 +61,9 @@ userSchema.statics.signup = async ({
   email,
   password,
   confirmPassword,
+  verificationTokenHash,
+  verificationTokenExpires,
+  avatar,
 }) => {
   if (!email || !password || !name || !confirmPassword) {
     throw Error("All fields must be filled");
@@ -85,7 +91,15 @@ userSchema.statics.signup = async ({
   const salt = await bcrypt.genSalt(10);
   const hash = await bcrypt.hash(password, salt);
 
-  const user = await User.create({ name, email, password: hash });
+  const user = await User.create({
+    name,
+    email,
+    password: hash,
+    verificationTokenHash,
+    verificationTokenExpires,
+    avatar,
+  });
+
   return user;
 };
 

@@ -9,6 +9,7 @@ import {
   sendVerificationCode,
   updateUserRoles,
   verifyEmail,
+  verifyEmailUsingUrl,
 } from "../controllers/authController.js";
 import dotenv from "dotenv";
 
@@ -30,6 +31,7 @@ router.put("/api/user/updateRoles/:id", updateUserRoles);
 router.post("/api/auth/logout", logout);
 router.post("/api/auth/send-verification-code", sendVerificationCode);
 router.post("/api/auth/confirm-verification-code", verifyEmail);
+router.get("/api/auth/confirm-verification-url", verifyEmailUsingUrl);
 
 // Google OAuth route - step 1
 router.get(

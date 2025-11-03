@@ -24,6 +24,7 @@ import axios from "axios";
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
 import { verificationLimiter } from "../config/upstash.js";
+import { createVerificationToken } from "../utils/tokens.js";
 
 const createToken = (_id) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "3d" });
@@ -38,18 +39,16 @@ export const register = asyncHandler(async (req, res) => {
   }
 
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  try {
-    const { data } = await axios.post(
-      `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
-    );
+  const { data } = await axios.post(
+    `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
+  );
 
-    if (!data.success) {
-      return res.status(400).json({ error: "Captcha verification failed" });
-    }
-  } catch (error) {
-    console.error("reCAPTCHA verification error:", error);
-    return res.status(500).json({ error: "Captcha verification error" });
+  if (!data.success) {
+    return res.status(400).json({ error: "Captcha verification failed" });
   }
+
+  const { token: verificationToken, tokenHash } = createVerificationToken();
+  const expires = Date.now() + 24 * 60 * 60 * 1000;
 
   const defaultAvatar =
     "https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/no-profile-picture-icon.png";
@@ -59,20 +58,37 @@ export const register = asyncHandler(async (req, res) => {
     email,
     password,
     confirmPassword,
+    verificationTokenHash: tokenHash,
+    verificationTokenExpires: new Date(expires),
     avatar: defaultAvatar,
   });
 
-  const token = createToken(user._id);
+  // verification link
+  const verifyUrl = `${
+    process.env.CLIENT_URL
+  }/verify-account?verificationToken=${verificationToken}&email=${encodeURIComponent(
+    email
+  )}`;
+
+  const html = `
+    <p>Hi ${name},</p>
+    <p>Click the link below to verify your account:</p>
+    <a href="${verifyUrl}">${verifyUrl}</a>
+    <p>This link expires in 24 hours.</p>
+  `;
+
+  try {
+    await sendEmail(user.email, "Verify Your Email", html);
+  } catch (error) {
+    console.error("Failed to send email:", error);
+    return res
+      .status(500)
+      .json({ error: "Failed to send verification email." });
+  }
 
   res.status(201).json({
-    userId: user._id,
-    roles: user.roles,
-    name: user.name,
+    message: "User registered successfully! Verification email sent.",
     email: user.email,
-    token,
-    avatar: user.avatar,
-    isVerified: user.isVerified,
-    message: "User registered successfully!",
   });
 });
 
@@ -123,7 +139,7 @@ export const login = asyncHandler(async (req, res) => {
 
 // fetch user and reservations
 export const fetchUserData = asyncHandler(async (req, res) => {
-  const userEmail = req.query.email; 
+  const userEmail = req.query.email;
 
   if (!userEmail || !validator.isEmail(userEmail)) {
     throw Error("The email is either empty or not valid.");
@@ -259,7 +275,6 @@ export const sendVerificationCode = asyncHandler(async (req, res) => {
       message: "Verification code sent successfully.",
     });
   } catch (error) {
-    console.error("❌ Email sending failed:", error);
     res.status(500).json({
       error: "Failed to send verification email.",
     });
@@ -286,4 +301,46 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   await user.save();
 
   res.status(200).json({ message: "Email verified successfully." });
+});
+
+export const verifyEmailUsingUrl = asyncHandler(async (req, res) => {
+  const { verificationToken, email } = req.query;
+
+  if (!verificationToken || !email)
+    return res.status(400).json({ message: "Invalid verification link" });
+
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(verificationToken)
+    .digest("hex");
+
+  const user = await User.findOne({
+    email,
+    verificationTokenHash: tokenHash,
+    verificationTokenExpires: { $gt: new Date() },
+  });
+
+  if (!user) {
+    return res.status(400).json({ message: "Invalid or expired token" });
+  }
+
+  user.isVerified = true;
+  user.verificationTokenHash = undefined;
+  user.verificationTokenExpires = undefined;
+  await user.save();
+
+  const sessionToken = createToken(user._id);
+
+  res.cookie("token", sessionToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 24 * 60 * 60 * 1000,
+    path: "/",
+  });
+
+  return res.status(200).json({
+    message: "Account verified successfully!",
+    isVerified: user.isVerified,
+  });
 });

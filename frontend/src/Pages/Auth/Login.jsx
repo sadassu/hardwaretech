@@ -1,9 +1,23 @@
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useLogin } from "../../hooks/useLogin";
 import ReCAPTCHA from "react-google-recaptcha";
 
 function Login() {
+  const location = useLocation();
+  const [successMessage, setSuccessMessage] = useState(
+    location.state?.message || ""
+  );
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+      }, 30000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -48,6 +62,12 @@ function Login() {
           <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2" />
           <h2 className="text-white text-2xl font-bold">Log In</h2>
         </div>
+
+        {successMessage && (
+          <div className="bg-green-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center animate-fade-in">
+            {successMessage}
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (

@@ -28,7 +28,7 @@ function Register() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) return;
-    
+
     if (!captchaToken) {
       alert("Please complete the reCAPTCHA.");
       return;
@@ -43,7 +43,11 @@ function Register() {
     );
 
     if (result && !error) {
-      navigate("/login");
+      navigate("/login", {
+        state: {
+          message: "User registered successfully! Verification email sent.",
+        },
+      });
     }
   };
 

@@ -30,6 +30,7 @@ import SupplyHistories from "./Pages/SupplyHistories/SupplyHistories";
 import CategoryList from "./Pages/Settings/CategoryList";
 import Verification from "./Pages/Verification";
 import ProtectedRoute from "./routes/ProtectedRoutes";
+import VerificationUrl from "./Pages/verificationUrl";
 
 const Product = lazy(() => import("./Pages/Products/Product"));
 const Sales = lazy(() => import("./Pages/Sales/Sales"));
@@ -58,6 +59,7 @@ const App = () => {
         <Route element={<PublicLayout />}>
           <Route path="/verification" element={<Verification />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/verify-account" element={<VerificationUrl />} />
           <Route path="/" element={<HomePage />} />
 
           <Route
