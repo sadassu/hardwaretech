@@ -211,7 +211,7 @@ export const updateReservation = asyncHandler(async (req, res) => {
   });
 });
 
-// Get reservations by userID
+// Get reservations by User ID (with product + variant details)
 export const getReservationByUserId = asyncHandler(async (req, res) => {
   const userId = req.params.userId;
   const page = parseInt(req.query.page) || 1;
@@ -219,16 +219,32 @@ export const getReservationByUserId = asyncHandler(async (req, res) => {
   const sortBy = req.query.sortBy || "reservationDate";
   const sortOrder = req.query.sortOrder === "desc" ? -1 : 1;
   const skip = (page - 1) * limit;
+  const status = req.query.status; // Optional filter for user reservations
 
-  // ✅ Fetch paginated reservations
-  const reservations = await Reservation.find({ userId })
-    .populate("reservationDetails")
+  // ✅ Build query filter
+  const filter = { userId };
+  if (status && status !== "all") {
+    filter.status = status;
+  }
+
+  // ✅ Fetch reservations with full details
+  const reservations = await Reservation.find(filter)
+    .populate({
+      path: "reservationDetails",
+      populate: {
+        path: "productVariantId",
+        populate: {
+          path: "product",
+          select: "name category image description", // fields from Product model
+        },
+      },
+    })
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit);
 
-  // ✅ Count total reservations
-  const total = await Reservation.countDocuments({ userId });
+  // ✅ Count total reservations (with filter)
+  const total = await Reservation.countDocuments(filter);
 
   // ✅ Compute status counts per user
   const statusAggregation = await Reservation.aggregate([
@@ -245,7 +261,7 @@ export const getReservationByUserId = asyncHandler(async (req, res) => {
     completed: 0,
   };
 
-  // ✅ Map aggregation results to the object
+  // ✅ Map aggregation results
   statusAggregation.forEach((s) => {
     if (statusCounts[s._id] !== undefined) {
       statusCounts[s._id] = s.count;
@@ -260,17 +276,17 @@ export const getReservationByUserId = asyncHandler(async (req, res) => {
       page,
       pages: 0,
       reservations: [],
-      statusCounts, 
+      statusCounts,
     });
   }
 
-  // ✅ Return full data with status counts
+  // ✅ Return full data with product + variant details
   res.status(200).json({
     total,
     page,
     pages: Math.ceil(total / limit),
     reservations,
-    statusCounts, 
+    statusCounts,
   });
 });
 

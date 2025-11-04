@@ -161,33 +161,6 @@ const Profile = () => {
                               )}
                           </div>
 
-                          {/* Dropdown */}
-                          <div className="dropdown dropdown-left">
-                            <button
-                              type="button"
-                              tabIndex={0}
-                              role="button"
-                              className="btn btn-ghost btn-sm"
-                            >
-                              <EllipsisVertical className="h-4 w-4" />
-                            </button>
-                            <ul
-                              tabIndex={0}
-                              className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
-                            >
-                              <li>
-                                <a className="flex items-center gap-2 hover:bg-base-200">
-                                  <Eye className="h-4 w-4" /> View Details
-                                </a>
-                              </li>
-                              <li>
-                                <a className="flex items-center gap-2 hover:bg-base-200">
-                                  <FileDown className="h-4 w-4" /> Download
-                                  Receipt
-                                </a>
-                              </li>
-                            </ul>
-                          </div>
                         </div>
                       </div>
                     ))

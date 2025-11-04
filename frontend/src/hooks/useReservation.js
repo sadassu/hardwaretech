@@ -7,7 +7,8 @@ import { useAuthContext } from "./useAuthContext";
 export const useReservation = () => {
   const { user } = useAuthContext();
   const setToast = useToast();
-  const { updateReservation, fetchReservations } = useReservationStore();
+  const { updateReservation, fetchReservations, fetchUserReservations } =
+    useReservationStore();
 
   // ✅ Update reservation status (existing)
   const updateReservationStatus = async (reservationId, formData) => {
@@ -67,7 +68,7 @@ export const useReservation = () => {
 
       const updatedReservation = res.data.reservation || res.data;
       updateReservation(updatedReservation);
-      await fetchReservations(user.token);
+      await fetchUserReservations(user.token, user.userId);
 
       setToast({
         show: true,

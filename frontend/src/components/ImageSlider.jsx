@@ -11,7 +11,7 @@ export default function ImageSlider() {
       title: "Welcome to BABA",
       subtitle: "Experience the future of digital innovation",
       buttonText: "Get Started",
-      buttonLink: "#",
+      buttonLink: "/login",
     },
     {
       background: "url(/assets/carousel/c-2.jpg) center/cover no-repeat",

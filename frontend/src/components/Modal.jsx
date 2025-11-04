@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
+import { X } from "lucide-react"; // ✅ Import Lucide icon
 
 const Modal = ({ children, isOpen, onClose, className = "" }) => {
   const modalRef = useRef(null);
@@ -28,6 +29,15 @@ const Modal = ({ children, isOpen, onClose, className = "" }) => {
         ref={modalRef}
         className={`bg-[#222831] text-white rounded-2xl p-4 sm:p-6 relative w-full max-w-md sm:max-w-lg ${className}`}
       >
+        {/* ✅ Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors"
+          aria-label="Close"
+        >
+          <X size={20} />
+        </button>
+
         {children}
       </div>
     </div>,

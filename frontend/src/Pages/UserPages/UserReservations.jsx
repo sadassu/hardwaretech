@@ -11,32 +11,15 @@ import { formatPrice } from "../../utils/formatPrice";
 import { useReservationStore } from "../../store/reservationStore";
 
 const UserReservations = () => {
-  const {
-    reservations,
-    pages,
-    page,
-    setPage,
-    fetchUserReservations,
-    loading,
-  } = useReservationStore();
+  const { reservations, pages, page, setPage, fetchUserReservations, loading } =
+    useReservationStore();
 
   const { user } = useAuthContext();
   const { userId } = useParams();
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const limit = 12;
-
-  // 🕒 Debounce search input
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [search, setPage]);
 
   // 🔄 Fetch user-specific reservations
   useEffect(() => {
@@ -47,7 +30,7 @@ const UserReservations = () => {
         status: "all",
       });
     }
-  }, [user?.token, userId, page, debouncedSearch, fetchUserReservations]);
+  }, [user?.token, userId, page, fetchUserReservations]);
 
   // 🏷️ Badge style helper
   const getStatusBadge = (status) => {
@@ -75,22 +58,6 @@ const UserReservations = () => {
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-4">
         <h1 className="text-3xl font-bold">My Reservations</h1>
-
-        {/* Search bar */}
-        <div className="form-control w-full max-w-md">
-          <div className="input-group">
-            <input
-              type="text"
-              placeholder="Search reservations..."
-              className="input input-bordered w-full"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button className="btn btn-square btn-outline">
-              <Search className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Loading State */}
@@ -105,11 +72,6 @@ const UserReservations = () => {
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📅</div>
           <h3 className="text-xl font-bold mb-2">No reservations found</h3>
-          <p className="text-base-content/70">
-            {search
-              ? "Try adjusting your search terms"
-              : "You haven't made any reservations yet"}
-          </p>
         </div>
       )}
 
@@ -136,12 +98,40 @@ const UserReservations = () => {
                     </div>
                   </div>
 
-                  {/* Reservation ID */}
                   <div className="mb-2">
-                    <span className="text-base-content/70">ID: </span>
-                    <span className="font-mono text-base">
-                      {reservation._id.slice(-8)}
-                    </span>
+                    {reservation.reservationDetails?.length >= 3 ? (
+                      // 🌀 Marquee for 3 or more products
+                      <div className="overflow-hidden whitespace-nowrap">
+                        <div className="animate-marquee inline-block">
+                          {reservation.reservationDetails.map(
+                            (detail, index) => (
+                              <span
+                                key={index}
+                                className="mx-3 text-primary text-2xl"
+                              >
+                                {detail.productVariantId?.product?.name ||
+                                  "Unnamed Product"}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      // 🧍‍♂️ Static display for 1–2 products
+                      <div className="flex flex-wrap gap-2">
+                        {reservation.reservationDetails?.map(
+                          (detail, index) => (
+                            <span key={index} className="text-primary text-2xl">
+                              {detail.productVariantId?.product?.name ||
+                                "Unnamed Product"}
+                              {index <
+                                reservation.reservationDetails.length - 1 &&
+                                ","}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Total Price */}
@@ -171,7 +161,9 @@ const UserReservations = () => {
 
                   {/* Actions */}
                   <div className="card-actions justify-end">
-                    <CancelReservation reservationId={reservation._id} />
+                    {reservation.status === "pending" && (
+                      <CancelReservation reservationId={reservation._id} />
+                    )}
                     <button
                       className="btn btn-primary btn-outline"
                       onClick={() => handleViewDetails(reservation)}
