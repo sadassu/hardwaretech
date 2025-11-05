@@ -107,7 +107,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     name,
     description: description || "",
     category: existingCategory._id,
-    image: image || "", // ← Just store the text
+    image: image || "", 
   });
 
   const populatedProduct = await newProduct.populate("category");

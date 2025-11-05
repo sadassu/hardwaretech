@@ -24,7 +24,7 @@ router.get(
 router.get("/products/:id", getProductById);
 router.post(
   "/products",
-  requireAuthCookies,
+  requireAuth,
   requireRole(["admin", "cashier"]),
   createProduct
 );

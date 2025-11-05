@@ -13,7 +13,7 @@ const CreateProduct = () => {
     name: "",
     description: "",
     category: "",
-    image: "", // now a text area input
+    image: "", 
   });
 
   const { user } = useAuthContext();
@@ -48,7 +48,7 @@ const CreateProduct = () => {
           name: formData.name,
           description: formData.description,
           category: formData.category,
-          image: formData.image, // send text instead of file
+          image: formData.image, 
         },
         {
           headers: {
