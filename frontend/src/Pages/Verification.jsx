@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAuthContext } from "../hooks/useAuthContext";
+import { useLogout } from "../hooks/useLogout";
 import api from "../utils/api";
 
 function Verification() {
   const { user } = useAuthContext();
+  const { logout } = useLogout();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
@@ -119,6 +121,10 @@ function Verification() {
       setMessage(data.message);
       setCode("");
       localStorage.removeItem("verificationCooldown");
+
+      setTimeout(() => {
+        logout();
+      }, 2000);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to verify code.");
     } finally {
