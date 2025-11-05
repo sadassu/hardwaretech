@@ -45,6 +45,8 @@ function CartContent() {
     clearCart,
   } = useCart();
 
+  console.log(cartItems);
+
   const restrictedRoles = ["admin", "cashier"];
   const isRestricted = user?.roles?.some((role) =>
     restrictedRoles.includes(role)
@@ -213,7 +215,8 @@ function CartContent() {
                           {item.size && (
                             <div className="inline-flex items-center gap-1 mt-1">
                               <span className="text-xs font-medium text-[#30475E] bg-[#30475E]/10 px-2 py-1 rounded-full">
-                                ₱{item.price.toFixed(2)} / 1 {item.unit}
+                                ₱{item.price.toFixed(2)} / {item.size}{" "}
+                                {item.unit}
                               </span>
                             </div>
                           )}
@@ -306,7 +309,7 @@ function CartContent() {
                   </label>
                   <textarea
                     className="textarea textarea-bordered textarea-lg w-full bg-white text-[#222831] focus:border-[#30475E] focus:outline-[#30475E] rounded-xl text-sm sm:text-base"
-                    placeholder="Any special requests or delivery instructions? (Optional)"
+                    placeholder="Any special requests? (Optional)"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}

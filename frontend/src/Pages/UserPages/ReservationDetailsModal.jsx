@@ -16,7 +16,8 @@ function ReservationDetailsModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className="max-w-5xl w-full text-white px-4 sm:px-6"
+      // Keep modal within the viewport and make content scrollable
+      className="max-w-5xl w-full text-white px-4 sm:px-6 max-h-[90vh] overflow-y-auto py-6"
     >
       <h3 className="font-bold text-2xl mb-6 text-center text-white">
         Reservation Details

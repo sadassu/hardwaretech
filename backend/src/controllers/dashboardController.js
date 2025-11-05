@@ -27,7 +27,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
  */
 
 export const getDashboardSales = asyncHandler(async (req, res) => {
-  const { option } = req.query; // "daily", "monthly", "yearly"
+  const { option } = req.query; 
 
   let groupStage = {};
   let matchStage = {};
