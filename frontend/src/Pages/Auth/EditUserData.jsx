@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useFetch } from "../../hooks/useFetch";
 import api from "../../utils/api";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Loader2, User, Calendar, Search } from "lucide-react";
+import { formatDatePHT } from "../../utils/formatDate";
 
 function EditUserData() {
   const [email, setEmail] = useState("");
   const [fetchUrl, setFetchUrl] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
-  const navigate = useNavigate(); // ✅ Hook for navigation
+  const navigate = useNavigate();
 
   const { data, loading, error } = useFetch(fetchUrl, {}, [fetchUrl]);
 
@@ -24,8 +26,7 @@ function EditUserData() {
     }
   };
 
-  // Update when fetched
-  React.useEffect(() => {
+  useEffect(() => {
     if (data?.user?.roles) {
       setSelectedRoles(data.user.roles);
     }
@@ -54,146 +55,116 @@ function EditUserData() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
           {/* Header with Back Button */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <User className="w-5 h-5 text-blue-600" />
               User Management
             </h2>
             <button
-              onClick={() => navigate(-1)} // ✅ Go back to previous page
-              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition duration-200"
+              onClick={() => navigate(-1)}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition duration-200 w-full sm:w-auto flex items-center justify-center gap-2"
             >
-              ← Back
+              <ArrowLeft className="w-4 h-4" /> Back
             </button>
           </div>
 
           <div className="space-y-4">
+            {/* Search Input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search by Email
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Enter user email address"
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Enter user email address"
+                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm sm:text-base"
+                  />
+                </div>
                 <button
                   onClick={handleFetch}
                   disabled={!email || loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition duration-200 shadow-md hover:shadow-lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition duration-200 shadow-md hover:shadow-lg w-full sm:w-auto flex items-center justify-center gap-2"
                 >
                   {loading ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="none"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       Searching...
-                    </span>
+                    </>
                   ) : (
-                    "Search"
+                    <>
+                      <Search className="w-4 h-4" /> Search
+                    </>
                   )}
                 </button>
               </div>
             </div>
 
+            {/* Error Message */}
             {hasSearched && error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                <p className="font-medium">Error</p>
-                <p className="text-sm">{error}</p>
+                <p className="font-medium text-sm sm:text-base">Error</p>
+                <p className="text-xs sm:text-sm">{error}</p>
               </div>
             )}
 
+            {/* User Data */}
             {data && (
-              <div className="mt-6 space-y-6">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <svg
-                      className="w-5 h-5 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
+              <div className="mt-6 space-y-4 sm:space-y-6">
+                {/* User Info */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 sm:p-5">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-600" />
                     User Information
                   </h3>
                   <div className="space-y-2">
-                    <p className="text-gray-700">
+                    <p className="text-sm sm:text-base text-gray-700 break-words">
                       <strong className="text-gray-900">Name:</strong>{" "}
                       {data.user?.name || "N/A"}
                     </p>
-                    <p className="text-gray-700">
+                    <p className="text-sm sm:text-base text-gray-700 break-all">
                       <strong className="text-gray-900">Email:</strong>{" "}
                       {data.user?.email || "N/A"}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-5">
-                  <label className="block text-lg font-semibold text-gray-800 mb-3">
+                {/* Role Management */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5">
+                  <label className="block text-base sm:text-lg font-semibold text-gray-800 mb-3">
                     Manage Roles
                   </label>
                   <select
                     multiple
                     value={selectedRoles}
                     onChange={handleRoleChange}
-                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none min-h-32"
+                    className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none min-h-32 text-sm sm:text-base"
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                     <option value="cashier">Cashier</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Hold Ctrl (Windows) or Cmd (Mac) to select multiple roles
-                  </p>
                   <button
                     onClick={handleUpdateRoles}
-                    className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg"
+                    className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg w-full sm:w-auto"
                   >
                     Update Roles
                   </button>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-5">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <svg
-                      className="w-5 h-5 text-indigo-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
+                {/* Reservations */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5">
+                  <h4 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-indigo-600" />
                     Reservations
                   </h4>
                   {data.reservations?.length > 0 ? (
@@ -203,11 +174,11 @@ function EditUserData() {
                           key={res._id}
                           className="bg-gray-50 rounded-lg p-3 border border-gray-200"
                         >
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium text-gray-800">
-                              {res.reservationDate}
+                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                            <span className="font-medium text-gray-800 text-sm sm:text-base">
+                              {formatDatePHT(res.reservationDate)}
                             </span>
-                            <span className="text-sm text-gray-600 bg-blue-100 px-3 py-1 rounded-full">
+                            <span className="text-xs sm:text-sm text-gray-600 bg-blue-100 px-3 py-1 rounded-full w-fit">
                               {res.reservationDetails.length} detail
                               {res.reservationDetails.length !== 1 ? "s" : ""}
                             </span>
@@ -216,7 +187,7 @@ function EditUserData() {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-gray-500 italic">
+                    <p className="text-sm sm:text-base text-gray-500 italic">
                       No reservations found for this user.
                     </p>
                   )}
@@ -224,22 +195,11 @@ function EditUserData() {
               </div>
             )}
 
+            {/* Empty Search Prompt */}
             {!hasSearched && !data && (
-              <div className="text-center py-12">
-                <svg
-                  className="w-16 h-16 text-gray-300 mx-auto mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <p className="text-gray-500 text-lg">
+              <div className="text-center py-8 sm:py-12">
+                <Search className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-base sm:text-lg">
                   Enter an email address to search for a user
                 </p>
               </div>

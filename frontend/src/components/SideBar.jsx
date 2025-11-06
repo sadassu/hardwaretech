@@ -74,7 +74,7 @@ const SideBar = () => {
       path: "/products",
       icon: Package,
       isLink: true,
-      roles: ["admin", "staff", "cashier"],
+      roles: ["admin", "staff"],
     },
     {
       name: "POS",
@@ -95,7 +95,7 @@ const SideBar = () => {
       path: "/supply-histories",
       icon: FileBox,
       isLink: true,
-      roles: ["admin", "staff", "cashier"],
+      roles: ["admin", "staff"],
     },
     {
       name: "Settings",

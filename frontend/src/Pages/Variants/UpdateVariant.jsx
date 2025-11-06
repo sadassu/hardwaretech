@@ -5,7 +5,20 @@ import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
 import { Edit } from "lucide-react";
 
-const UNIT_OPTIONS = ["pcs", "kg", "g", "lb", "m", "cm", "ft", "set", "W", "V"];
+const UNIT_OPTIONS = [
+  "pcs",
+  "kg",
+  "g",
+  "lb",
+  "m",
+  "cm",
+  "ft",
+  "set",
+  "W",
+  "V",
+  "amphere",
+  "gang",
+];
 
 const UpdateVariant = ({ variant }) => {
   const { updateVariant } = useVariant();

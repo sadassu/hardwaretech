@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useCart } from "./useCart";
 import { useAuthContext } from "./useAuthContext";
 import api from "../utils/api";
+import { useSaleStore } from "../store/saleStore";
 
 export function useCheckout() {
   const { user } = useAuthContext();
@@ -57,8 +58,7 @@ export function useCheckout() {
     }
   };
 
-  
-// admin check out
+  // admin check out
   const adminCheckout = async ({ amountPaid }) => {
     if (!user) {
       setError("You must be logged in");
@@ -91,6 +91,14 @@ export function useCheckout() {
 
       // ✅ Clear cart on success
       clearCart();
+
+      const { fetchDailySales, fetchAnnualSales, fetchThisYearSales } =
+        useSaleStore.getState();
+      await Promise.all([
+        fetchDailySales(),
+        fetchAnnualSales(),
+        fetchThisYearSales(),
+      ]);
 
       return data;
     } catch (err) {

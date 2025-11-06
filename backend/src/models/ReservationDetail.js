@@ -27,7 +27,7 @@ const ReservationDetailSchema = new mongoose.Schema({
       "set",
       "W",
       "V",
-      "ampere",
+      "amphere",
       "gang",
     ],
     required: true,

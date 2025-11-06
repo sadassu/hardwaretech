@@ -7,6 +7,7 @@ import Pagination from "../../components/Pagination";
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatPrice } from "../../utils/formatPrice";
 import { Printer } from "lucide-react";
+import SalesCards from "../Dashboard/SalesCards";
 
 const Sales = () => {
   const { sales, pages, dispatch } = useSalesContext();
@@ -15,20 +16,9 @@ const Sales = () => {
   const [selectedSale, setSelectedSale] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [expandedRow, setExpandedRow] = useState(null);
 
   const limit = 20;
-
-  // Debounce search
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [search]);
 
   const { data, loading, error } = useFetch(
     "/sales",
@@ -38,11 +28,10 @@ const Sales = () => {
         limit,
         sortBy: "saleDate",
         sortOrder: "desc",
-        search: debouncedSearch,
       },
       headers: { Authorization: `Bearer ${user?.token}` },
     },
-    [page, debouncedSearch, user?.token]
+    [page, user?.token]
   );
 
   useEffect(() => {
@@ -72,18 +61,9 @@ const Sales = () => {
             Track and manage sales transactions from POS and reservations
           </p>
         </div>
-
-        {/* Search */}
-        <div className="form-control w-full max-w-xs">
-          <input
-            type="text"
-            placeholder="Search sales..."
-            className="input input-bordered w-full max-w-xs"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
       </div>
+
+      <SalesCards />
 
       {/* Table */}
       <div className="card bg-base-100 shadow-xl">
@@ -296,11 +276,11 @@ const Sales = () => {
                   <tr>
                     <td colSpan="7" className="text-center py-12">
                       <p className="text-base-content/60">No sales found</p>
-                      {debouncedSearch && (
+                      {
                         <p className="text-xs text-base-content/40 mt-1">
                           Try adjusting your search terms
                         </p>
-                      )}
+                      }
                     </td>
                   </tr>
                 )}

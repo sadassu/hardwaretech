@@ -95,7 +95,7 @@ const App = () => {
             path="/products"
             element={
               <Suspense fallback={<div>Loading...</div>}>
-                <RoleRoute allowedRoles={["admin", "cashier"]}>
+                <RoleRoute allowedRoles={["admin"]}>
                   <Product />
                 </RoleRoute>
               </Suspense>
@@ -165,7 +165,7 @@ const App = () => {
             path="/supply-histories"
             element={
               <Suspense fallback={<div>Loading...</div>}>
-                <RoleRoute allowedRoles={["admin", "cashier"]}>
+                <RoleRoute allowedRoles={["admin"]}>
                   <SupplyHistories />
                 </RoleRoute>
               </Suspense>

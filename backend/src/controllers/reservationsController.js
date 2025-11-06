@@ -324,8 +324,8 @@ export const getAllReservations = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const sortBy = req.query.sortBy || "reservationDate";
-  const sortOrder = req.query.sortOrder === "desc" ? -1 : 1;
-  const status = req.query.status; // Get status filter from query params
+  const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+  const status = req.query.status;
   const skip = (page - 1) * limit;
 
   // Build query filter

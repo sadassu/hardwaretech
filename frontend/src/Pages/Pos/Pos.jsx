@@ -11,6 +11,7 @@ import CategoryFilter from "../../components/CategoryFilter";
 
 import { useProductStore } from "../../store/productStore";
 import { useCategoriesStore } from "../../store/categoriesStore";
+import SaleCards from "./SaleCards";
 
 function Pos() {
   const { user } = useAuthContext();
@@ -147,6 +148,8 @@ function Pos() {
           </div>
         </div>
       </div>
+      
+      <SaleCards />
 
       <div className="container mx-auto px-6 py-6">
         {/* Search Section */}

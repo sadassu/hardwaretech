@@ -114,42 +114,6 @@ export const getDashboardSales = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get total sales sum for the current year
- *
- * This function calculates the overall sales total for the current year
- * across all Sale documents.
- *
- * Response format:
- * {
- *   totalSales: 123456  // sum of all totalPrice values for the current year
- * }
- */
-
-export const getTotalSalesYear = asyncHandler(async (req, res) => {
-  const currentYear = new Date().getFullYear();
-  const start = new Date(`${currentYear}-01-01T00:00:00.000Z`);
-  const end = new Date(`${currentYear}-12-31T23:59:59.999Z`);
-
-  const result = await Sale.aggregate([
-    {
-      $match: {
-        saleDate: { $gte: start, $lte: end },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        totalSales: { $sum: "$totalPrice" },
-      },
-    },
-  ]);
-
-  res.json({
-    totalSales: result.length > 0 ? result[0].totalSales : 0,
-  });
-});
-
-/**
  * Controller: getStockStatus
  *
  * Fetches product variants based on stock status (low, out, or all).

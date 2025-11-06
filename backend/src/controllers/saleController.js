@@ -3,7 +3,8 @@ import Sale from "../models/Sale.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import ProductVariant from "../models/ProductVariant.js";
 
-// create sale to the sale and sale_details
+// this is what the pos use to insert the sale from the mongodb
+// it accepts the items the amount paid and the cashier or the user logged in
 export const createSale = asyncHandler(async (req, res) => {
   const { items, amountPaid, cashier } = req.body;
 
@@ -109,13 +110,13 @@ export const getSales = asyncHandler(async (req, res) => {
 
   const sales = await Sale.find()
     .populate({
-      path: "items.productVariantId", // populate the ProductVariant
+      path: "items.productVariantId",
       populate: {
-        path: "product", // then populate the Product inside ProductVariant
-        select: "name category image", // optional: select only needed fields
+        path: "product",
+        select: "name category image",
       },
     })
-    .populate("cashier", "name email roles") // populate cashier info
+    .populate("cashier", "name email roles")
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(limit);
@@ -133,3 +134,97 @@ export const getSales = asyncHandler(async (req, res) => {
     sales,
   });
 });
+
+//get the daily sales
+export const getDailySales = asyncHandler(async (req, res) => {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const result = await Sale.aggregate([
+    {
+      $match: {
+        saleDate: { $gte: startOfDay, $lte: endOfDay },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalSales: { $sum: "$totalPrice" },
+      },
+    },
+  ]);
+
+  const totalSales = result.length > 0 ? result[0].totalSales : 0;
+
+  res.status(200).json({ date: startOfDay.toDateString(), totalSales });
+});
+
+//take the annual sales
+export const getAnnualSales = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+
+    const result = await Sale.aggregate([
+      {
+        $match: {
+          saleDate: { $gte: startOfYear, $lte: endOfYear },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAnnualSales: { $sum: "$totalPrice" },
+        },
+      },
+    ]);
+
+    const totalAnnualSales = result.length > 0 ? result[0].totalAnnualSales : 0;
+
+    res.status(200).json({
+      year: now.getFullYear(),
+      totalAnnualSales,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+//take the this year sales
+export const getThisYearSales = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1); // Jan 1
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999); // Dec 31
+
+    // Aggregate total sales within this year
+    const result = await Sale.aggregate([
+      {
+        $match: {
+          saleDate: { $gte: startOfYear, $lte: endOfYear },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: "$totalPrice" },
+        },
+      },
+    ]);
+
+    const totalSales = result.length > 0 ? result[0].totalSales : 0;
+
+    res.status(200).json({
+      year: now.getFullYear(),
+      totalSales,
+    });
+  } catch (error) {
+    console.error("Error fetching this year's sales:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};

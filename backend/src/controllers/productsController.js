@@ -80,6 +80,10 @@ export const getProductById = asyncHandler(async (req, res) => {
   res.status(200).json(product);
 });
 
+// helper: build a regex to match the exact name, case-insensitive
+const exactNameRegex = (name) =>
+  new RegExp("^" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$", "i");
+
 //  Create new product
 export const createProduct = asyncHandler(async (req, res) => {
   const { name, description, category, image } = req.body || {};
@@ -87,6 +91,14 @@ export const createProduct = asyncHandler(async (req, res) => {
   // ✅ Validate required fields
   if (!name || !category) {
     return res.status(400).json({ message: "Name and category are required" });
+  }
+
+  // Prevent duplicate product name (case-insensitive)
+  const existingProduct = await Product.findOne({ name: exactNameRegex(name) });
+  if (existingProduct) {
+    return res
+      .status(400)
+      .json({ message: "A product with this name already exists" });
   }
 
   // ✅ Validate image (optional)
@@ -107,7 +119,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     name,
     description: description || "",
     category: existingCategory._id,
-    image: image || "", 
+    image: image || "",
   });
 
   const populatedProduct = await newProduct.populate("category");
@@ -132,6 +144,24 @@ export const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(productId);
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
+  }
+
+  // If name is provided and differs from current, ensure uniqueness
+  if (
+    name &&
+    !product.name.match(
+      new RegExp("^" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$", "i")
+    )
+  ) {
+    const conflicting = await Product.findOne({
+      name: exactNameRegex(name),
+      _id: { $ne: productId },
+    });
+    if (conflicting) {
+      return res
+        .status(400)
+        .json({ message: "Another product with this name already exists" });
+    }
   }
 
   // ✅ Handle category (reuse or create)

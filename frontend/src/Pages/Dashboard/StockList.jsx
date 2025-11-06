@@ -3,9 +3,9 @@ import { useFetch } from "../../hooks/useFetch";
 /**
  * Sub-component to show stock details in Modal
  */
-export function StockList({ type, onClose }) {
+export function StockList({ type }) {
   const { data, loading, error } = useFetch(
-    `dashboard/stocks?type=${type}&page=1&limit=10`,
+    `dashboard/stocks?type=${type}&page=1&limit=999`,
     {},
     [type]
   );
