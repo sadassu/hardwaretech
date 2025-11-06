@@ -69,6 +69,14 @@ userSchema.statics.signup = async ({
     throw Error("All fields must be filled");
   }
 
+  // ✅ Name validation: at least 2 characters, letters and spaces only
+  const nameRegex = /^[A-Za-z\s]{2,}$/;
+  if (!nameRegex.test(name.trim())) {
+    throw Error(
+      "Name must be at least 2 characters and contain only letters and spaces."
+    );
+  }
+
   if (password !== confirmPassword) {
     throw Error("Passwords do not match");
   }
@@ -92,7 +100,7 @@ userSchema.statics.signup = async ({
   const hash = await bcrypt.hash(password, salt);
 
   const user = await User.create({
-    name,
+    name: name.trim(),
     email,
     password: hash,
     verificationTokenHash,

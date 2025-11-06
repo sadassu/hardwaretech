@@ -61,7 +61,7 @@ function Register() {
       }}
     >
       <div
-        className="backdrop-blur-md bg-gray-800/80 rounded-xl p-8 w-full max-w-sm"
+        className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-8 w-full max-w-sm"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
       >
         {/* Logo + Title */}
@@ -80,81 +80,102 @@ function Register() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 relative">
           {/* Full Name */}
-          <div className="relative">
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter your full name"
-              className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
-              required
-            />
-            <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
-              Full Name
-            </span>
+          <div>
+            <div className="relative">
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Enter your full name"
+                className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
+                required
+              />
+              <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
+                Full Name
+              </span>
+            </div>
+            <p className="text-sm text-white mx-2">
+              Must be at least 2 Characters, letters and spaces only
+            </p>
           </div>
 
           {/* Email */}
-          <div className="relative">
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
-              required
-            />
-            <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
-              Email
-            </span>
+          <div>
+            <div className="relative">
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter your email"
+                className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
+                required
+              />
+              <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
+                Email
+              </span>
+            </div>
+            <p className="text-sm text-white mx-2">
+              Enter a valid email address (e.g., user@example.com)
+            </p>
           </div>
 
           {/* Password */}
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
-            >
-              {showPassword ? "🙈" : "👁️"}
-            </button>
-            <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
-              Password
-            </span>
+          <div>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+              <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
+                Password
+              </span>
+            </div>
+            <p className="text-sm text-white mx-2">
+              Must be at least 8 characters with uppercase, lowercase, number,
+              and special characters
+            </p>
           </div>
 
           {/* Confirm Password */}
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Re-enter your password"
-              className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
-            >
-              {showConfirmPassword ? "🙈" : "👁️"}
-            </button>
-            <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
-              Confirm Password
-            </span>
+          <div>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Re-enter your password"
+                className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
+              >
+                {showConfirmPassword ? "🙈" : "👁️"}
+              </button>
+              <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
+                Confirm Password
+              </span>
+            </div>
+            <p className="text-sm text-white mx-2">
+              Re-enter your password to confirm
+            </p>
           </div>
 
           {/* Password match warning */}

@@ -54,7 +54,7 @@ function Login() {
       }}
     >
       <div
-        className="backdrop-blur-md bg-gray-800/80 rounded-xl p-8 w-full max-w-sm"
+        className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-8 w-full max-w-sm"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
       >
         {/* Logo + Title */}
