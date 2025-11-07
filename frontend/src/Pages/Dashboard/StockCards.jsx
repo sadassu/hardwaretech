@@ -65,10 +65,7 @@ function StockCards() {
       <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="animate-pulse"
-            >
+            <div key={i} className="animate-pulse">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-gray-200 rounded-xl"></div>
                 <div className="flex-1">
@@ -95,9 +92,7 @@ function StockCards() {
   }
 
   return (
-    <div >
-      
-
+    <div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -128,13 +123,6 @@ function StockCards() {
                   </p>
                   <p className={`text-4xl font-bold ${stat.textColor}`}>
                     {stat.count.toLocaleString()}
-                  </p>
-                </div>
-
-                {/* Click hint */}
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors duration-300">
-                    Click to view details →
                   </p>
                 </div>
               </div>

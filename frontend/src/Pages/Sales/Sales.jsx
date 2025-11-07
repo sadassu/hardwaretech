@@ -6,8 +6,9 @@ import Receipt from "../../components/Receipt";
 import Pagination from "../../components/Pagination";
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatPrice } from "../../utils/formatPrice";
-import { Printer } from "lucide-react";
+import { Printer, RotateCcw } from "lucide-react";
 import SaleCards from "../Pos/SaleCards";
+import ReturnSales from "./ReturnSales";
 
 const Sales = () => {
   const { sales, pages, dispatch } = useSalesContext();
@@ -257,16 +258,19 @@ const Sales = () => {
                           </div>
                         </td>
                         <td>
-                          <button
-                            className="btn btn-outline btn-sm"
-                            onClick={() => {
-                              setSelectedSale(sale);
-                              setShowReceipt(true);
-                            }}
-                          >
-                            <Printer />
-                            Print
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              className="btn btn-outline btn-sm"
+                              onClick={() => {
+                                setSelectedSale(sale);
+                                setShowReceipt(true);
+                              }}
+                            >
+                              <Printer />
+                              Print
+                            </button>
+                            <ReturnSales sale={sale} />
+                          </div>
                         </td>
                       </tr>
 

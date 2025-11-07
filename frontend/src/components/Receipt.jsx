@@ -336,10 +336,6 @@ function Receipt({ sale, onClose }) {
 
             {/* Totals */}
             <div className="my-3 border-t-2 border-dashed border-black pt-2">
-              <div className="flex justify-between text-sm my-2">
-                <span>Subtotal:</span>
-                <span>₱{sale.totalPrice?.toLocaleString()}</span>
-              </div>
               <div className="flex justify-between text-base font-bold my-2 pt-2 border-t-2 border-black">
                 <span>TOTAL:</span>
                 <span>₱{sale.totalPrice?.toLocaleString()}</span>

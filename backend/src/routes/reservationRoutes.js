@@ -5,12 +5,12 @@ import {
   deleteReservation,
   getAllReservations,
   updateReservationStatus,
-  completeReservation,
   updateReservation,
   cancelReservation,
 } from "../controllers/reservationsController.js";
 import requireAuth from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { completeReservation } from "../controllers/reservationCompleteController.js";
 
 const router = express.Router();
 

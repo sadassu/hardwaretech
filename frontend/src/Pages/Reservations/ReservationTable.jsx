@@ -121,18 +121,21 @@ const ReservationTable = () => {
                     </td>
                     <td>
                       <div className="flex gap-2">
-                        <UpdateReservationStatus reservation={res} />
-                        <UpdateReservationDetails
-                          reservation={res}
-                          onUpdateSuccess={updateReservation}
-                        />
+                        {/* show actions only for non-completed / non-cancelled reservations */}
                         {!["completed", "cancelled"].includes(
                           res.status?.toLowerCase()
                         ) && (
-                          <CompleteReservation
-                            reservation={res}
-                            onUpdateSuccess={updateReservation}
-                          />
+                          <>
+                            <UpdateReservationStatus reservation={res} />
+                            <UpdateReservationDetails
+                              reservation={res}
+                              onUpdateSuccess={updateReservation}
+                            />
+                            <CompleteReservation
+                              reservation={res}
+                              onUpdateSuccess={updateReservation}
+                            />
+                          </>
                         )}
                       </div>
                     </td>

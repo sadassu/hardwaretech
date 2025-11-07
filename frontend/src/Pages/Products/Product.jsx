@@ -16,6 +16,7 @@ import RestockVariant from "../Variants/RestockVariant";
 import Pagination from "../../components/Pagination";
 import SearchBar from "../../components/SearchBar";
 import CategoryFilter from "../../components/CategoryFilter";
+import StockCards from "../Dashboard/StockCards";
 
 const Product = () => {
   const { products, total, pages, loading, error, fetchProducts } =
@@ -212,6 +213,9 @@ const Product = () => {
           />
         </div>
 
+        <div className="mb-4">
+          <StockCards />
+        </div>
         {/* ➕ Create Product */}
         <div className="mb-8">
           <CreateProduct onSuccess={() => fetchProducts(user.token)} />
