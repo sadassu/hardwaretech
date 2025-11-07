@@ -11,7 +11,6 @@ function ReservationDetailsModal({
 }) {
   if (!selectedReservation) return null;
 
-  console.log(selectedReservation);
   return (
     <Modal
       isOpen={isOpen}

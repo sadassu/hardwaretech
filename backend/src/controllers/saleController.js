@@ -105,37 +105,195 @@ export const getSales = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const sortBy = req.query.sortBy || "saleDate";
   const sortOrder = req.query.sortOrder === "desc" ? -1 : 1;
-
   const skip = (page - 1) * limit;
 
-  const sales = await Sale.find()
-    .populate({
-      path: "items.productVariantId",
-      populate: {
-        path: "product",
-        select: "name category image",
-      },
-    })
-    .populate("cashier", "name email roles")
-    .sort({ [sortBy]: sortOrder })
-    .skip(skip)
-    .limit(limit);
+  // Accept filters
+  const {
+    search,
+    cashier: cashierFilter,
+    type: typeFilter,
+    status: statusFilter,
+    dateFrom,
+    dateTo,
+  } = req.query;
 
-  if (!sales || sales.length === 0) {
-    return res.status(404).json({ message: "No sales found" });
+  // Build regex for search if present
+  const searchRegex = search ? new RegExp(search, "i") : null;
+
+  // Aggregation pipeline
+  const pipeline = [];
+
+  // Add saleId as string to allow regex search on id
+  pipeline.push({
+    $addFields: {
+      saleIdString: { $toString: "$_id" },
+    },
+  });
+
+  // Lookup cashier (users collection)
+  pipeline.push({
+    $lookup: {
+      from: "users",
+      localField: "cashier",
+      foreignField: "_id",
+      as: "cashier",
+    },
+  });
+  pipeline.push({
+    $unwind: { path: "$cashier", preserveNullAndEmptyArrays: true },
+  });
+
+  // Lookup product variants referenced in items and populate their product
+  pipeline.push({
+    $lookup: {
+      from: "productvariants",
+      let: { variantIds: "$items.productVariantId" },
+      pipeline: [
+        {
+          $match: {
+            $expr: { $in: ["$_id", "$$variantIds"] },
+          },
+        },
+        {
+          $lookup: {
+            from: "products",
+            localField: "product",
+            foreignField: "_id",
+            as: "product",
+          },
+        },
+        { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
+      ],
+      as: "variants",
+    },
+  });
+
+  // Build match conditions
+  const matchConditions = [];
+
+  if (typeFilter) {
+    matchConditions.push({ type: typeFilter });
   }
 
-  const total = await Sale.countDocuments();
+  if (dateFrom || dateTo) {
+    const dateMatch = {};
+    if (dateFrom) dateMatch.$gte = new Date(dateFrom);
+    if (dateTo) {
+      // include end of day for dateTo
+      const d = new Date(dateTo);
+      d.setHours(23, 59, 59, 999);
+      dateMatch.$lte = d;
+    }
+    matchConditions.push({ saleDate: dateMatch });
+  }
+
+  if (statusFilter) {
+    if (statusFilter.toLowerCase() === "paid") {
+      matchConditions.push({ $expr: { $gte: ["$amountPaid", "$totalPrice"] } });
+    } else if (statusFilter.toLowerCase() === "partial") {
+      matchConditions.push({ $expr: { $lt: ["$amountPaid", "$totalPrice"] } });
+    }
+  }
+
+  // Cashier filter: accept a possible ObjectId string or match name/email (case-insensitive)
+  if (cashierFilter) {
+    if (mongoose.Types.ObjectId.isValid(cashierFilter)) {
+      matchConditions.push({ cashier: mongoose.Types.ObjectId(cashierFilter) });
+    } else {
+      const cfRegex = new RegExp(cashierFilter, "i");
+      matchConditions.push({
+        $or: [{ "cashier.name": cfRegex }, { "cashier.email": cfRegex }],
+      });
+    }
+  }
+
+  // If search provided, match across saleIdString, cashier name/email, variants.name or variants.product.name
+  if (searchRegex) {
+    matchConditions.push({
+      $or: [
+        { saleIdString: { $regex: searchRegex } },
+        { "cashier.name": { $regex: searchRegex } },
+        { "cashier.email": { $regex: searchRegex } },
+        { "variants.name": { $regex: searchRegex } },
+        { "variants.product.name": { $regex: searchRegex } },
+      ],
+    });
+  }
+
+  if (matchConditions.length > 0) {
+    pipeline.push({ $match: { $and: matchConditions } });
+  }
+
+  // Sort stage
+  pipeline.push({ $sort: { [sortBy]: sortOrder } });
+
+  // Use facet to get total count and paginated results in one query
+  pipeline.push({
+    $facet: {
+      metadata: [{ $count: "total" }],
+      data: [
+        // Map items to include the populated productVariantId object from variants lookup
+        {
+          $addFields: {
+            items: {
+              $map: {
+                input: "$items",
+                as: "it",
+                in: {
+                  productVariantId: {
+                    $arrayElemAt: [
+                      {
+                        $filter: {
+                          input: "$variants",
+                          as: "v",
+                          cond: { $eq: ["$$v._id", "$$it.productVariantId"] },
+                        },
+                      },
+                      0,
+                    ],
+                  },
+                  productId: "$$it.productId",
+                  quantity: "$$it.quantity",
+                  price: "$$it.price",
+                  subtotal: "$$it.subtotal",
+                  size: "$$it.size",
+                  unit: "$$it.unit",
+                },
+              },
+            },
+          },
+        },
+        // Optionally remove the temporary fields we used for lookups
+        {
+          $project: {
+            variants: 0,
+            saleIdString: 0,
+          },
+        },
+        { $skip: skip },
+        { $limit: limit },
+      ],
+    },
+  });
+
+  const result = await Sale.aggregate(pipeline);
+
+  const metadata = result[0].metadata[0] || { total: 0 };
+  const total = metadata.total || 0;
+  const sales = result[0].data || [];
+
+  // Calculate total pages
+  const pages = Math.ceil(total / limit) || 1;
 
   res.status(200).json({
     total,
     page,
-    pages: Math.ceil(total / limit),
+    pages,
     sales,
   });
 });
 
-//get the daily sales
+// get the daily sales
 export const getDailySales = asyncHandler(async (req, res) => {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
@@ -162,7 +320,7 @@ export const getDailySales = asyncHandler(async (req, res) => {
   res.status(200).json({ date: startOfDay.toDateString(), totalSales });
 });
 
-//take the annual sales
+// take the annual sales
 export const getAnnualSales = async (req, res) => {
   try {
     const now = new Date();
@@ -195,7 +353,7 @@ export const getAnnualSales = async (req, res) => {
   }
 };
 
-//take the this year sales
+// take the this year sales
 export const getThisYearSales = async (req, res) => {
   try {
     const now = new Date();
@@ -225,6 +383,48 @@ export const getThisYearSales = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching this year's sales:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+// get the monthly sales
+export const getMonthlySales = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999
+    );
+
+    const result = await Sale.aggregate([
+      {
+        $match: {
+          saleDate: { $gte: startOfMonth, $lte: endOfMonth },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalMonthlySales: { $sum: "$totalPrice" },
+        },
+      },
+    ]);
+
+    const totalMonthlySales = result.length > 0 ? result[0].totalMonthlySales : 0;
+
+    res.status(200).json({
+      year: now.getFullYear(),
+      month: now.getMonth() + 1,
+      totalMonthlySales,
+    });
+  } catch (error) {
+    console.error("Error fetching monthly sales:", error);
     res.status(500).json({ message: "Server error", error });
   }
 };

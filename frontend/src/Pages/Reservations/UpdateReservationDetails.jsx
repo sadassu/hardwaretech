@@ -126,9 +126,8 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h5 className="font-medium text-sm">
-                          {matchedProduct?.name ||
-                            detail.productId?.name ||
-                            `Product ID: ${detail.productId}`}
+                          {detail?.productVariantId?.product?.name ||
+                            "Unnamed Product"}
                         </h5>
 
                         <div className="text-xs text-base-content/60 mt-1 space-y-1">

@@ -7,6 +7,7 @@ export const useSaleStore = create(
     (set) => ({
       dailySales: 0,
       annualSales: 0,
+      monthlySales: 0,
       loading: false,
       error: null,
 
@@ -53,6 +54,21 @@ export const useSaleStore = create(
             error:
               error.response?.data?.message ||
               "Failed to fetch this year's sales",
+            loading: false,
+          });
+        }
+      },
+
+      fetchMonthlySales: async () => {
+        set({ loading: true, error: null });
+        try {
+          const res = await api.get("/sales/monthly-sales");
+          set({ monthlySales: res.data.totalMonthlySales || 0, loading: false });
+        } catch (error) {
+          console.error("Failed to fetch monthly sales:", error);
+          set({
+            error:
+              error.response?.data?.message || "Failed to fetch monthly sales",
             loading: false,
           });
         }

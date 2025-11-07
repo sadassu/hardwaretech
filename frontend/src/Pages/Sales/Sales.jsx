@@ -7,7 +7,7 @@ import Pagination from "../../components/Pagination";
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatPrice } from "../../utils/formatPrice";
 import { Printer } from "lucide-react";
-import SalesCards from "../Dashboard/SalesCards";
+import SaleCards from "../Pos/SaleCards";
 
 const Sales = () => {
   const { sales, pages, dispatch } = useSalesContext();
@@ -17,6 +17,14 @@ const Sales = () => {
   const [showReceipt, setShowReceipt] = useState(false);
   const [page, setPage] = useState(1);
   const [expandedRow, setExpandedRow] = useState(null);
+
+  // New filter states
+  const [search, setSearch] = useState("");
+  const [cashierFilter, setCashierFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const limit = 20;
 
@@ -28,10 +36,27 @@ const Sales = () => {
         limit,
         sortBy: "saleDate",
         sortOrder: "desc",
+        // include filters in request (backend should handle empty strings/undefined)
+        search: search || undefined,
+        cashier: cashierFilter || undefined,
+        type: typeFilter || undefined,
+        status: statusFilter || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
       },
       headers: { Authorization: `Bearer ${user?.token}` },
     },
-    [page, user?.token]
+    // Add filters to dependency array so fetch re-runs when they change
+    [
+      page,
+      user?.token,
+      search,
+      cashierFilter,
+      typeFilter,
+      statusFilter,
+      dateFrom,
+      dateTo,
+    ]
   );
 
   useEffect(() => {
@@ -63,7 +88,82 @@ const Sales = () => {
         </div>
       </div>
 
-      <SalesCards />
+      <SaleCards />
+
+      {/* Filters */}
+      <div className="my-4">
+        <div className="flex flex-wrap gap-2 items-center">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search sale ID, product..."
+            className="input input-sm input-bordered"
+          />
+
+          <input
+            type="text"
+            value={cashierFilter}
+            onChange={(e) => {
+              setCashierFilter(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Cashier name or email"
+            className="input input-sm input-bordered"
+          />
+
+          <select
+            value={typeFilter}
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              setPage(1);
+            }}
+            className="select select-sm select-bordered"
+          >
+            <option value="">All Types</option>
+            <option value="pos">POS</option>
+            <option value="reservation">Reservation</option>
+          </select>
+
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => {
+              setDateFrom(e.target.value);
+              setPage(1);
+            }}
+            className="input input-sm input-bordered"
+          />
+
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => {
+              setDateTo(e.target.value);
+              setPage(1);
+            }}
+            className="input input-sm input-bordered"
+          />
+
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={() => {
+              setSearch("");
+              setCashierFilter("");
+              setTypeFilter("");
+              setStatusFilter("");
+              setDateFrom("");
+              setDateTo("");
+              setPage(1);
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      </div>
 
       {/* Table */}
       <div className="card bg-base-100 shadow-xl">

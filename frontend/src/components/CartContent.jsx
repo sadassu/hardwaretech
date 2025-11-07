@@ -45,8 +45,6 @@ function CartContent() {
     clearCart,
   } = useCart();
 
-  console.log(cartItems);
-
   const restrictedRoles = ["admin", "cashier"];
   const isRestricted = user?.roles?.some((role) =>
     restrictedRoles.includes(role)

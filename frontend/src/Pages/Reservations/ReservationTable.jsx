@@ -126,7 +126,9 @@ const ReservationTable = () => {
                           reservation={res}
                           onUpdateSuccess={updateReservation}
                         />
-                        {!['completed', 'cancelled'].includes(res.status?.toLowerCase()) && (
+                        {!["completed", "cancelled"].includes(
+                          res.status?.toLowerCase()
+                        ) && (
                           <CompleteReservation
                             reservation={res}
                             onUpdateSuccess={updateReservation}

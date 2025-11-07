@@ -45,7 +45,7 @@ export const useReservationStore = create(
             page,
             limit,
             sortBy: "reservationDate",
-            sortOrder: "asc",
+            sortOrder: "desc",
           };
           if (status !== "all") params.status = status;
 
