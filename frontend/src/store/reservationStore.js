@@ -81,7 +81,7 @@ export const useReservationStore = create(
       ) => {
         set({ loading: true, error: null });
         try {
-          const params = { page, limit };
+          const params = { page, limit, sortOrder: "desc" }; 
           if (status !== "all") params.status = status;
 
           const res = await api.get(`/reservations/user/${userId}`, {

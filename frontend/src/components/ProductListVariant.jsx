@@ -27,7 +27,7 @@ function ProductListVariant({ product, user, isMobile }) {
       <div className="mt-4">
         <div className="alert alert-warning">
           <AlertTriangle className="h-6 w-6" />
-          <span>No stock available</span>
+          <span className="text-red-500">No stock available</span>
         </div>
       </div>
     );

@@ -24,9 +24,10 @@ export const returnSales = asyncHandler(async (req, res) => {
     price: item.price,
   }));
 
+  // Return items to stock by incrementing the quantity field
   for (const item of sale.items) {
     await ProductVariant.findByIdAndUpdate(item.productVariantId._id, {
-      $inc: { stock: item.quantity },
+      $inc: { quantity: item.quantity },
     });
   }
 
@@ -35,7 +36,7 @@ export const returnSales = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: "Sale items retrieved and sale deleted successfully",
+    message: "Sale items returned to stock and sale deleted successfully",
     items: itemsWithQuantity,
   });
 });

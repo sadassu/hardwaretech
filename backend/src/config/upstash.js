@@ -9,7 +9,7 @@ const redis = Redis.fromEnv();
 
 export const ratelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(1500, "60 s"),
+  limiter: Ratelimit.slidingWindow(999999, "60 s"),
 });
 
 export const verificationLimiter = new Ratelimit({

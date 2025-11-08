@@ -14,7 +14,6 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import supplyHistoryRoute from "./routes/supplyHistoriesRoute.js";
 import categoryRoutes from "./routes/categoriesRoute.js";
 
-
 import { connectDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 import passport from "passport";
@@ -51,7 +50,7 @@ app.use("/api/sales", saleRoutes);
 app.use("/api/delete", deleteRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/supply-histories", supplyHistoryRoute);
-app.use("/api/categories", categoryRoutes)
+app.use("/api/categories", categoryRoutes);
 
 // ✅ Global error handler
 app.use((err, req, res, next) => {
@@ -66,4 +65,11 @@ connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server listening on port: ${PORT}`);
   });
+
+  // Initialize cron jobs in production
+  if (process.env.NODE_ENV === "production") {
+    import("./cron/cancelOldReservations.js")
+      .then(() => console.log("✅ Cron jobs initialized"))
+      .catch((err) => console.error("❌ Failed to initialize cron jobs:", err));
+  }
 });

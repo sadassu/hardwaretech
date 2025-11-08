@@ -19,8 +19,7 @@ import CategoryFilter from "../../components/CategoryFilter";
 import StockCards from "../Dashboard/StockCards";
 
 const Product = () => {
-  const { products, total, pages, loading, error, fetchProducts } =
-    useProductStore();
+  const { products, pages, loading, error, fetchProducts } = useProductStore();
 
   const {
     categories,
@@ -87,40 +86,6 @@ const Product = () => {
     setSelectedCategory("");
     setCurrentPage(1);
   };
-
-  // ✅ Calculate statistics
-  const calculateStats = () => {
-    if (!products || products.length === 0) {
-      return {
-        totalCategories: categories.length,
-        totalProducts: 0,
-        lowStockVariants: 0,
-      };
-    }
-
-    const uniqueCategories = new Set();
-    let lowStockCount = 0;
-    const lowStockThreshold = 10;
-
-    products.forEach((product) => {
-      if (product.category?._id) {
-        uniqueCategories.add(product.category._id);
-      }
-      if (product.variants) {
-        product.variants.forEach((variant) => {
-          if (variant.quantity <= lowStockThreshold) lowStockCount++;
-        });
-      }
-    });
-
-    return {
-      totalCategories: categories.length,
-      totalProducts: total || products.length,
-      lowStockVariants: lowStockCount,
-    };
-  };
-
-  const stats = calculateStats();
 
   return (
     <div className="min-h-screen p-4 lg:p-2">
@@ -192,26 +157,6 @@ const Product = () => {
             </button>
           </div>
         )}
-
-        {/* 📊 Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <StatCard
-            title="Total Categories"
-            value={stats.totalCategories}
-            color="#30475E"
-          />
-          <StatCard
-            title="Total Products"
-            value={stats.totalProducts}
-            color="#222831"
-          />
-          <StatCard
-            title="Low Stock Variants"
-            value={stats.lowStockVariants}
-            color={stats.lowStockVariants > 0 ? "#F05454" : "#30475E"}
-            subtitle="(≤10 items)"
-          />
-        </div>
 
         <div className="mb-4">
           <StockCards />
@@ -304,8 +249,10 @@ const Product = () => {
                                   <div className="flex items-center gap-2 mt-1">
                                     <div
                                       className={`badge badge-sm ${
-                                        variant.quantity <= 10
+                                        variant.quantity === 0
                                           ? "bg-[#F05454] text-white"
+                                          : variant.quantity <= 50
+                                          ? "bg-yellow-400 text-black"
                                           : "badge-outline"
                                       }`}
                                     >
@@ -369,19 +316,5 @@ const Product = () => {
     </div>
   );
 };
-
-// ✅ Small stat card subcomponent
-const StatCard = ({ title, value, color, subtitle }) => (
-  <div
-    className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl overflow-hidden"
-    style={{ backgroundColor: color }}
-  >
-    <div className="p-6">
-      <p className="text-sm font-medium mb-1 text-[#DDDDDD]">{title}</p>
-      <h3 className="text-3xl font-bold text-[#DDDDDD]">{value}</h3>
-      {subtitle && <p className="text-xs mt-1 text-[#DDDDDD]/70">{subtitle}</p>}
-    </div>
-  </div>
-);
 
 export default Product;
