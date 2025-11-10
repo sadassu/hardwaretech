@@ -17,6 +17,7 @@ function LoginSuccess() {
     const emailParam = params.get("email");
     const avatar = params.get("avatar");
     const isVerified = params.get("isVerified");
+    const googleLoggedIn = params.get("googleLoggedIn");
 
     if (token) {
       let roles = [];
@@ -34,6 +35,7 @@ function LoginSuccess() {
         email: emailParam,
         avatar,
         isVerified,
+        googleLoggedIn,
       };
 
       // Save full user object

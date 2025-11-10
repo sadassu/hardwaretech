@@ -25,9 +25,9 @@ function ProductListVariant({ product, user, isMobile }) {
   if (hasNoVariants || allOutOfStock) {
     return (
       <div className="mt-4">
-        <div className="alert alert-warning">
-          <AlertTriangle className="h-6 w-6" />
-          <span className="text-red-500">No stock available</span>
+        <div className="alert alert-warning bg-red-500 border-black">
+          <AlertTriangle className="h-6 w-6 text-white" />
+          <span className="text-white">No stock available</span>
         </div>
       </div>
     );

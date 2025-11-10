@@ -31,6 +31,8 @@ import CategoryList from "./Pages/Settings/CategoryList";
 import Verification from "./Pages/Verification";
 import ProtectedRoute from "./routes/ProtectedRoutes";
 import VerificationUrl from "./Pages/verificationUrl";
+import ForgotPassword from "./Pages/Auth/ForgotPassword";
+import ResetPassword from "./Pages/Auth/PasswordReset";
 
 const Product = lazy(() => import("./Pages/Products/Product"));
 const Sales = lazy(() => import("./Pages/Sales/Sales"));
@@ -65,6 +67,14 @@ const App = () => {
           <Route
             path="/login"
             element={!user ? <Login /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/forgot-password"
+            element={!user ? <ForgotPassword /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/reset-password/:token"
+            element={!user ? <ResetPassword /> : <Navigate to="/" />}
           />
           <Route
             path="/register"

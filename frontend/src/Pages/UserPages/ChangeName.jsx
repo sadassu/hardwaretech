@@ -5,7 +5,7 @@ import api from "../../utils/api";
 import { SquarePen } from "lucide-react";
 import TextInput from "../../components/TextInput.jsx";
 
-function ChangeName({ onUpdateSuccess }) {
+function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
   const { user, dispatch } = useAuthContext();
   const [name, setName] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -47,9 +47,9 @@ function ChangeName({ onUpdateSuccess }) {
       {/* Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="btn bg-red-500 text-white rounded-xl flex items-center gap-2 px-4 py-2 text-sm sm:text-base w-full sm:w-auto"
+        className={`cursor-pointer rounded-xl flex items-center gap-2 px-4 py-2 text-sm sm:text-base w-full sm:w-auto ${className}`}
       >
-        <SquarePen className="h-4 w-4 sm:h-5 sm:w-5" />
+        {Icon && <Icon className="w-5 h-5" />}
         Change Name
       </button>
 

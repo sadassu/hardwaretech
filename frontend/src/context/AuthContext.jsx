@@ -16,6 +16,8 @@ export const authReducer = (state, action) => {
         ...state,
         user: { ...state.user, ...action.payload },
       };
+    case "DELETE_ACCOUNT":
+      return { user: null }; // remove user from state
     default:
       return state;
   }
@@ -33,8 +35,13 @@ export const AuthContextProvider = ({ children }) => {
     }
   }, []);
 
+  const deleteAccount = () => {
+    localStorage.removeItem("user");
+    dispatch({ type: "DELETE_ACCOUNT" });
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, dispatch }}>
+    <AuthContext.Provider value={{ ...state, dispatch, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

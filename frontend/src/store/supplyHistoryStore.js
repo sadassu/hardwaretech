@@ -19,12 +19,20 @@ export const useSupplyHistoryStore = create((set, get) => ({
     page = 1,
     limit = 10,
     search = "",
+    startDate,
+    endDate,
   }) => {
     set({ loading: true, error: null });
 
     try {
+      const params = { page, limit, search };
+
+      // ✅ Add startDate and endDate if provided
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+
       const res = await api.get("/supply-histories", {
-        params: { page, limit, search },
+        params,
         headers: { Authorization: `Bearer ${token}` },
       });
 

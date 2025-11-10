@@ -42,11 +42,13 @@ const userSchema = new mongoose.Schema(
     },
 
     verificationCode: { type: String },
-
     verificationCodeExpires: { type: Date },
 
     verificationTokenHash: String,
     verificationTokenExpires: Date,
+
+    resetPasswordTokenHash: String,
+    resetPasswordTokenExpires: Date,
 
     isVerified: {
       type: Boolean,
@@ -55,6 +57,12 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.pre("findOneAndDelete", async function (next) {
+  const userId = this.getQuery()["_id"];
+  await mongoose.model("Reservation").deleteMany({ userId });
+  next();
+});
 
 userSchema.statics.signup = async ({
   name,

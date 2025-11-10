@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuthContext } from "../hooks/useAuthContext";
 import {
@@ -14,12 +14,28 @@ import {
   Menu,
   FileBox,
 } from "lucide-react";
+import ChangePassword from "../Pages/UserPages/ChangePassword";
+import ChangeName from "../Pages/UserPages/ChangeName";
 
 const SideBar = () => {
   const { user } = useAuthContext();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
+
+  // ✅ Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -228,18 +244,20 @@ const SideBar = () => {
         </nav>
 
         {/* User section at bottom */}
-        <div className="p-4 border-t border-slate-700">
+        <div
+          className="p-4 border-t border-slate-700 relative"
+          ref={userMenuRef}
+        >
           <div
-            className={`flex items-center ${
-              isCollapsed ? "justify-center" : "space-x-3"
-            }`}
+            className={`flex items-center cursor-pointer rounded-lg p-2 transition-all duration-200 
+      hover:bg-slate-700 hover:scale-[1.01] 
+      ${isCollapsed ? "justify-center" : "space-x-3"}`}
+            onClick={() => setShowUserMenu((prev) => !prev)}
           >
-            <div className="avatar">
-              <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-medium text-slate-200">
-                  {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                </span>
-              </div>
+            <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-medium text-slate-200">
+                {user?.name?.charAt(0)?.toUpperCase() || "U"}
+              </span>
             </div>
             {!isCollapsed && (
               <span className="text-sm text-slate-300 truncate">
@@ -247,6 +265,30 @@ const SideBar = () => {
               </span>
             )}
           </div>
+
+          {/* Dropdown Menu */}
+          {!isCollapsed && showUserMenu && (
+            <div
+              className="absolute bottom-14 left-4 right-4 bg-slate-800 border border-slate-700 
+      rounded-lg shadow-lg overflow-hidden z-50 animate-fadeIn"
+            >
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-slate-200 
+        hover:bg-red-600 hover:text-white transition-all duration-200"
+              >
+                <ChangeName />
+              </button>
+
+              {!user.googleLoggedIn && (
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-slate-200 
+        hover:bg-red-600 hover:text-white transition-all duration-200"
+                >
+                  <ChangePassword />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

@@ -99,37 +99,14 @@ const UserReservations = () => {
                   </div>
 
                   <div className="mb-2">
-                    {reservation.reservationDetails?.length >= 3 ? (
-                      // 🌀 Marquee for 3 or more products
-                      <div className="overflow-hidden whitespace-nowrap">
-                        <div className="animate-marquee inline-block">
-                          {reservation.reservationDetails.map(
-                            (detail, index) => (
-                              <span
-                                key={index}
-                                className="mx-3 text-primary text-2xl"
-                              >
-                                {detail.productVariantId?.product?.name ||
-                                  "Unnamed Product"}
-                              </span>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      // 🧍‍♂️ Static display for 1–2 products
-                      <div className="flex flex-wrap gap-2">
-                        {reservation.reservationDetails?.map(
-                          (detail, index) => (
-                            <span key={index} className="text-primary text-2xl">
-                              {detail.productVariantId?.product?.name ||
-                                "Unnamed Product"}
-                              {index <
-                                reservation.reservationDetails.length - 1 &&
-                                ","}
-                            </span>
-                          )
-                        )}
+                    {reservation.reservationDetails?.length > 0 && (
+                      <div className="flex flex-wrap gap-3">
+                        {reservation.reservationDetails.map((detail, index) => (
+                          <span key={index} className="text-primary text-2xl">
+                            {detail.productVariantId?.product?.name ||
+                              "Unnamed Product"}
+                          </span>
+                        ))}
                       </div>
                     )}
                   </div>

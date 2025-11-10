@@ -39,6 +39,7 @@ export const useLogin = () => {
       }
 
       setIsLoading(false);
+      return response.data; // <-- ✅ this returns the json your component expects
     } catch (err) {
       setIsLoading(false);
       // Handle captcha or login errors

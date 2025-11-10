@@ -5,7 +5,7 @@ import api from "../../utils/api";
 import { LockKeyhole } from "lucide-react";
 import TextInput from "../../components/TextInput";
 
-function ChangePassword() {
+function ChangePassword({ className = "", icon: Icon }) {
   const { user } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
@@ -75,9 +75,9 @@ function ChangePassword() {
           setError(null);
           setSuccess(null);
         }}
-        className="btn bg-red-500 text-white rounded-xl flex items-center gap-2 px-4 py-2 text-sm sm:text-base w-full sm:w-auto"
+        className={`cursor-pointer rounded-xl flex items-center gap-2 px-4 py-2 text-sm sm:text-base w-full sm:w-auto ${className}`}
       >
-        <LockKeyhole className="w-4 h-4 sm:w-5 sm:h-5" />
+        {Icon && <Icon className="w-5 h-5" />}
         <span className="hidden sm:inline">Change Password</span>
         <span className="sm:hidden">Password</span>
       </button>

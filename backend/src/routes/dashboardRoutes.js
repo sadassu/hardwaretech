@@ -9,9 +9,19 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = express.Router();
 
-router.get("/sales", requireAuth, requireRole(["admin"]), getDashboardSales);
+router.get(
+  "/sales",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  getDashboardSales
+);
 
-router.get("/stocks", requireAuth, requireRole(["admin"]), getStockStatus);
+router.get(
+  "/stocks",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  getStockStatus
+);
 
 router.get(
   "/supply-sales",

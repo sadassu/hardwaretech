@@ -2,7 +2,8 @@ import React from "react";
 import ChangeName from "./ChangeName";
 import ChangePassword from "./ChangePassword";
 import ChangeAvatar from "./ChangeAvatar";
-import { BarChart3 } from "lucide-react";
+import { AlertTriangle, BarChart3, LockIcon, SquarePen } from "lucide-react";
+import DeleteAccount from "./DeleteAccount";
 
 function UserInformationCard({ user, data, statusCounts }) {
   return (
@@ -29,8 +30,20 @@ function UserInformationCard({ user, data, statusCounts }) {
 
           {/* Action Buttons */}
           <div className="card-actions justify-end ">
-            <ChangePassword />
-            <ChangeName />
+            {!user.googleLoggedIn && (
+              <ChangePassword
+                className="btn bg-red-500 text-white"
+                icon={LockIcon}
+              />
+            )}
+            <ChangeName
+              className="btn bg-red-500 text-white"
+              icon={SquarePen}
+            />
+            <DeleteAccount
+              className="btn bg-red-500 text-white"
+              icon={AlertTriangle}
+            />
           </div>
         </div>
       </div>

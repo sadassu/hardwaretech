@@ -4,13 +4,13 @@ import ProductVariant from "./ProductVariant.js";
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    description: { type: String, default: "" },
+    description: { type: String, default: "", require: true },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
       required: true,
     },
-    image: { type: String, default: "" },
+    image: { type: String, default: "", require: true },
   },
   { timestamps: true }
 );

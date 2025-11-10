@@ -12,6 +12,13 @@ import {
   verifyEmailUsingUrl,
 } from "../controllers/authController.js";
 import dotenv from "dotenv";
+import requireAuth from "../middleware/requireAuth.js";
+import { deleteAccount } from "../controllers/deleteAccountController.js";
+import { requireRole } from "../middleware/requireRole.js";
+import {
+  forgotPassword,
+  resetPassword,
+} from "../controllers/forgotPasswordController.js";
 
 const router = express.Router();
 
@@ -32,6 +39,16 @@ router.post("/api/auth/logout", logout);
 router.post("/api/auth/send-verification-code", sendVerificationCode);
 router.post("/api/auth/confirm-verification-code", verifyEmail);
 router.get("/api/auth/confirm-verification-url", verifyEmailUsingUrl);
+router.delete("/api/auth/me", requireAuth, deleteAccount);
+router.delete(
+  "/api/auth/:id",
+  requireAuth,
+  requireRole("admin"),
+  deleteAccount
+);
+
+router.post("/api/auth/forgot-password", forgotPassword);
+router.post("/api/auth/reset-password/:token", resetPassword);
 
 // Google OAuth route - step 1
 router.get(
@@ -60,6 +77,9 @@ router.get(
     // include isVerified
     const isVerified = req.user.isVerified || false;
 
+    // google logged in flag
+    const googleLoggedIn = true;
+
     res.redirect(
       `${CLIENT_URL}/login/success?token=${token}&userId=${
         req.user._id
@@ -69,7 +89,9 @@ router.get(
         req.user.email
       )}&avatar=${encodeURIComponent(
         req.user.avatar || ""
-      )}&isVerified=${encodeURIComponent(isVerified)}`
+      )}&isVerified=${encodeURIComponent(
+        isVerified
+      )}&googleLoggedIn=${encodeURIComponent(googleLoggedIn)}`
     );
   }
 );

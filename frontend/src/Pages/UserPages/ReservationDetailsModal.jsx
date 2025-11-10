@@ -15,7 +15,6 @@ function ReservationDetailsModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      // Keep modal within the viewport and make content scrollable
       className="max-w-5xl w-full text-white px-4 sm:px-6 max-h-[90vh] overflow-y-auto py-6"
     >
       <h3 className="font-bold text-2xl mb-6 text-center text-white">
@@ -89,21 +88,28 @@ function ReservationDetailsModal({
 
           <div className="grid grid-cols-1 gap-4">
             {selectedReservation.reservationDetails.map((detail, index) => {
-              const variant = detail.productVariantId;
+              const variant = detail?.productVariantId;
+              const product = variant?.product;
 
+              // Safely compute price and subtotal
               const price = variant?.price || 0;
-              const subtotal = price * detail.quantity;
+              const subtotal = price * (detail?.quantity || 0);
 
               return (
                 <div
-                  key={detail._id || index}
+                  key={detail?._id || index}
                   className="bg-[#1a1f25] border border-gray-600 rounded-2xl p-4 transition-all hover:border-gray-500"
                 >
                   {/* Product Info */}
                   <div className="mb-3">
                     <h5 className="font-semibold text-lg text-white">
-                      {variant.product?.name || "Unnamed Product"}
+                      {product?.name || "Unknown Product"}
                     </h5>
+                    {!product && (
+                      <p className="text-sm text-red-400">
+                        ⚠️ Product data not found (might have been deleted)
+                      </p>
+                    )}
                   </div>
 
                   {/* Variant Details */}
@@ -111,11 +117,10 @@ function ReservationDetailsModal({
                     <div>
                       <span className="text-gray-400">Size:</span>{" "}
                       <span className="text-gray-200">
-                        {variant?.size || "—"}
+                        {variant?.size || "N/A"}
                       </span>
                     </div>
 
-                    {/* Only show Color if it exists */}
                     {variant?.color && (
                       <div>
                         <span className="text-gray-400">Color:</span>{" "}
@@ -132,19 +137,24 @@ function ReservationDetailsModal({
                     <div>
                       <span className="text-gray-400">Unit:</span>{" "}
                       <span className="text-gray-200">
-                        {variant?.unit || "—"}
+                        {variant?.unit || "N/A"}
                       </span>
                     </div>
+
                     <div>
                       <span className="text-gray-400">Quantity:</span>{" "}
-                      <span className="text-gray-200">{detail.quantity}</span>
+                      <span className="text-gray-200">
+                        {detail?.quantity ?? "N/A"}
+                      </span>
                     </div>
+
                     <div>
                       <span className="text-gray-400">Price:</span>{" "}
                       <span className="text-gray-200">
                         {formatPrice(price)}
                       </span>
                     </div>
+
                     <div>
                       <span className="text-gray-400">Subtotal:</span>{" "}
                       <span className="font-semibold text-primary">

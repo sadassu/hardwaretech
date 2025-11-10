@@ -85,12 +85,15 @@ const exactNameRegex = (name) =>
   new RegExp("^" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$", "i");
 
 //  Create new product
+// Create product
 export const createProduct = asyncHandler(async (req, res) => {
   const { name, description, category, image } = req.body || {};
 
   // ✅ Validate required fields
-  if (!name || !category) {
-    return res.status(400).json({ message: "Name and category are required" });
+  if (!name || !category || !description || !image) {
+    return res.status(400).json({
+      message: "Name, description, category, and image are required",
+    });
   }
 
   // Prevent duplicate product name (case-insensitive)
@@ -101,8 +104,8 @@ export const createProduct = asyncHandler(async (req, res) => {
       .json({ message: "A product with this name already exists" });
   }
 
-  // ✅ Validate image (optional)
-  if (image && typeof image !== "string") {
+  // ✅ Validate image
+  if (typeof image !== "string") {
     return res
       .status(400)
       .json({ message: "Image must be a text URL or base64 string" });
@@ -114,12 +117,12 @@ export const createProduct = asyncHandler(async (req, res) => {
     existingCategory = await Category.create({ name: category });
   }
 
-  // ✅ Create product (no file handling)
+  // ✅ Create product
   const newProduct = await Product.create({
     name,
-    description: description || "",
+    description,
     category: existingCategory._id,
-    image: image || "",
+    image,
   });
 
   const populatedProduct = await newProduct.populate("category");
@@ -146,6 +149,13 @@ export const updateProduct = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Product not found" });
   }
 
+  // ✅ Ensure all required fields
+  if (!name || !category || !description || !image) {
+    return res.status(400).json({
+      message: "Name, description, category, and image are required",
+    });
+  }
+
   // If name is provided and differs from current, ensure uniqueness
   if (
     name &&
@@ -166,26 +176,24 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
   // ✅ Handle category (reuse or create)
   let categoryId = product.category;
-  if (category) {
-    let existingCategory = await Category.findOne({ name: category });
-    if (!existingCategory) {
-      existingCategory = await Category.create({ name: category });
-    }
-    categoryId = existingCategory._id;
+  let existingCategory = await Category.findOne({ name: category });
+  if (!existingCategory) {
+    existingCategory = await Category.create({ name: category });
   }
+  categoryId = existingCategory._id;
 
-  // ✅ Validate image (optional)
-  if (image && typeof image !== "string") {
+  // ✅ Validate image
+  if (typeof image !== "string") {
     return res
       .status(400)
       .json({ message: "Image must be a text URL or base64 string" });
   }
 
   // ✅ Update fields
-  product.name = name || product.name;
-  product.description = description || product.description;
+  product.name = name;
+  product.description = description;
   product.category = categoryId;
-  if (image) product.image = image;
+  product.image = image;
 
   await product.save();
   await product.populate("category");

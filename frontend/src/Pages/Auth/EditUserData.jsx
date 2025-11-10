@@ -2,7 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useFetch } from "../../hooks/useFetch";
 import api from "../../utils/api";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, User, Calendar, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  User,
+  Calendar,
+  Search,
+  Trash,
+} from "lucide-react";
 import { formatDatePHT } from "../../utils/formatDate";
 
 function EditUserData() {
@@ -10,6 +17,7 @@ function EditUserData() {
   const [fetchUrl, setFetchUrl] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
 
   const { data, loading, error } = useFetch(fetchUrl, {}, [fetchUrl]);
@@ -51,6 +59,29 @@ function EditUserData() {
     } catch (err) {
       console.error(err);
       alert("Failed to update roles.");
+    }
+  };
+
+  // DELETE ACCOUNT HANDLER
+  const handleDeleteAccount = async () => {
+    if (!data?.user?._id) return;
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this account? This action cannot be undone."
+    );
+    if (!confirmDelete) return;
+
+    setDeleting(true);
+    try {
+      await api.delete(`/auth/${data.user._id}`);
+      alert("Account deleted successfully!");
+
+      // Reload the page
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete account.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -153,12 +184,33 @@ function EditUserData() {
                     <option value="admin">Admin</option>
                     <option value="cashier">Cashier</option>
                   </select>
-                  <button
-                    onClick={handleUpdateRoles}
-                    className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg w-full sm:w-auto"
-                  >
-                    Update Roles
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                    <button
+                      onClick={handleUpdateRoles}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg w-full sm:w-auto"
+                    >
+                      Update Roles
+                    </button>
+
+                    {/* Delete Button */}
+
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleting}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg w-full sm:w-auto flex items-center justify-center gap-2"
+                    >
+                      {deleting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash className="w-4 h-4" /> Delete Account
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Reservations */}

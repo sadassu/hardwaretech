@@ -4,8 +4,8 @@ import Pagination from "../../components/Pagination";
 import SearchBar from "../../components/SearchBar";
 import { useSupplyHistoryStore } from "../../store/supplyHistoryStore";
 import RedoModal from "./RedoModal";
-import { Clock, Package, TrendingUp } from "lucide-react";
-import { useIsMobile } from "../../hooks/useIsMobile"; // 👈 import your hook
+import { Clock, Package, TrendingUp, Calendar, X } from "lucide-react";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 const SupplyHistories = () => {
   const { user } = useAuthContext();
@@ -27,9 +27,11 @@ const SupplyHistories = () => {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const limit = 10;
 
-  const isMobile = useIsMobile(768); // 👈 dynamically detect screen size
+  const isMobile = useIsMobile(768);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -41,7 +43,6 @@ const SupplyHistories = () => {
           fetchTotalMoneySpent(user.token),
         ]);
 
-        // Calculate totals for 7 days
         setLast7DaysSpending(
           spending.reduce((sum, day) => sum + day.totalSpent, 0)
         );
@@ -69,30 +70,132 @@ const SupplyHistories = () => {
   // Fetch data whenever filters change
   useEffect(() => {
     if (user?.token) {
-      fetchSupplyHistories({ token: user.token, page, limit, search: query });
+      fetchSupplyHistories({
+        token: user.token,
+        page,
+        limit,
+        search: query,
+        startDate,
+        endDate,
+      });
     }
-  }, [page, query, user?.token]);
+  }, [page, query, startDate, endDate, user?.token]);
+
+  const handleStartDateChange = (e) => {
+    setStartDate(e.target.value);
+    setPage(1);
+  };
+
+  const handleEndDateChange = (e) => {
+    setEndDate(e.target.value);
+    setPage(1);
+  };
+
+  const clearDateFilters = () => {
+    setStartDate("");
+    setEndDate("");
+    setPage(1);
+  };
+
+  const hasDateFilter = startDate || endDate;
+
+  const getDateRangeText = () => {
+    if (startDate && endDate) {
+      return `${new Date(startDate + "T00:00:00").toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })} - ${new Date(endDate + "T00:00:00").toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })}`;
+    } else if (startDate) {
+      return `From ${new Date(startDate + "T00:00:00").toLocaleDateString(
+        "en-PH",
+        {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }
+      )}`;
+    } else if (endDate) {
+      return `Up to ${new Date(endDate + "T00:00:00").toLocaleDateString(
+        "en-PH",
+        {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }
+      )}`;
+    }
+    return "";
+  };
 
   return (
     <div className="container mx-auto p-6">
       {/* ===== HEADER ===== */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-base-content">
-            Supply Histories
-          </h1>
-          <p className="text-base-content/70 mt-1">
-            View all supply restock transactions
-          </p>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-base-content">
+              Supply Histories
+            </h1>
+            <p className="text-base-content/70 mt-1">
+              View all supply restock transactions
+            </p>
+          </div>
+
+          <SearchBar
+            search={search}
+            onSearchChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch("")}
+            isSearching={isSearching}
+            placeholder="Search product name..."
+          />
         </div>
 
-        <SearchBar
-          search={search}
-          onSearchChange={(e) => setSearch(e.target.value)}
-          onClear={() => setSearch("")}
-          isSearching={isSearching}
-          placeholder="Search product name..."
-        />
+        {/* ===== DATE RANGE FILTER ===== */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <Calendar className="h-5 w-5 text-base-content/70" />
+              <input
+                type="date"
+                value={startDate}
+                onChange={handleStartDateChange}
+                className="input input-bordered w-full"
+                placeholder="Start date"
+              />
+            </div>
+            <span className="hidden sm:block text-base-content/70">to</span>
+            <div className="flex items-center gap-2 flex-1">
+              <input
+                type="date"
+                value={endDate}
+                onChange={handleEndDateChange}
+                className="input input-bordered w-full"
+                placeholder="End date"
+                min={startDate || undefined}
+              />
+              {hasDateFilter && (
+                <button
+                  onClick={clearDateFilters}
+                  className="btn btn-ghost btn-sm btn-circle"
+                  title="Clear date filters"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          {hasDateFilter && (
+            <div className="text-sm text-base-content/70">
+              Showing results for:{" "}
+              <span className="font-semibold">{getDateRangeText()}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ===== ANALYTICS CARDS ===== */}
@@ -192,11 +295,13 @@ const SupplyHistories = () => {
                     })}
                   </p>
                   <p>
-                    <strong>Date:</strong>{" "}
-                    {new Date(h.supplied_at).toLocaleDateString("en-PH", {
+                    <strong>Date Supplied:</strong>{" "}
+                    {new Date(h.createdAt).toLocaleDateString("en-PH", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </p>
                   <p>
@@ -220,7 +325,9 @@ const SupplyHistories = () => {
             ))
           ) : (
             <p className="text-center text-base-content/60 py-12">
-              No supply histories found
+              {hasDateFilter
+                ? "No supply histories found for the selected date range"
+                : "No supply histories found"}
             </p>
           )}
         </div>
@@ -236,6 +343,7 @@ const SupplyHistories = () => {
                   <th>Supplier Price</th>
                   <th>Total Cost</th>
                   <th>Date Supplied</th>
+                  <th>Created At</th>
                   <th>Notes</th>
                   <th>Actions</th>
                 </tr>
@@ -243,7 +351,7 @@ const SupplyHistories = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="text-center py-12">
+                    <td colSpan="8" className="text-center py-12">
                       <span className="loading loading-spinner loading-lg"></span>
                     </td>
                   </tr>
@@ -288,6 +396,21 @@ const SupplyHistories = () => {
                           day: "numeric",
                         })}
                       </td>
+                      <td>
+                        <div className="text-sm">
+                          {new Date(h.createdAt).toLocaleDateString("en-PH", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                          <div className="text-xs text-base-content/60">
+                            {new Date(h.createdAt).toLocaleTimeString("en-PH", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
+                        </div>
+                      </td>
                       <td className="max-w-xs truncate">
                         {h.notes || (
                           <span className="text-base-content/50 italic">
@@ -306,9 +429,11 @@ const SupplyHistories = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="text-center py-12">
+                    <td colSpan="8" className="text-center py-12">
                       <p className="text-base-content/60">
-                        No supply histories found
+                        {hasDateFilter
+                          ? "No supply histories found for the selected date range"
+                          : "No supply histories found"}
                       </p>
                     </td>
                   </tr>

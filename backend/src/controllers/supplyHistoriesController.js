@@ -4,7 +4,16 @@ import SupplyHistory from "../models/SupplyHistory.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const getSupplyHistory = asyncHandler(async (req, res) => {
-  let { month, sort, order, page = 1, limit = 10, search } = req.query;
+  let {
+    month,
+    startDate,
+    endDate,
+    sort,
+    order,
+    page = 1,
+    limit = 10,
+    search,
+  } = req.query;
 
   // Ensure numbers
   page = Number(page);
@@ -12,8 +21,20 @@ export const getSupplyHistory = asyncHandler(async (req, res) => {
 
   let filter = {};
 
-  // 📌 Filter by month
-  if (month) {
+  // 📌 Filter by date range (startDate & endDate)
+  if (startDate && endDate) {
+    const start = new Date(`${startDate}T00:00:00.000Z`);
+    const end = new Date(`${endDate}T23:59:59.999Z`);
+    filter.supplied_at = { $gte: start, $lte: end };
+  }
+  // 📌 Filter by specific date (if only startDate provided)
+  else if (startDate) {
+    const start = new Date(`${startDate}T00:00:00.000Z`);
+    const end = new Date(`${startDate}T23:59:59.999Z`);
+    filter.supplied_at = { $gte: start, $lte: end };
+  }
+  // 📌 Filter by month (only if no dates provided)
+  else if (month) {
     const start = new Date(`${month}-01T00:00:00.000Z`);
     const end = new Date(start);
     end.setMonth(end.getMonth() + 1);
@@ -58,8 +79,7 @@ export const getSupplyHistory = asyncHandler(async (req, res) => {
   let total = await SupplyHistory.countDocuments(filter);
 
   if (search) {
-    // adjust total if search applied
-    total = histories.length;
+    total = histories.length; // adjust total if search applied
   }
 
   res.status(200).json({
