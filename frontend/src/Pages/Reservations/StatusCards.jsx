@@ -46,17 +46,10 @@ const StatusCards = ({ statusFilter, statusCounts, onStatusChange }) => {
       color: "bg-error/10 hover:bg-error/20",
       activeColor: "bg-error text-error-content",
     },
-    {
-      key: "failed",
-      label: "Failed",
-      Icon: AlertTriangle,
-      color: "bg-error/10 hover:bg-error/20",
-      activeColor: "bg-error text-error-content",
-    },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
       {statusCards.map((card) => {
         const IconComponent = card.Icon;
         const isActive = statusFilter === card.key;

@@ -23,7 +23,6 @@ function ProductList() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const limit = 12;
 
   // Debounce search
   useEffect(() => {
@@ -50,7 +49,6 @@ function ProductList() {
     if (user?.token) {
       fetchProducts(user.token, {
         page,
-        limit,
         search: debouncedSearch,
         category: selectedCategory,
       });

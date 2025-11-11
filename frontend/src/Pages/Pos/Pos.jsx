@@ -40,7 +40,6 @@ function Pos() {
   const [isSearching, setIsSearching] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const limit = 9;
 
   // ✅ Debounce search input
   useEffect(() => {
@@ -65,7 +64,6 @@ function Pos() {
     if (user?.token) {
       fetchProducts(user.token, {
         page: currentPage,
-        limit,
         search: debouncedSearch,
         category: selectedCategory,
       });

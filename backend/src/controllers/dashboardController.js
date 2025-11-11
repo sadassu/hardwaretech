@@ -143,7 +143,7 @@ export const getStockStatus = async (req, res) => {
 
     // Build query depending on stock type
     let query = {};
-    if (type === "low") query = { quantity: { $gt: 0, $lt: 50 } };
+    if (type === "low") query = { quantity: { $gt: 0, $lt: 15 } };
     if (type === "out") query = { quantity: 0 };
     if (type === "all") query = {}; // no filter
 

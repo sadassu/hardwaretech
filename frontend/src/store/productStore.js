@@ -19,7 +19,7 @@ export const useProductStore = create(
       // ✅ Fetch products
       fetchProducts: async (
         token,
-        { page = 1, limit = 10, search = "", category = "" } = {}
+        { page = 1, limit = 12, search = "", category = "" } = {}
       ) => {
         set({ loading: true, error: null });
         try {

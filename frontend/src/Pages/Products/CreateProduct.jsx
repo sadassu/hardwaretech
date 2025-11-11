@@ -5,20 +5,23 @@ import { useAuthContext } from "../../hooks/useAuthContext.js";
 import TextInput from "../../components/TextInput.jsx";
 import { useCategoriesStore } from "../../store/categoriesStore.js";
 import { useProductStore } from "../../store/productStore.js";
+import StatusToast from "../../components/StatusToast.jsx";
 
 const CreateProduct = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [error, setError] = useState(null);
+  const [localError, setLocalError] = useState(null);
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     category: "",
-    image: "", 
+    image: "",
   });
 
   const { user } = useAuthContext();
   const { categories, fetchCategories, loading } = useCategoriesStore();
-  const { products, setProducts } = useProductStore();
+  const { products, setProducts, setSuccess, successMessage, clearMessages } =
+    useProductStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -37,40 +40,39 @@ const CreateProduct = () => {
     e.preventDefault();
 
     if (!user) {
-      setError("You must be logged in");
+      setLocalError("You must be logged in");
       return;
     }
 
     try {
-      const { data } = await api.post(
-        "/products",
-        {
-          name: formData.name,
-          description: formData.description,
-          category: formData.category,
-          image: formData.image, 
+      const res = await api.post("/products", formData, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
+      });
 
-      // ✅ Update Zustand store immediately
+      // ✅ Get message from backend
+      const { message, product } = res.data;
+
+      // ✅ Update Zustand store
       setProducts({
-        products: [...products, data.product],
+        products: [...products, product],
         total: products.length + 1,
         page: 1,
         pages: 1,
       });
 
-      // Reset form
+      // ✅ Show backend message via toast
+      setSuccess(message);
+
+      // Reset form + close modal
       setFormData({ name: "", description: "", category: "", image: "" });
       setIsOpen(false);
-    } catch (error) {
-      console.log(error);
-      setError(error.response?.data?.message || "Failed to create product");
+      setLocalError(null);
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to create product";
+      setLocalError(msg);
     }
   };
 
@@ -87,7 +89,8 @@ const CreateProduct = () => {
         <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
           Create Product
         </h2>
-        {error && <div className="text-red-500 mb-4">{error}</div>}
+
+        {localError && <div className="text-red-500 mb-4">{localError}</div>}
 
         <form
           onSubmit={handleSubmit}
@@ -162,6 +165,15 @@ const CreateProduct = () => {
           </button>
         </form>
       </Modal>
+
+      {/* ✅ Show only success toast */}
+      <StatusToast
+        color="border-green-500 bg-green-100 text-green-700"
+        header="Success"
+        message={successMessage}
+        show={!!successMessage}
+        onClose={clearMessages}
+      />
     </>
   );
 };

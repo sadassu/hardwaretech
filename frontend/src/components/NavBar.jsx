@@ -2,8 +2,6 @@ import { Link } from "react-router";
 import { useAuthContext } from "../hooks/useAuthContext";
 import { useLogout } from "../hooks/useLogout";
 import CartContent from "./CartContent";
-
-// Lucide icons
 import {
   Home,
   Wrench,
@@ -20,6 +18,10 @@ const NavBar = () => {
     logout();
   };
   const { user } = useAuthContext();
+
+  // helper condition — show "My Reservations" only if not admin/cashier
+  const canShowReservations =
+    user && !user.roles?.includes("admin") && !user.roles?.includes("cashier");
 
   return (
     <div className="navbar bg-slate-800 text-white shadow-lg px-4 sticky top-0 z-50 fira-code">
@@ -51,7 +53,8 @@ const NavBar = () => {
                 Products
               </Link>
             </li>
-            {user && (
+
+            {canShowReservations && (
               <>
                 <div className="divider my-1"></div>
                 <li>
@@ -87,7 +90,7 @@ const NavBar = () => {
               Products
             </Link>
           </li>
-          {user && (
+          {canShowReservations && (
             <li>
               <Link
                 to={`/reservations/user/${user.userId}`}
@@ -146,7 +149,7 @@ const NavBar = () => {
 
                 {/* Admin Dashboard */}
                 {user.roles?.some((role) =>
-                  ["admin", "", "staff"].includes(role)
+                  ["admin", "staff"].includes(role)
                 ) && (
                   <li>
                     <Link to="/dashboard" className="flex items-center gap-2">
@@ -155,7 +158,8 @@ const NavBar = () => {
                     </Link>
                   </li>
                 )}
-                {user.roles?.some((role) => ["cashier"].includes(role)) && (
+
+                {user.roles?.includes("cashier") && (
                   <li>
                     <Link to="/pos" className="flex items-center gap-2">
                       <LayoutDashboard className="w-4 h-4" />
@@ -174,29 +178,17 @@ const NavBar = () => {
                   </Link>
                 </li>
 
-                <li>
-                  <Link
-                    to={`/reservations/user/${user.userId}`}
-                    className="flex items-center gap-2"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    My Reservations
-                  </Link>
-                </li>
-
-                {/* <li>
-                  <Link to="/orders" className="flex items-center gap-2">
-                    <History className="w-4 h-4" />
-                    Order History
-                  </Link>
-                </li>
-
-                <li>
-                  <Link to="/settings" className="flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Settings
-                  </Link>
-                </li> */}
+                {canShowReservations && (
+                  <li>
+                    <Link
+                      to={`/reservations/user/${user.userId}`}
+                      className="flex items-center gap-2"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      My Reservations
+                    </Link>
+                  </li>
+                )}
 
                 <div className="divider my-1"></div>
                 <li>

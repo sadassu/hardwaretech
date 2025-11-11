@@ -57,7 +57,6 @@ const Product = () => {
     if (!user?.token) return;
     fetchProducts(user.token, {
       page: currentPage,
-      limit: 10,
       search: debouncedSearch,
       category: selectedCategory,
     });

@@ -3,6 +3,7 @@ import { Trash2, AlertTriangle } from "lucide-react";
 import Modal from "../../components/Modal";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useProductStore } from "../../store/productStore";
+import StatusToast from "../../components/StatusToast"; // ✅ import your toast
 
 const DeleteProduct = ({ product }) => {
   const { user } = useAuthContext();
@@ -10,6 +11,13 @@ const DeleteProduct = ({ product }) => {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [toast, setToast] = useState({
+    show: false,
+    color: "",
+    header: "",
+    message: "",
+  });
 
   const handleDelete = async () => {
     if (!product?._id) {
@@ -21,9 +29,22 @@ const DeleteProduct = ({ product }) => {
     try {
       await deleteProduct(user.token, product._id);
       setIsOpen(false);
+
+      setToast({
+        show: true,
+        color: "border-green-500 bg-green-100 text-green-700",
+        header: "Success",
+        message: "Product deleted successfully!",
+      });
     } catch (error) {
       console.error("Error deleting product:", error);
-      alert("Failed to delete product. Please try again.");
+
+      setToast({
+        show: true,
+        color: "border-red-500 bg-red-100 text-red-700",
+        header: "Error",
+        message: "Failed to delete product. Please try again.",
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -96,6 +117,15 @@ const DeleteProduct = ({ product }) => {
           </div>
         </div>
       </Modal>
+
+      {/* ✅ Toast */}
+      <StatusToast
+        color={toast.color}
+        header={toast.header}
+        message={toast.message}
+        show={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
     </>
   );
 };
