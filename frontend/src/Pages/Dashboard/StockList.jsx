@@ -57,7 +57,7 @@ export function StockList({ type }) {
                       className={`${
                         variant.quantity === 0
                           ? "text-red-400 font-semibold"
-                          : variant.quantity <= 50
+                          : variant.quantity <= 15
                           ? "text-yellow-400 font-semibold"
                           : "text-green-400"
                       }`}

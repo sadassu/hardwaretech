@@ -148,9 +148,7 @@ const NavBar = () => {
                 <div className="divider my-1"></div>
 
                 {/* Admin Dashboard */}
-                {user.roles?.some((role) =>
-                  ["admin", "staff"].includes(role)
-                ) && (
+                {user.roles?.some((role) => ["admin"].includes(role)) && (
                   <li>
                     <Link to="/dashboard" className="flex items-center gap-2">
                       <LayoutDashboard className="w-4 h-4" />

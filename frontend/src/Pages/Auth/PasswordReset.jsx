@@ -68,12 +68,6 @@ function ResetPassword() {
         className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-8 w-full max-w-sm"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
       >
-        {/* Logo + Title */}
-        <div className="flex flex-col items-center mb-6">
-          <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2" />
-          <h2 className="text-white text-2xl font-bold">Reset Password</h2>
-        </div>
-
         {/* Messages */}
         {message && (
           <div className="bg-green-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center animate-pulse">

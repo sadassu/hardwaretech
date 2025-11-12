@@ -11,10 +11,17 @@ export const useProductStore = create(
       pages: 1,
       loading: false,
       error: null,
+      successMessage: null, // ✅ Added success message state
 
       // ✅ Set products (used after fetching)
       setProducts: ({ products, total, page, pages }) =>
         set({ products, total, page, pages }),
+
+      // ✅ Set success message (used by CreateProduct)
+      setSuccess: (message) => set({ successMessage: message }),
+
+      // ✅ Clear both success & error messages
+      clearMessages: () => set({ successMessage: null, error: null }),
 
       // ✅ Fetch products
       fetchProducts: async (

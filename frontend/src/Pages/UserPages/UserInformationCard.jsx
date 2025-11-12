@@ -5,7 +5,7 @@ import ChangeAvatar from "./ChangeAvatar";
 import { AlertTriangle, BarChart3, LockIcon, SquarePen } from "lucide-react";
 import DeleteAccount from "./DeleteAccount";
 
-function UserInformationCard({ user, data, statusCounts }) {
+function UserInformationCard({ user }) {
   return (
     <div className="lg:col-span-1">
       <h2 className="card-title text-xl mb-4 flex items-center gap-2">
@@ -48,49 +48,7 @@ function UserInformationCard({ user, data, statusCounts }) {
         </div>
       </div>
 
-      {/* Status Overview Card */}
-      <div className="card bg-base-100 shadow-xl mt-6">
-        <div className="card-body">
-          <h2 className="card-title text-xl mb-4 flex items-center gap-2">
-            <BarChart3 className="h-6 w-6" />
-            Reservation Summary
-          </h2>
-
-          <div className="stats stats-vertical shadow">
-            <div className="stat">
-              <div className="stat-title">Total Reservations</div>
-              <div className="stat-value text-primary">{data?.total || 0}</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            <div className="stat bg-base-200 rounded-lg p-3">
-              <div className="stat-title text-xs">Pending</div>
-              <div className="stat-value text-sm text-warning">
-                {statusCounts.pending}
-              </div>
-            </div>
-            <div className="stat bg-base-200 rounded-lg p-3">
-              <div className="stat-title text-xs">Confirmed</div>
-              <div className="stat-value text-sm text-success">
-                {statusCounts.confirmed}
-              </div>
-            </div>
-            <div className="stat bg-base-200 rounded-lg p-3">
-              <div className="stat-title text-xs">Completed</div>
-              <div className="stat-value text-sm text-info">
-                {statusCounts.completed}
-              </div>
-            </div>
-            <div className="stat bg-base-200 rounded-lg p-3">
-              <div className="stat-title text-xs">Cancelled/Failed</div>
-              <div className="stat-value text-sm text-error">
-                {statusCounts.cancelled + statusCounts.failed}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      
     </div>
   );
 }

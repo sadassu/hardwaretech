@@ -13,6 +13,7 @@ import {
   X,
   Menu,
   FileBox,
+  User,
 } from "lucide-react";
 import ChangePassword from "../Pages/UserPages/ChangePassword";
 import ChangeName from "../Pages/UserPages/ChangeName";
@@ -244,51 +245,25 @@ const SideBar = () => {
         </nav>
 
         {/* User section at bottom */}
-        <div
-          className="p-4 border-t border-slate-700 relative"
-          ref={userMenuRef}
-        >
-          <div
+        <div className="p-4 border-t border-slate-700">
+          <Link
+            to={`/profile/${user?.userId}`}
             className={`flex items-center cursor-pointer rounded-lg p-2 transition-all duration-200 
       hover:bg-slate-700 hover:scale-[1.01] 
       ${isCollapsed ? "justify-center" : "space-x-3"}`}
-            onClick={() => setShowUserMenu((prev) => !prev)}
           >
             <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
               <span className="text-sm font-medium text-slate-200">
                 {user?.name?.charAt(0)?.toUpperCase() || "U"}
               </span>
             </div>
+
             {!isCollapsed && (
               <span className="text-sm text-slate-300 truncate">
                 {user?.name || "Guest User"}
               </span>
             )}
-          </div>
-
-          {/* Dropdown Menu */}
-          {!isCollapsed && showUserMenu && (
-            <div
-              className="absolute bottom-14 left-4 right-4 bg-slate-800 border border-slate-700 
-      rounded-lg shadow-lg overflow-hidden z-50 animate-fadeIn"
-            >
-              <button
-                className="w-full text-left px-4 py-2 text-sm text-slate-200 
-        hover:bg-red-600 hover:text-white transition-all duration-200"
-              >
-                <ChangeName />
-              </button>
-
-              {!user.googleLoggedIn && (
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-slate-200 
-        hover:bg-red-600 hover:text-white transition-all duration-200"
-                >
-                  <ChangePassword />
-                </button>
-              )}
-            </div>
-          )}
+          </Link>
         </div>
       </div>
 
