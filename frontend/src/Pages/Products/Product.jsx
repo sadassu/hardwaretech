@@ -250,7 +250,7 @@ const Product = () => {
                                       className={`badge badge-sm ${
                                         variant.quantity === 0
                                           ? "bg-[#F05454] text-white"
-                                          : variant.quantity <= 50
+                                          : variant.quantity <= 15
                                           ? "bg-yellow-400 text-black"
                                           : "badge-outline"
                                       }`}
