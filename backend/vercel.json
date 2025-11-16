@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/autoCancelReservations",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
