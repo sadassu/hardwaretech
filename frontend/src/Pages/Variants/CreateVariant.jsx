@@ -65,16 +65,14 @@ const CreateVariant = ({ product }) => {
 
   return (
     <>
-      <div className="relative group inline-block">
-        <button className="btn bg-red-500" onClick={() => setIsOpen(true)}>
-          <Plus className="size-5 text-white hover:scale-110 transition-transform" />
-        </button>
-
-        {/* Tooltip */}
-        <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
-          Add Variant
-        </span>
-      </div>
+      <button
+        className="btn btn-sm gap-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white border-0 hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transition-all duration-200"
+        onClick={() => setIsOpen(true)}
+        title="Add Variant"
+      >
+        <Plus className="w-4 h-4" />
+        <span className="hidden sm:inline">Add Variant</span>
+      </button>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">

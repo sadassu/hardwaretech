@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useLogin } from "../../hooks/useLogin";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -8,7 +8,6 @@ function Login() {
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ""
   );
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (successMessage) {
@@ -42,22 +41,9 @@ function Login() {
       return;
     }
 
-    try {
-      const json = await login(formData.email, formData.password, captchaToken);
-
-      // ✅ Role-based redirect
-      const roles = json?.roles || [];
-      if (roles.includes("admin")) {
-        navigate("/dashboard");
-      } else if (roles.includes("cashier")) {
-        navigate("/pos");
-      } else {
-        navigate("/");
-      }
-    } catch (error) {
-      console.error("Login failed:", error);
-      alert("Login failed. Please check your credentials and try again.");
-    }
+    // ✅ The useLogin hook already handles role-based navigation
+    // No need to navigate here - it would override the hook's navigation
+    await login(formData.email, formData.password, captchaToken);
   };
 
   return (

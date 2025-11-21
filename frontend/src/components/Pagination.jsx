@@ -13,32 +13,35 @@ const Pagination = ({ page, pages, onPageChange }) => {
   });
 
   return (
-    <div className="flex justify-center mt-8">
-      <nav className="flex items-center gap-1  p-2 text-white">
+    <div className="flex justify-center">
+      <nav className="bg-white rounded-2xl shadow-md border-2 border-gray-100 p-2 flex items-center gap-1">
         {/* Previous button */}
         <button
-          className={`flex items-center gap-2 px-4 py-2 bg-[#222831] rounded-md font-medium transition-all duration-200 ${
+          className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
             page === 1
-              ? "text-gray-300 cursor-not-allowed"
-              : "text-gray-700 hover:bg-[#F05454] hover:text-white"
+              ? "text-gray-300 cursor-not-allowed bg-gray-50"
+              : "text-gray-700 hover:bg-blue-50 hover:text-blue-600 active:scale-95"
           }`}
           disabled={page === 1}
           onClick={() => onPageChange(page - 1)}
+          title="Previous page"
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="hidden sm:inline">Prev</span>
         </button>
 
         {/* Page numbers */}
-        <div className="flex items-center gap-1 px-2 ">
+        <div className="flex items-center gap-1 px-1 sm:px-2">
           {pageNumbers.map((num) => (
             <button
               key={num}
-              className={`min-w-[40px] h-10 rounded-md bg-[#222831] font-medium transition-all duration-200 ${
+              className={`min-w-[36px] sm:min-w-[40px] h-9 sm:h-10 rounded-lg font-semibold text-sm transition-all duration-200 ${
                 page === num
-                  ? "bg-[#F05454] text-white shadow-md"
-                  : "text-white hover:bg-[#F05454]"
+                  ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md scale-105"
+                  : "text-gray-700 hover:bg-gray-100 active:scale-95"
               }`}
               onClick={() => onPageChange(num)}
+              title={`Page ${num}`}
             >
               {num}
             </button>
@@ -47,15 +50,17 @@ const Pagination = ({ page, pages, onPageChange }) => {
 
         {/* Next button */}
         <button
-          className={`flex items-center gap-2 px-4 py-2 bg-[#222831] rounded-md font-medium transition-all duration-200 ${
+          className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
             page === pages
-              ? "text-gray-300 cursor-not-allowed"
-              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              ? "text-gray-300 cursor-not-allowed bg-gray-50"
+              : "text-gray-700 hover:bg-blue-50 hover:text-blue-600 active:scale-95"
           }`}
           disabled={page === pages}
           onClick={() => onPageChange(page + 1)}
+          title="Next page"
         >
-          <ChevronRight className="h-5 w-5" />
+          <span className="hidden sm:inline">Next</span>
+          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
       </nav>
     </div>

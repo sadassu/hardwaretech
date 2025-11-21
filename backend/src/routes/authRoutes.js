@@ -63,9 +63,12 @@ router.get(
   (req, res) => {
     const token = createToken(req.user._id);
 
+    // Ensure roles is always an array and pass it as JSON string
     const roles = Array.isArray(req.user.roles)
-      ? req.user.roles[0]
-      : req.user.roles;
+      ? req.user.roles
+      : req.user.roles
+      ? [req.user.roles]
+      : ["user"];
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -83,7 +86,7 @@ router.get(
     res.redirect(
       `${CLIENT_URL}/login/success?token=${token}&userId=${
         req.user._id
-      }&roles=${encodeURIComponent(roles)}&name=${encodeURIComponent(
+      }&roles=${encodeURIComponent(JSON.stringify(roles))}&name=${encodeURIComponent(
         req.user.name
       )}&email=${encodeURIComponent(
         req.user.email

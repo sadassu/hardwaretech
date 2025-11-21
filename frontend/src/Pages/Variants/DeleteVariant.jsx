@@ -20,19 +20,13 @@ function DeleteVariant({ variant }) {
   return (
     <>
       {/* Delete button */}
-      <div className="relative group inline-block">
         <button
-          className="btn btn-square btn-ghost"
+        className="btn btn-sm btn-ghost gap-1.5 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
           onClick={() => setIsOpen(true)}
+        title="Delete Variant"
         >
-          <Trash2 className="size-5 text-gray-700 hover:text-red-500 transition-colors" />
+        <Trash2 className="w-4 h-4" />
         </button>
-
-        {/* Tooltip */}
-        <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
-          Delete Variant
-        </span>
-      </div>
 
       {/* Confirmation Modal */}
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>

@@ -50,6 +50,36 @@ export const createReservation = asyncHandler(async (req, res) => {
 
     await session.commitTransaction();
 
+    // ✅ Send email notification to user for new reservation
+    try {
+      const populatedReservation = await Reservation.findById(reservation._id).populate("userId", "name email");
+      
+      if (populatedReservation.userId && populatedReservation.userId.email) {
+        const { sendEmail } = await import("../utils/sendEmail.js");
+        const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
+
+        const emailHtml = getReservationStatusEmailTemplate(
+          populatedReservation.userId.name,
+          populatedReservation._id.toString(),
+          "pending",
+          populatedReservation.reservationDate,
+          populatedReservation.totalPrice,
+          populatedReservation.notes || ""
+        );
+
+        await sendEmail(
+          populatedReservation.userId.email,
+          "Reservation Created - Hardware Tech",
+          emailHtml
+        );
+
+        console.log(`✅ New reservation email sent to ${populatedReservation.userId.email}`);
+      }
+    } catch (emailError) {
+      console.error("❌ Failed to send new reservation email:", emailError);
+      // Don't fail the request if email fails
+    }
+
     res.status(201).json({
       message: "Reservation created",
       reservation,
@@ -75,13 +105,13 @@ export const cancelReservation = asyncHandler(async (req, res) => {
   }
 
   // 🔍 Find reservation
-  const reservation = await Reservation.findById(reservationId);
+  const reservation = await Reservation.findById(reservationId).populate("userId", "name email");
   if (!reservation) {
     return res.status(404).json({ message: "Reservation not found" });
   }
 
   // ✅ Check if the reservation is from the user requested
-  if (reservation.userId.toString() != req.user._id.toString()) {
+  if (reservation.userId._id.toString() != req.user._id.toString()) {
     return res
       .status(404)
       .json({ message: "This reservation is not your reservation" });
@@ -89,6 +119,34 @@ export const cancelReservation = asyncHandler(async (req, res) => {
 
   reservation.status = "cancelled";
   await reservation.save();
+
+  // ✅ Send email notification to user
+  if (reservation.userId && reservation.userId.email) {
+    try {
+      const { sendEmail } = await import("../utils/sendEmail.js");
+      const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
+
+      const emailHtml = getReservationStatusEmailTemplate(
+        reservation.userId.name,
+        reservation._id.toString(),
+        "cancelled",
+        reservation.reservationDate,
+        reservation.totalPrice,
+        reservation.remarks || ""
+      );
+
+      await sendEmail(
+        reservation.userId.email,
+        "Reservation Cancelled - Hardware Tech",
+        emailHtml
+      );
+
+      console.log(`✅ Cancellation email sent to ${reservation.userId.email}`);
+    } catch (emailError) {
+      console.error("❌ Failed to send cancellation email:", emailError);
+      // Don't fail the request if email fails
+    }
+  }
 
   return res
     .status(200)
@@ -310,6 +368,41 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
 
   if (!reservation) {
     return res.status(404).json({ message: "Reservation not found" });
+  }
+
+  // ✅ Send email notification to user
+  if (reservation.userId && reservation.userId.email) {
+    try {
+      const { sendEmail } = await import("../utils/sendEmail.js");
+      const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
+
+      const emailHtml = getReservationStatusEmailTemplate(
+        reservation.userId.name,
+        reservation._id.toString(),
+        status,
+        reservation.reservationDate,
+        reservation.totalPrice,
+        reservation.remarks || ""
+      );
+
+      const statusTitles = {
+        pending: "Reservation Pending",
+        confirmed: "Reservation Confirmed",
+        cancelled: "Reservation Cancelled",
+        failed: "Reservation Failed",
+      };
+
+      await sendEmail(
+        reservation.userId.email,
+        `${statusTitles[status]} - Hardware Tech`,
+        emailHtml
+      );
+
+      console.log(`✅ Status change email sent to ${reservation.userId.email}`);
+    } catch (emailError) {
+      console.error("❌ Failed to send status change email:", emailError);
+      // Don't fail the request if email fails
+    }
   }
 
   res.status(200).json({

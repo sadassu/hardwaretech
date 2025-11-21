@@ -259,9 +259,31 @@ const SideBar = () => {
             </div>
 
             {!isCollapsed && (
-              <span className="text-sm text-slate-300 truncate">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-slate-300 truncate font-medium">
                 {user?.name || "Guest User"}
+                </p>
+                {user?.roles && user.roles.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {user.roles.map((role) => {
+                      const roleColors = {
+                        admin: "bg-red-500/20 text-red-400 border-red-500/30",
+                        cashier: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+                      };
+                      return (
+                        <span
+                          key={role}
+                          className={`text-xs px-2 py-0.5 rounded border ${
+                            roleColors[role] || "bg-slate-600 text-slate-300"
+                          }`}
+                        >
+                          {role.charAt(0).toUpperCase() + role.slice(1)}
               </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             )}
           </Link>
         </div>
