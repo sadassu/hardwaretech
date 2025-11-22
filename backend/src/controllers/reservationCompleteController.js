@@ -97,6 +97,15 @@ export const completeReservation = asyncHandler(async (req, res) => {
       const populatedReservation = await Reservation.findById(id).populate("userId", "name email");
       
       if (populatedReservation.userId && populatedReservation.userId.email) {
+        // Extract product information from already populated details
+        const products = details.map(detail => ({
+          name: detail.productVariantId?.product?.name || "Unknown Product",
+          size: detail.productVariantId?.size || detail.size || "",
+          unit: detail.productVariantId?.unit || detail.unit || "",
+          quantity: detail.quantity || 1,
+          price: detail.productVariantId?.price || 0
+        }));
+
         const { sendEmail } = await import("../utils/sendEmail.js");
         const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
 
@@ -106,7 +115,8 @@ export const completeReservation = asyncHandler(async (req, res) => {
           "completed",
           populatedReservation.reservationDate,
           populatedReservation.totalPrice,
-          populatedReservation.remarks || ""
+          populatedReservation.remarks || "",
+          products
         );
 
         await sendEmail(

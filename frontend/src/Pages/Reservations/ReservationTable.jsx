@@ -7,7 +7,6 @@ import {
   User,
   Mail,
   Calendar,
-  DollarSign,
   Package,
   MessageSquare,
 } from "lucide-react";
@@ -26,6 +25,7 @@ const ReservationTable = () => {
     loading,
     expandedRow,
     statusFilter,
+    searchQuery,
     fetchReservations,
     toggleExpandedRow,
     updateReservation,
@@ -37,9 +37,9 @@ const ReservationTable = () => {
 
   useEffect(() => {
     if (user?.token) {
-      fetchReservations(user.token, { page, limit, status: statusFilter });
+      fetchReservations(user.token, { page, limit, status: statusFilter, search: searchQuery });
     }
-  }, [page, statusFilter, user?.token, fetchReservations]);
+  }, [page, statusFilter, searchQuery, user?.token, fetchReservations]);
 
   const getStatusConfig = (status) => {
     const configs = {
@@ -161,7 +161,6 @@ const ReservationTable = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <DollarSign className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                         <span className="font-mono font-bold text-green-600">
                         ₱{res.totalPrice?.toLocaleString() || "0"}
                       </span>

@@ -175,7 +175,7 @@ const Sales = () => {
                 <tr>
                   <th></th>
                   <th>Sale ID</th>
-                  <th>Cashier</th>
+                  <th>Cashier/Admin</th>
                   <th>Sale Date</th>
                   <th>Type & Status</th>
                   <th>Actions</th>

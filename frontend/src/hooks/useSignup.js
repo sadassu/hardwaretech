@@ -30,7 +30,9 @@ export const useSignup = () => {
       return json;
     } catch (err) {
       setIsLoading(false);
-      setError(err.response?.data?.message || "Signup failed");
+      // Backend returns { error: "message" } for errors
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || "Signup failed. Please try again.";
+      setError(errorMessage);
       return null;
     }
   };

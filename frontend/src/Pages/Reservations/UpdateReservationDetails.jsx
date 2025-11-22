@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Edit } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Edit, AlertTriangle } from "lucide-react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import api from "../../utils/api";
 import Modal from "../../components/Modal";
@@ -9,20 +9,67 @@ import { useReservationStore } from "../../store/reservationStore";
 const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   const { user } = useAuthContext();
   const { updateReservation } = useReservationStore();
-  const { products } = useProductStore();
+  const { products, fetchProducts } = useProductStore();
 
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [stockMessages, setStockMessages] = useState({}); // Track stock messages per item
   const [formData, setFormData] = useState({
     remarks: reservation?.remarks || "",
     reservationDetails: reservation?.reservationDetails || [],
   });
 
-  // ✅ Update a detail field
+  // ✅ Fetch products with variants when modal opens
+  useEffect(() => {
+    if (isOpen && user?.token && products.length === 0) {
+      fetchProducts(user.token, { page: 1, limit: 1000 }); // Fetch all products to get variants
+    }
+  }, [isOpen, user?.token, products.length, fetchProducts]);
+
+  // ✅ Calculate available stock for a reservation detail
+  const getAvailableStock = (detail, originalDetail) => {
+    const variant = detail.productVariantId;
+    if (!variant || !variant.quantity) return 0;
+    
+    // Get original quantity from reservation (before editing)
+    const originalQuantity = originalDetail?.quantity || detail.quantity || 0;
+    
+    // Available stock = current variant stock + original reservation quantity
+    // (because the original quantity is currently reserved and will be released)
+    return (variant.quantity || 0) + originalQuantity;
+  };
+
+  // ✅ Update a detail field with stock validation
   const handleDetailChange = (index, field, value) => {
     setFormData((prev) => {
       const updatedDetails = [...prev.reservationDetails];
-      updatedDetails[index] = { ...updatedDetails[index], [field]: value };
+      const originalDetail = reservation?.reservationDetails?.[index];
+      const currentDetail = updatedDetails[index];
+      
+      // If changing quantity, validate against available stock
+      if (field === "quantity") {
+        const newQuantity = Math.max(1, parseInt(value, 10) || 1);
+        const availableStock = getAvailableStock(currentDetail, originalDetail);
+        
+        if (newQuantity > availableStock) {
+          // Set to max available stock
+          updatedDetails[index] = { ...currentDetail, quantity: availableStock };
+          setStockMessages((prev) => ({
+            ...prev,
+            [index]: `Maximum available stock: ${availableStock}`,
+          }));
+        } else {
+          updatedDetails[index] = { ...currentDetail, quantity: newQuantity };
+          setStockMessages((prev) => {
+            const newMessages = { ...prev };
+            delete newMessages[index];
+            return newMessages;
+          });
+        }
+      } else {
+        updatedDetails[index] = { ...currentDetail, [field]: value };
+      }
+      
       return { ...prev, reservationDetails: updatedDetails };
     });
   };
@@ -36,22 +83,53 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
     });
   };
 
+  // ✅ Validate all quantities before submit
+  const validateQuantities = () => {
+    const errors = {};
+    formData.reservationDetails.forEach((detail, index) => {
+      const originalDetail = reservation?.reservationDetails?.[index];
+      const availableStock = getAvailableStock(detail, originalDetail);
+      
+      if (detail.quantity > availableStock) {
+        errors[index] = `Quantity exceeds available stock (${availableStock})`;
+      }
+    });
+    
+    if (Object.keys(errors).length > 0) {
+      setStockMessages(errors);
+      return false;
+    }
+    
+    return true;
+  };
+
   // ✅ Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!reservation) return;
+
+    // Validate quantities before submitting
+    if (!validateQuantities()) {
+      return;
+    }
 
     try {
       setLoading(true);
 
       const payload = {
         remarks: formData.remarks,
-        reservationDetails: formData.reservationDetails.map((d) => ({
-          productVariantId: d.productVariantId?._id || d.productVariantId,
-          quantity: d.quantity,
-          size: d.size,
-          unit: d.unit,
-        })),
+        reservationDetails: formData.reservationDetails.map((d) => {
+          // Use variant's unit if available, otherwise fallback to detail's unit
+          const variant = d.productVariantId;
+          const unit = variant?.unit || d.unit;
+          
+          return {
+            productVariantId: variant?._id || d.productVariantId,
+            quantity: d.quantity,
+            size: d.size,
+            unit: unit,
+          };
+        }),
       };
 
       const res = await api.put(`/reservations/${reservation._id}`, payload, {
@@ -67,8 +145,13 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
       onUpdateSuccess?.(updatedReservation);
 
       setIsOpen(false);
+      setStockMessages({}); // Clear messages on success
     } catch (error) {
       console.error("Update failed:", error);
+      // Show error if backend validation fails
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      }
     } finally {
       setLoading(false);
     }
@@ -78,7 +161,10 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
     <>
       <button
         className="btn btn-sm btn-ghost gap-1.5 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setIsOpen(true);
+          setStockMessages({}); // Reset stock messages when opening
+        }}
         title="Edit Reservation"
       >
         <Edit className="w-4 h-4" />
@@ -87,7 +173,10 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
 
       <Modal 
         isOpen={isOpen} 
-        onClose={() => setIsOpen(false)}
+        onClose={() => {
+          setIsOpen(false);
+          setStockMessages({}); // Reset stock messages when closing
+        }}
         className="bg-white rounded-2xl max-w-3xl w-full p-0 max-h-[90vh] flex flex-col"
       >
         <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-t-2xl flex-shrink-0">
@@ -131,9 +220,41 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
           {formData.reservationDetails?.length > 0 ? (
                 <div className="space-y-3">
               {formData.reservationDetails.map((detail, index) => {
+                // Get product ID from detail (could be from productId or productVariantId.product)
+                const productId = detail.productId?._id || detail.productId || detail.productVariantId?.product?._id || detail.productVariantId?.product;
+                
                 const matchedProduct = products?.find(
-                  (p) => p._id === (detail.productId?._id || detail.productId)
+                  (p) => p._id === productId
                 );
+
+                // Get variant information
+                const variant = detail.productVariantId;
+                const currentUnit = variant?.unit || detail.unit || "";
+
+                // Get available sizes from product variants in inventory
+                const getAvailableSizes = () => {
+                  // Try to get variants from matched product first
+                  let productVariants = matchedProduct?.variants;
+                  
+                  // If not found, try to get from the product in the variant
+                  if (!productVariants && variant?.product?.variants) {
+                    productVariants = variant.product.variants;
+                  }
+                  
+                  if (!productVariants || !Array.isArray(productVariants)) {
+                    return [];
+                  }
+                  
+                  // Extract unique sizes from all variants that have a size
+                  const sizes = productVariants
+                    .map((v) => v.size)
+                    .filter((size) => size && size.trim() !== "");
+                  
+                  // Remove duplicates and sort
+                  return [...new Set(sizes)].sort();
+                };
+
+                const availableSizes = getAvailableSizes();
 
                 return (
                   <div
@@ -160,12 +281,28 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {/* Quantity */}
                             <div>
-                              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                                Quantity
-                              </label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-xs font-semibold text-gray-600">
+                                  Quantity
+                                </label>
+                                {(() => {
+                                  const originalDetail = reservation?.reservationDetails?.[index];
+                                  const availableStock = getAvailableStock(detail, originalDetail);
+                                  const variant = detail.productVariantId;
+                                  return variant?.quantity !== undefined ? (
+                                    <span className="text-xs text-gray-500">
+                                      Stock: {availableStock}
+                                    </span>
+                                  ) : null;
+                                })()}
+                              </div>
                               <input
                                 type="number"
                                 min={1}
+                                max={(() => {
+                                  const originalDetail = reservation?.reservationDetails?.[index];
+                                  return getAvailableStock(detail, originalDetail);
+                                })()}
                                 value={detail.quantity || 1}
                                 onChange={(e) =>
                                   handleDetailChange(
@@ -174,37 +311,42 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                                     parseInt(e.target.value, 10)
                                   )
                                 }
-                                className="input input-bordered input-sm w-full bg-white border-2 border-gray-300 focus:border-purple-500"
+                                className={`input input-bordered input-sm w-full bg-white border-2 ${
+                                  stockMessages[index]
+                                    ? "border-red-300 focus:border-red-500"
+                                    : "border-gray-300 focus:border-purple-500"
+                                }`}
                               />
+                              {stockMessages[index] && (
+                                <div className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600">
+                                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                                  <span>{stockMessages[index]}</span>
+                                </div>
+                              )}
                             </div>
 
-                            {/* Unit */}
+                            {/* Unit - Read Only */}
                             <div>
                               <label className="block text-xs font-semibold text-gray-600 mb-1">
                                 Unit
                               </label>
                               <input
                                 type="text"
-                                value={detail.unit || ""}
-                                onChange={(e) =>
-                                  handleDetailChange(
-                                    index,
-                                    "unit",
-                                    e.target.value
-                                  )
-                                }
-                                className="input input-bordered input-sm w-full bg-white border-2 border-gray-300 focus:border-purple-500"
+                                value={currentUnit}
+                                disabled
+                                readOnly
+                                className="input input-bordered input-sm w-full bg-gray-100 border-2 border-gray-300 text-gray-600 cursor-not-allowed"
                                 placeholder="pcs, kg, etc."
+                                title="Unit is determined by the product variant"
                               />
                             </div>
 
-                            {/* Size */}
+                            {/* Size - Dropdown (Always) */}
                             <div>
                               <label className="block text-xs font-semibold text-gray-600 mb-1">
                                 Size
                               </label>
-                              <input
-                                type="text"
+                              <select
                                 value={detail.size || ""}
                                 onChange={(e) =>
                                   handleDetailChange(
@@ -213,9 +355,26 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                                     e.target.value
                                   )
                                 }
-                                className="input input-bordered input-sm w-full bg-white border-2 border-gray-300 focus:border-purple-500"
-                                placeholder="Size"
-                              />
+                                className="select select-bordered select-sm w-full bg-white border-2 border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 text-gray-900 cursor-pointer"
+                              >
+                                <option value="">Select Size</option>
+                                {availableSizes.length > 0 ? (
+                                  availableSizes.map((size) => (
+                                    <option key={size} value={size}>
+                                      {size}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option value="" disabled>
+                                    No sizes available
+                                  </option>
+                                )}
+                              </select>
+                              {availableSizes.length === 0 && (
+                                <p className="mt-1 text-xs text-gray-500">
+                                  No size variants found for this product
+                                </p>
+                              )}
                         </div>
                       </div>
 

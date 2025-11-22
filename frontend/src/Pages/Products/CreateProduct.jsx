@@ -110,68 +110,68 @@ const CreateProduct = () => {
                   Product Name
                 </label>
                 <input
-                  type="text"
-                  name="name"
-                  placeholder="Product Name"
-                  value={formData.name}
-                  onChange={handleChange}
+            type="text"
+            name="name"
+            placeholder="Product Name"
+            value={formData.name}
+            onChange={handleChange}
                   className="input input-bordered w-full bg-white text-gray-900"
-                  required
-                />
+            required
+          />
               </div>
 
               <div className="md:col-span-2">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
+              Description
+          </label>
                   <span className="text-xs text-gray-500">Optional</span>
                 </div>
-                <textarea
-                  name="description"
+          <textarea
+            name="description"
                   placeholder="Brief description (optional)"
-                  value={formData.description}
-                  onChange={handleChange}
+            value={formData.description}
+            onChange={handleChange}
                   className="textarea textarea-bordered w-full bg-white text-gray-900"
                   rows={3}
-                />
+          />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <input
-                  list="categories-list"
-                  name="category"
-                  autoComplete="off"
-                  placeholder="Select or type a category"
-                  value={formData.category}
-                  onChange={handleChange}
+              Category
+          </label>
+          <input
+            list="categories-list"
+            name="category"
+            autoComplete="off"
+            placeholder="Select or type a category"
+            value={formData.category}
+            onChange={handleChange}
                   className="input input-bordered w-full bg-white text-gray-900"
-                  required
-                />
-                <datalist id="categories-list">
-                  {categories.map((cat) => (
-                    <option key={cat._id} value={cat.name} />
-                  ))}
-                </datalist>
-                {loading && (
+            required
+          />
+          <datalist id="categories-list">
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat.name} />
+            ))}
+          </datalist>
+          {loading && (
                   <p className="text-gray-400 text-xs mt-1">
                     Loading categories...
                   </p>
-                )}
+          )}
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image URL
-                </label>
-                <textarea
-                  name="image"
-                  placeholder="Paste image URL"
-                  value={formData.image}
-                  onChange={handleChange}
+              Image URL
+          </label>
+          <textarea
+            name="image"
+            placeholder="Paste image URL"
+            value={formData.image}
+            onChange={handleChange}
                   className="textarea textarea-bordered w-full bg-white text-gray-900"
                   rows={2}
                   required
@@ -187,14 +187,14 @@ const CreateProduct = () => {
               >
                 Cancel
               </button>
-              <button
-                type="submit"
+          <button
+            type="submit"
                 className="btn bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-              >
+          >
                 Create Product
-              </button>
+          </button>
             </div>
-          </form>
+        </form>
         </div>
       </Modal>
 

@@ -8,7 +8,8 @@ export const getReservationStatusEmailTemplate = (
   status,
   reservationDate,
   totalPrice,
-  remarks = ""
+  remarks = "",
+  products = []
 ) => {
   const statusConfig = {
     pending: {
@@ -119,6 +120,32 @@ export const getReservationStatusEmailTemplate = (
                   </td>
                 </tr>
               </table>
+
+              ${products && products.length > 0 ? `
+              <!-- Products List Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <tr>
+                  <td>
+                    <h3 style="margin: 0 0 15px; font-size: 18px; color: #111827;">Products</h3>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      ${products.map((product, index) => `
+                      <tr>
+                        <td style="padding: 12px 0; ${index > 0 ? 'border-top: 1px solid #e5e7eb;' : ''}">
+                          <div style="font-size: 15px; color: #111827; font-weight: 600; margin-bottom: 4px;">
+                            ${product.name || 'Product'}
+                          </div>
+                          <div style="font-size: 13px; color: #6b7280;">
+                            ${product.size ? `Size: ${product.size} • ` : ''}${product.unit ? `Unit: ${product.unit} • ` : ''}Quantity: ${product.quantity || 1}
+                            ${product.price ? ` • Price: ₱${(product.price || 0).toLocaleString()}` : ''}
+                          </div>
+                        </td>
+                      </tr>
+                      `).join('')}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
 
               ${status === "confirmed" ? `
               <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 6px; margin-bottom: 20px;">

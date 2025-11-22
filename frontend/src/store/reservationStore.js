@@ -14,6 +14,7 @@ export const useReservationStore = create(
       error: null,
       expandedRow: null,
       statusFilter: "all",
+      searchQuery: "",
       statusCounts: {
         all: 0,
         pending: 0,
@@ -33,11 +34,13 @@ export const useReservationStore = create(
         })),
       setStatusFilter: (status) =>
         set({ statusFilter: status, page: 1, expandedRow: null }),
+      setSearchQuery: (query) =>
+        set({ searchQuery: query, page: 1, expandedRow: null }),
 
       // ✅ Fetch reservations from API
       fetchReservations: async (
         token,
-        { page = 1, limit = 20, status = "all" } = {}
+        { page = 1, limit = 20, status = "all", search = "" } = {}
       ) => {
         set({ loading: true, error: null });
         try {
@@ -48,6 +51,7 @@ export const useReservationStore = create(
             sortOrder: "desc",
           };
           if (status !== "all") params.status = status;
+          if (search && search.trim()) params.search = search.trim();
 
           const res = await api.get("/reservations", {
             params,

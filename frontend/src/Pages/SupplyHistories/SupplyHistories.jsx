@@ -157,31 +157,31 @@ const SupplyHistories = () => {
 
         {/* ===== DATE RANGE FILTER ===== */}
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2 flex-1">
-              <Calendar className="h-5 w-5 text-base-content/70" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex items-center gap-2 flex-1 w-full">
+              <Calendar className="h-5 w-5 text-base-content/70 flex-shrink-0" />
               <input
                 type="date"
                 value={startDate}
                 onChange={handleStartDateChange}
-                className="input input-bordered w-full"
+                className="input input-bordered w-full flex-1"
                 placeholder="Start date"
               />
             </div>
-            <span className="hidden sm:block text-base-content/70">to</span>
-            <div className="flex items-center gap-2 flex-1">
+            <span className="hidden sm:block text-base-content/70 self-center">to</span>
+            <div className="flex items-center gap-2 flex-1 w-full">
               <input
                 type="date"
                 value={endDate}
                 onChange={handleEndDateChange}
-                className="input input-bordered w-full"
+                className="input input-bordered w-full flex-1"
                 placeholder="End date"
                 min={startDate || undefined}
               />
               {hasDateFilter && (
                 <button
                   onClick={clearDateFilters}
-                  className="btn btn-ghost btn-sm btn-circle"
+                  className="btn btn-ghost btn-sm btn-circle flex-shrink-0"
                   title="Clear date filters"
                 >
                   <X className="h-4 w-4" />

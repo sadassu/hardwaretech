@@ -64,6 +64,7 @@ function Pos() {
     if (user?.token) {
       fetchProducts(user.token, {
         page: currentPage,
+        limit: 15, // 3 rows × 5 columns = 15 products per page
         search: debouncedSearch,
         category: selectedCategory,
       });
@@ -167,69 +168,27 @@ function Pos() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 sm:px-6 pb-6">
-        {/* Search Section */}
-        <div className="mb-6 relative">
-          <SearchBar
-            search={search}
-            onSearchChange={handleSearchChange}
-            onClear={clearSearch}
-            isSearching={isSearching || loading}
-            placeholder="Search products for POS..."
-          />
-          {(isSearching || loading) && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <span className="loading loading-spinner loading-sm text-primary"></span>
-            </div>
-          )}
-        </div>
-
-        {/* Active Filters */}
-        {(search || selectedCategory) && (
-          <div className="bg-white rounded-xl shadow-sm border-2 border-blue-100 p-4 mb-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-gray-700">Active filters:</span>
-              {search && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border-2 border-blue-200 rounded-lg text-sm font-medium text-blue-700">
-                  <span>Search: "{search}"</span>
-                  <button 
-                    onClick={clearSearch} 
-                    className="w-5 h-5 rounded-full bg-blue-200 hover:bg-blue-300 flex items-center justify-center transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-              {selectedCategory && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 border-2 border-purple-200 rounded-lg text-sm font-medium text-purple-700">
-                  <span>
-                    Category: {categories.find((c) => c._id === selectedCategory)?.name || "Selected"}
-                  </span>
-                  <button
-                    onClick={() => handleCategoryChange("")}
-                    className="w-5 h-5 rounded-full bg-purple-200 hover:bg-purple-300 flex items-center justify-center transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-              <button
-                onClick={clearAllFilters}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors ml-auto"
-              >
-                Clear All
-              </button>
-            </div>
+        {/* Enhanced Search Section */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+          <div className="mb-6">
+            <SearchBar
+              search={search}
+              onSearchChange={handleSearchChange}
+              onClear={clearSearch}
+              isSearching={isSearching || loading}
+              placeholder="Search products for POS..."
+              className="max-w-full"
+            />
           </div>
-        )}
 
-        {/* Category Filter */}
-        <CategoryFilter
-          className={"mb-4"}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onCategoryChange={handleCategoryChange}
-          loading={loading}
-        />
+          {/* Category Filter */}
+          <CategoryFilter
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onCategoryChange={handleCategoryChange}
+            loading={loading}
+          />
+        </div>
 
         {/* Product Grid */}
         {loading ? (
