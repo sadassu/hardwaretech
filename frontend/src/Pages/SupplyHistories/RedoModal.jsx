@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { RotateCw } from "lucide-react";
 import Modal from "../../components/Modal";
 
 function RedoModal({ user, history, redoSupplyHistory }) {
@@ -27,9 +28,11 @@ function RedoModal({ user, history, redoSupplyHistory }) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="btn btn-sm btn-outline bg-red-500 text-white hover:scale-105"
+        className="btn btn-sm btn-ghost gap-1.5 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all duration-200"
+        title="Redo Supply"
       >
-        Redo
+        <RotateCw className="w-4 h-4" />
+        <span className="hidden sm:inline">Redo</span>
       </button>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>

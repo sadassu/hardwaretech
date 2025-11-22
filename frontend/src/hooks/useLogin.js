@@ -24,18 +24,28 @@ export const useLogin = () => {
 
       const json = response.data;
 
+      console.log("Login response from backend:", json);
+      console.log("Roles received:", json.roles);
+
       // Save user and update context
       localStorage.setItem("user", JSON.stringify(json));
       dispatch({ type: "LOGIN", payload: json });
 
-      // ✅ Role-based redirect
-      const roles = json.roles || [];
+      // ✅ Role-based redirect with replace to prevent back button issues
+      const roles = Array.isArray(json.roles) ? json.roles : [json.roles || "user"];
+      
+      console.log("Processed roles:", roles);
+      console.log("Includes admin?", roles.includes("admin"));
+      
       if (roles.includes("admin")) {
-        navigate("/dashboard");
+        console.log("Navigating to /dashboard");
+        navigate("/dashboard", { replace: true });
       } else if (roles.includes("cashier")) {
-        navigate("/pos");
+        console.log("Navigating to /pos");
+        navigate("/pos", { replace: true });
       } else {
-        navigate("/");
+        console.log("Navigating to /");
+        navigate("/", { replace: true });
       }
 
       setIsLoading(false);
@@ -48,6 +58,7 @@ export const useLogin = () => {
       } else {
         setError(err.response?.data?.message || "Login failed");
       }
+      throw err; // Re-throw to let component handle it
     }
   };
 

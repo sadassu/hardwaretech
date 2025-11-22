@@ -43,12 +43,12 @@ export const useCategoriesStore = create(
       },
 
       // ➕ Add a category
-      addCategory: async ({ name, description }) => {
+      addCategory: async ({ name }) => {
         const { categories } = get();
         set({ loading: true, error: null });
 
         try {
-          const res = await api.post(`/categories`, { name, description });
+          const res = await api.post(`/categories`, { name });
           set({
             categories: [...categories, res.data.category],
             loading: false,

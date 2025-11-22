@@ -7,8 +7,15 @@ import { useAuthContext } from "./useAuthContext";
 export const useReservation = () => {
   const { user } = useAuthContext();
   const setToast = useToast();
-  const { updateReservation, fetchReservations, fetchUserReservations } =
-    useReservationStore();
+  const { 
+    updateReservation, 
+    fetchReservations, 
+    fetchUserReservations,
+    statusFilter,
+    page,
+    updateStatusCounts,
+    setStatusFilter
+  } = useReservationStore();
 
   // ✅ Update reservation status (existing)
   const updateReservationStatus = async (reservationId, formData) => {
@@ -25,9 +32,20 @@ export const useReservation = () => {
       );
 
       const updatedReservation = res.data.reservation || res.data;
+      const newStatus = updatedReservation.status || formData.status;
 
-      updateReservation(updatedReservation);
-      await fetchReservations(user.token);
+      // Automatically switch to the tab that matches the new status
+      setStatusFilter(newStatus);
+
+      // Refresh the list with the new status filter to show the updated reservation
+      await fetchReservations(user.token, {
+        page: 1, // Reset to page 1 when switching tabs
+        limit: 20,
+        status: newStatus,
+      });
+
+      // Update status counts to reflect the change
+      await updateStatusCounts(user.token);
 
       setToast({
         show: true,
@@ -68,7 +86,16 @@ export const useReservation = () => {
 
       const updatedReservation = res.data.reservation || res.data;
       updateReservation(updatedReservation);
-      await fetchUserReservations(user.token, user.userId);
+      
+      // Refresh user reservations with current filter
+      await fetchUserReservations(user.token, user.userId, {
+        page,
+        limit: 20,
+        status: "all", // User reservations page typically shows all
+      });
+      
+      // Update status counts
+      await updateStatusCounts(user.token);
 
       setToast({
         show: true,
@@ -115,12 +142,20 @@ export const useReservation = () => {
       );
 
       const updatedReservation = res.data.reservation || res.data;
+      const newStatus = "completed"; // Completing a reservation sets status to "completed"
 
-      // ✅ Update Zustand store
-      updateReservation(updatedReservation);
+      // Automatically switch to the "completed" tab to show the completed reservation
+      setStatusFilter(newStatus);
 
-      // ✅ Optionally refresh list
-      await fetchReservations(user.token);
+      // Refresh the list with the completed status filter
+      await fetchReservations(user.token, {
+        page: 1, // Reset to page 1 when switching tabs
+        limit: 20,
+        status: newStatus,
+      });
+
+      // ✅ Update status counts
+      await updateStatusCounts(user.token);
 
       setToast({
         show: true,

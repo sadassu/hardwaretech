@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../hooks/useAuthContext";
 
@@ -6,8 +6,15 @@ function LoginSuccess() {
   const navigate = useNavigate();
   const { dispatch } = useAuthContext();
   const [email, setEmail] = useState("");
+  const hasProcessed = useRef(false); // Prevent double processing
 
   useEffect(() => {
+    // Prevent running this effect multiple times
+    if (hasProcessed.current) {
+      console.log("Already processed, skipping...");
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
 
     const userId = params.get("userId");
@@ -22,9 +29,17 @@ function LoginSuccess() {
     if (token) {
       let roles = [];
       try {
-        roles = JSON.parse(rolesParam);
-      } catch {
-        roles = rolesParam ? [rolesParam] : ["user"]; // fallback
+        // Try to parse as JSON first (backend now sends it as JSON string)
+        const parsed = JSON.parse(rolesParam);
+        roles = Array.isArray(parsed) ? parsed : [parsed];
+      } catch (error) {
+        // Fallback: if not JSON, treat as string and wrap in array
+        roles = rolesParam ? [rolesParam.trim()] : ["user"];
+      }
+
+      // Ensure roles is always an array
+      if (!Array.isArray(roles) || roles.length === 0) {
+        roles = ["user"];
       }
 
       const user = {
@@ -44,16 +59,25 @@ function LoginSuccess() {
 
       setEmail(emailParam);
 
-      // ✅ Redirect based on role
-      if (roles.includes("admin")) {
-        navigate("/dashboard");
-      } else if (roles.includes("cashier")) {
-        navigate("/pos");
+      // Mark as processed BEFORE any navigation
+      hasProcessed.current = true;
+
+      // ✅ Redirect based on role - check if roles array includes the role
+      const userRoles = Array.isArray(roles) ? roles : [roles];
+      
+      // Use setTimeout to ensure context is updated before navigation
+      setTimeout(() => {
+        if (userRoles.includes("admin")) {
+          navigate("/dashboard", { replace: true });
+        } else if (userRoles.includes("cashier")) {
+          navigate("/pos", { replace: true });
       } else {
-        navigate("/");
+          navigate("/", { replace: true });
       }
+      }, 0);
     } else {
-      navigate("/login");
+      hasProcessed.current = true;
+      navigate("/login", { replace: true });
     }
   }, [navigate, dispatch]);
 

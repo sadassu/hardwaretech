@@ -46,14 +46,40 @@ function SalesSupplyHistoryGraph() {
     return null;
   };
 
+  // Calculate summary statistics
+  const getSummary = () => {
+    if (!salesData?.data || salesData.data.length === 0) return null;
+
+    const data = salesData.data;
+    const totalSupply = data.reduce((sum, item) => sum + (item.totalSupplyCost || 0), 0);
+    const totalSalesAmount = data.reduce((sum, item) => sum + (item.totalSales || 0), 0);
+    const totalProfit = data.reduce((sum, item) => sum + (item.difference || 0), 0);
+    const profitMargin = totalSalesAmount > 0 ? (totalProfit / totalSalesAmount) * 100 : 0;
+    const avgProfit = data.length > 0 ? totalProfit / data.length : 0;
+
+    // Find best performing period
+    const bestPeriod = [...data].sort((a, b) => (b.difference || 0) - (a.difference || 0))[0];
+
+    return {
+      totalSupply,
+      totalSalesAmount,
+      totalProfit,
+      profitMargin,
+      avgProfit,
+      bestPeriod,
+    };
+  };
+
+  const summary = getSummary();
+
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1">
             Supply vs Sales Analysis
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-gray-500">
             {option === "weekly" ? "Weekly" : "Monthly"} performance overview
           </p>
         </div>
@@ -87,8 +113,9 @@ function SalesSupplyHistoryGraph() {
       )}
 
       {!loading && !error && salesData?.data?.length > 0 ? (
-        <div className="bg-white rounded-xl p-6 shadow-inner">
-          <ResponsiveContainer width="100%" height={400}>
+        <>
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-inner">
+            <ResponsiveContainer width="100%" height={350} className="sm:h-[400px]">
             <LineChart
               data={salesData.data}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
@@ -144,6 +171,114 @@ function SalesSupplyHistoryGraph() {
             </LineChart>
           </ResponsiveContainer>
         </div>
+
+          {/* Summary Statistics */}
+          {summary && (
+            <div className="mt-6 pt-6 border-t-2 border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                Analysis Summary
+              </h3>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {/* Total Supply Cost */}
+                <div className="bg-gradient-to-br from-blue-50 to-sky-50 rounded-xl p-3 sm:p-4 border-2 border-blue-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Total Supply Cost
+                    </p>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-blue-600 mb-0.5">
+                    {formatPrice(summary.totalSupply)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {option === "weekly" ? "Weekly" : "Monthly"} investment
+                  </p>
+                </div>
+
+                {/* Total Sales */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 sm:p-4 border-2 border-green-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Total Sales
+                    </p>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-green-600 mb-0.5">
+                    {formatPrice(summary.totalSalesAmount)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Revenue generated
+                  </p>
+                </div>
+
+                {/* Total Profit */}
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 sm:p-4 border-2 border-amber-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Total Profit
+                    </p>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-amber-600 mb-0.5">
+                    {formatPrice(summary.totalProfit)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Net earnings
+                  </p>
+                </div>
+
+                {/* Profit Margin */}
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-3 sm:p-4 border-2 border-purple-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Profit Margin
+                    </p>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-purple-600 mb-0.5">
+                    {summary.profitMargin.toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Return on sales
+                  </p>
+                </div>
+
+                {/* Average Profit */}
+                <div className="bg-gradient-to-br from-cyan-50 to-teal-50 rounded-xl p-3 sm:p-4 border-2 border-cyan-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Avg Profit
+                    </p>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-cyan-600 mb-0.5">
+                    {formatPrice(summary.avgProfit)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Per period
+                  </p>
+                </div>
+
+                {/* Best Period */}
+                <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl p-3 sm:p-4 border-2 border-rose-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Best Period
+                    </p>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-rose-600 mb-0.5">
+                    {formatPrice(summary.bestPeriod.difference)}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {summary.bestPeriod.period}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         !loading &&
         !error && (
