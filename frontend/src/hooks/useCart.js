@@ -33,9 +33,22 @@ export function useCart() {
       );
 
       if (existingIndex >= 0) {
-        cartCopy[existingIndex].quantity += item.quantity;
-        cartCopy[existingIndex].total =
-          cartCopy[existingIndex].quantity * cartCopy[existingIndex].price;
+        const existingItem = cartCopy[existingIndex];
+        const newQuantity = existingItem.quantity + item.quantity;
+        // Use the maximum available stock (prefer new value if provided, otherwise keep existing)
+        const maxAvailable = item.quantityAvailable !== undefined 
+          ? item.quantityAvailable 
+          : (existingItem.quantityAvailable ?? Infinity);
+        
+        // Ensure we don't exceed available stock
+        const finalQuantity = Math.min(newQuantity, maxAvailable);
+        
+        cartCopy[existingIndex].quantity = finalQuantity;
+        cartCopy[existingIndex].total = finalQuantity * cartCopy[existingIndex].price;
+        // Update quantityAvailable if provided (use the variant's actual stock)
+        if (item.quantityAvailable !== undefined) {
+          cartCopy[existingIndex].quantityAvailable = item.quantityAvailable;
+        }
       } else {
         cartCopy.push(item);
       }
@@ -75,15 +88,20 @@ export function useCart() {
 
   const updateQuantity = useCallback((productId, variantId, newQty) => {
     setCart((prevCart) => {
-      const newCart = prevCart.map((c) =>
-        c.productId === productId && c.variantId === variantId
-          ? {
-              ...c,
-              quantity: newQty,
-              total: newQty * c.price,
-            }
-          : c
-      );
+      const newCart = prevCart.map((c) => {
+        if (c.productId === productId && c.variantId === variantId) {
+          // Check if quantityAvailable exists and enforce limit
+          const maxAvailable = c.quantityAvailable ?? Infinity;
+          const finalQty = Math.min(newQty, maxAvailable);
+          
+          return {
+            ...c,
+            quantity: finalQty,
+            total: finalQty * c.price,
+          };
+        }
+        return c;
+      });
 
       localStorage.setItem("cart", JSON.stringify(newCart));
       setTimeout(() => {

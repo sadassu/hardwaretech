@@ -55,6 +55,22 @@ export const createReservation = asyncHandler(async (req, res) => {
       const populatedReservation = await Reservation.findById(reservation._id).populate("userId", "name email");
       
       if (populatedReservation.userId && populatedReservation.userId.email) {
+        // Populate reservation details with product information
+        const reservationDetails = await ReservationDetail.find({ reservationId: reservation._id })
+          .populate({
+            path: "productVariantId",
+            populate: { path: "product", select: "name" }
+          });
+
+        // Extract product information for email
+        const products = reservationDetails.map(detail => ({
+          name: detail.productVariantId?.product?.name || "Unknown Product",
+          size: detail.productVariantId?.size || detail.size || "",
+          unit: detail.productVariantId?.unit || detail.unit || "",
+          quantity: detail.quantity || 1,
+          price: detail.productVariantId?.price || 0
+        }));
+
         const { sendEmail } = await import("../utils/sendEmail.js");
         const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
 
@@ -64,7 +80,8 @@ export const createReservation = asyncHandler(async (req, res) => {
           "pending",
           populatedReservation.reservationDate,
           populatedReservation.totalPrice,
-          populatedReservation.notes || ""
+          populatedReservation.notes || "",
+          products
         );
 
         await sendEmail(
@@ -123,6 +140,22 @@ export const cancelReservation = asyncHandler(async (req, res) => {
   // ✅ Send email notification to user
   if (reservation.userId && reservation.userId.email) {
     try {
+      // Populate reservation details with product information
+      const reservationDetails = await ReservationDetail.find({ reservationId: reservation._id })
+        .populate({
+          path: "productVariantId",
+          populate: { path: "product", select: "name" }
+        });
+
+      // Extract product information for email
+      const products = reservationDetails.map(detail => ({
+        name: detail.productVariantId?.product?.name || "Unknown Product",
+        size: detail.productVariantId?.size || detail.size || "",
+        unit: detail.productVariantId?.unit || detail.unit || "",
+        quantity: detail.quantity || 1,
+        price: detail.productVariantId?.price || 0
+      }));
+
       const { sendEmail } = await import("../utils/sendEmail.js");
       const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
 
@@ -132,7 +165,8 @@ export const cancelReservation = asyncHandler(async (req, res) => {
         "cancelled",
         reservation.reservationDate,
         reservation.totalPrice,
-        reservation.remarks || ""
+        reservation.remarks || "",
+        products
       );
 
       await sendEmail(
@@ -373,6 +407,22 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
   // ✅ Send email notification to user
   if (reservation.userId && reservation.userId.email) {
     try {
+      // Populate reservation details with product information
+      const reservationDetails = await ReservationDetail.find({ reservationId: reservation._id })
+        .populate({
+          path: "productVariantId",
+          populate: { path: "product", select: "name" }
+        });
+
+      // Extract product information for email
+      const products = reservationDetails.map(detail => ({
+        name: detail.productVariantId?.product?.name || "Unknown Product",
+        size: detail.productVariantId?.size || detail.size || "",
+        unit: detail.productVariantId?.unit || detail.unit || "",
+        quantity: detail.quantity || 1,
+        price: detail.productVariantId?.price || 0
+      }));
+
       const { sendEmail } = await import("../utils/sendEmail.js");
       const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
 
@@ -382,7 +432,8 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
         status,
         reservation.reservationDate,
         reservation.totalPrice,
-        reservation.remarks || ""
+        reservation.remarks || "",
+        products
       );
 
       const statusTitles = {
@@ -418,6 +469,7 @@ export const getAllReservations = asyncHandler(async (req, res) => {
   const sortBy = req.query.sortBy || "reservationDate";
   const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
   const status = req.query.status;
+  const search = req.query.search; // Search query
   const skip = (page - 1) * limit;
 
   // Build query filter
@@ -426,8 +478,9 @@ export const getAllReservations = asyncHandler(async (req, res) => {
     filter.status = status;
   }
 
-  // Fetch reservations with user details + reservation details
-  const reservations = await Reservation.find(filter)
+  // If search query exists, we'll filter after populating
+  // First, fetch all matching reservations
+  let reservations = await Reservation.find(filter)
     .populate("userId", "name email roles isActive")
     .populate({
       path: "reservationDetails",
@@ -439,12 +492,74 @@ export const getAllReservations = asyncHandler(async (req, res) => {
         },
       },
     })
-    .sort({ [sortBy]: sortOrder })
-    .skip(skip)
-    .limit(limit);
+    .sort({ [sortBy]: sortOrder });
 
-  // Count filtered reservations
-  const total = await Reservation.countDocuments(filter);
+  // Apply search filter if provided
+  if (search && search.trim()) {
+    const searchLower = search.toLowerCase().trim();
+    const searchTrimmed = search.trim();
+    
+    reservations = reservations.filter((reservation) => {
+      const userId = reservation.userId;
+      const reservationId = reservation._id.toString();
+      
+      // Search in user name
+      const userNameMatch = userId?.name?.toLowerCase().includes(searchLower);
+      // Search in user email
+      const userEmailMatch = userId?.email?.toLowerCase().includes(searchLower);
+      // Search in reservation ID (last 8 characters)
+      const reservationIdMatch = reservationId.toLowerCase().includes(searchLower) || 
+                                 reservationId.slice(-8).toLowerCase().includes(searchLower);
+      
+      // Search in product names
+      let productNameMatch = false;
+      if (reservation.reservationDetails && reservation.reservationDetails.length > 0) {
+        productNameMatch = reservation.reservationDetails.some((detail) => {
+          const product = detail.productVariantId?.product;
+          if (product && product.name) {
+            return product.name.toLowerCase().includes(searchLower);
+          }
+          return false;
+        });
+      }
+      
+      // Search in date (various date formats)
+      let dateMatch = false;
+      if (reservation.reservationDate) {
+        const reservationDate = new Date(reservation.reservationDate);
+        // Try to parse the search query as a date
+        const searchDate = new Date(searchTrimmed);
+        
+        // Check if search is a valid date
+        if (!isNaN(searchDate.getTime())) {
+          // Compare dates (ignore time)
+          const resDateStr = reservationDate.toISOString().split('T')[0];
+          const searchDateStr = searchDate.toISOString().split('T')[0];
+          dateMatch = resDateStr === searchDateStr;
+        }
+        
+        // Also check formatted date strings
+        const dateFormats = [
+          reservationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).toLowerCase(),
+          reservationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).toLowerCase(),
+          reservationDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }).toLowerCase(),
+          reservationDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase(),
+          reservationDate.toLocaleDateString('en-US').toLowerCase(),
+          reservationDate.toISOString().split('T')[0], // YYYY-MM-DD format
+        ];
+        
+        dateMatch = dateMatch || dateFormats.some(format => format.includes(searchLower));
+      }
+      
+      return userNameMatch || userEmailMatch || reservationIdMatch || productNameMatch || dateMatch;
+    });
+  }
+
+  // Get total count before pagination (after search filter if applied)
+  const total = reservations.length;
+
+  // Apply pagination
+  reservations = reservations.slice(skip, skip + limit);
 
   // Get status counts for all statuses
   const statusCountsRaw = await Reservation.aggregate([

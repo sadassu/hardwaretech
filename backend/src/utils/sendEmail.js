@@ -12,7 +12,7 @@ export const sendEmail = async (to, subject, html) => {
   });
 
   const info = await transporter.sendMail({
-    from: process.env.EMAIL_FROM || `"No Reply" <${process.env.SMTP_USER}>`,
+    from: process.env.EMAIL_FROM || `"Hardwaretech" <${process.env.SMTP_USER}>`,
     to,
     subject,
     html,

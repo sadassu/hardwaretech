@@ -14,7 +14,12 @@ export const authReducer = (state, action) => {
     case "UPDATED_USER":
       return {
         ...state,
-        user: { ...state.user, ...action.payload },
+        user: { 
+          ...state.user, 
+          ...action.payload,
+          // Preserve isVerified if not provided in payload
+          isVerified: action.payload.isVerified !== undefined ? action.payload.isVerified : state.user?.isVerified
+        },
       };
     case "DELETE_ACCOUNT":
       return { user: null }; // remove user from state

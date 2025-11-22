@@ -16,6 +16,8 @@ import {
   Loader2,
   PackageX,
   ClipboardList,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 
@@ -24,6 +26,7 @@ function CartContent() {
   const [isOpen, setIsOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [amountPaid, setAmountPaid] = useState("");
+  const [maxStockMessages, setMaxStockMessages] = useState({});
   const { user } = useAuthContext();
 
   // ✅ Zustand store functions
@@ -149,10 +152,11 @@ function CartContent() {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         className="w-full max-w-2xl"
+        hideCloseButton={true}
       >
         <div className="bg-[#222831] rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="bg-[#30475E] text-white p-4 sm:p-6 rounded-t-2xl flex-shrink-0">
+          <div className="bg-[#30475E] text-white p-4 sm:p-6 rounded-t-2xl flex-shrink-0 relative">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="bg-white/20 p-2 rounded-full">
@@ -168,16 +172,25 @@ function CartContent() {
                   </p>
                 </div>
               </div>
-              {cartItems.length > 0 && (
+              <div className="flex items-center gap-2">
+                {cartItems.length > 0 && (
+                  <button
+                    className="btn btn-ghost btn-sm text-white/80 hover:text-white hover:bg-white/20 border-white/30"
+                    onClick={clearCart}
+                    title="Clear cart"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Clear All</span>
+                  </button>
+                )}
                 <button
-                  className="btn btn-ghost btn-sm text-white/80 hover:text-white hover:bg-white/20 border-white/30"
-                  onClick={clearCart}
-                  title="Clear cart"
+                  className="btn btn-ghost btn-sm text-white/80 hover:text-white hover:bg-white/20 border-white/30 w-8 h-8 p-0"
+                  onClick={() => setIsOpen(false)}
+                  title="Close"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Clear All</span>
+                  <X className="w-4 h-4" />
                 </button>
-              )}
+              </div>
             </div>
           </div>
 
@@ -232,53 +245,103 @@ function CartContent() {
 
                       <div className="flex items-center justify-between">
                         {/* Quantity Controls */}
-                        <div className="flex items-center gap-2 sm:gap-3 bg-[#222831]/10 rounded-full p-1">
-                          <button
-                            className="btn btn-ghost btn-sm rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 hover:bg-[#30475E] hover:text-white"
-                            onClick={() =>
-                              updateQuantity(
-                                item.productId,
-                                item.variantId,
-                                item.quantity - 1
-                              )
-                            }
-                            disabled={item.quantity <= 1}
-                          >
-                            <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2 sm:gap-3 bg-[#222831]/10 rounded-full p-1">
+                            <button
+                              className="btn btn-ghost btn-sm rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 hover:bg-[#30475E] hover:text-white"
+                              onClick={() => {
+                                const newQty = item.quantity - 1;
+                                updateQuantity(
+                                  item.productId,
+                                  item.variantId,
+                                  newQty
+                                );
+                                // Clear message when decreasing
+                                setMaxStockMessages(prev => {
+                                  const updated = { ...prev };
+                                  delete updated[`${item.productId}-${item.variantId}`];
+                                  return updated;
+                                });
+                              }}
+                              disabled={item.quantity <= 1}
+                            >
+                              <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </button>
 
-                          <input
-                            type="number"
-                            className="input input-ghost input-sm w-12 sm:w-16 text-center font-semibold bg-transparent border-none focus:bg-white rounded-lg text-[#222831]"
-                            value={item.quantity}
-                            min={1}
-                            max={item.quantityAvailable}
-                            onChange={(e) => {
-                              let value = parseInt(e.target.value, 10) || 1;
-                              if (value > item.quantityAvailable)
-                                value = item.quantityAvailable;
-                              if (value < 1) value = 1;
-                              updateQuantity(
-                                item.productId,
-                                item.variantId,
-                                value
-                              );
-                            }}
-                          />
+                            <input
+                              type="number"
+                              className="input input-ghost input-sm w-12 sm:w-16 text-center font-semibold bg-transparent border-none focus:bg-white rounded-lg text-[#222831]"
+                              value={item.quantity}
+                              min={1}
+                              max={item.quantityAvailable ?? Infinity}
+                              onChange={(e) => {
+                                let value = parseInt(e.target.value, 10) || 1;
+                                const maxAvailable = item.quantityAvailable ?? Infinity;
+                                
+                                if (value > maxAvailable) {
+                                  value = maxAvailable;
+                                  setMaxStockMessages(prev => ({
+                                    ...prev,
+                                    [`${item.productId}-${item.variantId}`]: `Maximum available stock: ${maxAvailable}`
+                                  }));
+                                } else {
+                                  setMaxStockMessages(prev => {
+                                    const updated = { ...prev };
+                                    delete updated[`${item.productId}-${item.variantId}`];
+                                    return updated;
+                                  });
+                                }
+                                if (value < 1) value = 1;
+                                updateQuantity(
+                                  item.productId,
+                                  item.variantId,
+                                  value
+                                );
+                              }}
+                            />
 
-                          <button
-                            className="btn btn-ghost btn-sm rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 hover:bg-[#30475E] hover:text-white"
-                            onClick={() =>
-                              updateQuantity(
-                                item.productId,
-                                item.variantId,
-                                item.quantity + 1
-                              )
-                            }
-                            disabled={item.quantity >= item.quantityAvailable}
-                          >
-                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
+                            <button
+                              className="btn btn-ghost btn-sm rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 hover:bg-[#30475E] hover:text-white"
+                              onClick={() => {
+                                const maxAvailable = item.quantityAvailable ?? Infinity;
+                                const newQty = item.quantity + 1;
+                                
+                                if (newQty > maxAvailable) {
+                                  setMaxStockMessages(prev => ({
+                                    ...prev,
+                                    [`${item.productId}-${item.variantId}`]: `Maximum available stock: ${maxAvailable}`
+                                  }));
+                                  updateQuantity(
+                                    item.productId,
+                                    item.variantId,
+                                    maxAvailable
+                                  );
+                                } else {
+                                  updateQuantity(
+                                    item.productId,
+                                    item.variantId,
+                                    newQty
+                                  );
+                                  setMaxStockMessages(prev => {
+                                    const updated = { ...prev };
+                                    delete updated[`${item.productId}-${item.variantId}`];
+                                    return updated;
+                                  });
+                                }
+                              }}
+                              disabled={item.quantity >= (item.quantityAvailable ?? Infinity)}
+                            >
+                              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </button>
+                          </div>
+                          {maxStockMessages[`${item.productId}-${item.variantId}`] && (
+                            <div className="bg-amber-500/20 border border-amber-500/40 rounded-lg p-2 flex items-start gap-2">
+                              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                              <p className="text-xs text-amber-200">
+                                {maxStockMessages[`${item.productId}-${item.variantId}`]}
+                              </p>
+                            </div>
+                          )}
                         </div>
 
                         <div className="text-right">

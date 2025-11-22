@@ -210,10 +210,9 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
   const option = req.query.option || "weekly"; // default weekly
   const year = parseInt(req.query.year, 10) || new Date().getFullYear();
   let groupStageSupply = {};
-  let groupStageSales = {};
 
   if (option === "weekly") {
-    // ----- WEEKLY AGGREGATION -----
+    // ----- WEEKLY AGGREGATION FOR SUPPLY -----
     groupStageSupply = {
       _id: {
         year: { $isoWeekYear: "$supplied_at" },
@@ -222,29 +221,14 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
       },
       totalSupplyCost: { $sum: "$total_cost" },
     };
-    groupStageSales = {
-      _id: {
-        year: { $isoWeekYear: "$saleDate" },
-        week: { $isoWeek: "$saleDate" },
-        month: { $month: "$saleDate" },
-      },
-      totalSales: { $sum: "$totalPrice" },
-    };
   } else if (option === "monthly") {
-    // ----- MONTHLY AGGREGATION -----
+    // ----- MONTHLY AGGREGATION FOR SUPPLY -----
     groupStageSupply = {
       _id: {
         year: { $year: "$supplied_at" },
         month: { $month: "$supplied_at" },
       },
       totalSupplyCost: { $sum: "$total_cost" },
-    };
-    groupStageSales = {
-      _id: {
-        year: { $year: "$saleDate" },
-        month: { $month: "$saleDate" },
-      },
-      totalSales: { $sum: "$totalPrice" },
     };
   } else {
     return res.status(400).json({
@@ -324,7 +308,8 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
     { $group: groupStageSupply },
   ]);
 
-  // --- SALES AGGREGATION ---
+  // --- SALES AGGREGATION WITH COGS (Cost of Goods Sold) ---
+  // Use supplier_price from SupplyHistory (actual cost paid) instead of ProductVariant
   const salesAgg = await Sale.aggregate([
     {
       $match: {
@@ -334,20 +319,107 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
         },
       },
     },
-    { $group: groupStageSales },
+    // Unwind items to calculate COGS per item
+    { $unwind: "$items" },
+    // Lookup SupplyHistory to get the actual supplier_price that was paid
+    // Find the most recent supply entry for this variant before or on the sale date
+    {
+      $lookup: {
+        from: "supplyhistories",
+        let: { variantId: "$items.productVariantId", saleDate: "$saleDate" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$product_variant", "$$variantId"] },
+                  { $lte: ["$supplied_at", "$$saleDate"] },
+                ],
+              },
+            },
+          },
+          { $sort: { supplied_at: -1 } }, // Get most recent supply entry
+          { $limit: 1 },
+          {
+            $project: {
+              supplier_price: 1,
+            },
+          },
+        ],
+        as: "supplyHistory",
+      },
+    },
+    // Fallback to ProductVariant supplier_price if no SupplyHistory found
+    {
+      $lookup: {
+        from: "productvariants",
+        localField: "items.productVariantId",
+        foreignField: "_id",
+        as: "variant",
+      },
+    },
+    { $unwind: { path: "$variant", preserveNullAndEmptyArrays: true } },
+    // Calculate COGS using supplier_price from SupplyHistory (actual cost paid)
+    // Fallback to ProductVariant supplier_price if SupplyHistory not found
+    {
+      $addFields: {
+        actualSupplierPrice: {
+          $ifNull: [
+            { $arrayElemAt: ["$supplyHistory.supplier_price", 0] },
+            { $ifNull: ["$variant.supplier_price", 0] },
+          ],
+        },
+        itemCOGS: {
+          $multiply: [
+            "$items.quantity",
+            {
+              $ifNull: [
+                { $arrayElemAt: ["$supplyHistory.supplier_price", 0] },
+                { $ifNull: ["$variant.supplier_price", 0] },
+              ],
+            },
+          ],
+        },
+        itemSales: {
+          $multiply: ["$items.quantity", "$items.price"],
+        },
+        periodId: option === "weekly"
+          ? {
+              year: { $isoWeekYear: "$saleDate" },
+              week: { $isoWeek: "$saleDate" },
+              month: { $month: "$saleDate" },
+            }
+          : {
+              year: { $year: "$saleDate" },
+              month: { $month: "$saleDate" },
+            },
+      },
+    },
+    // Group by period and sum sales and COGS
+    {
+      $group: {
+        _id: "$periodId",
+        totalSales: { $sum: "$itemSales" },
+        totalCOGS: { $sum: "$itemCOGS" },
+      },
+    },
   ]);
 
   // 🧩 Merge the two datasets
   const combined = [];
   const salesMap = new Map();
 
-  // Index sales data
+  // Index sales data with COGS
   for (const s of salesAgg) {
     const key =
       option === "weekly"
         ? `${s._id.year}-${s._id.week}`
         : `${s._id.year}-${s._id.month}`;
-    salesMap.set(key, { totalSales: s.totalSales, month: s._id.month });
+    salesMap.set(key, {
+      totalSales: s.totalSales,
+      totalCOGS: s.totalCOGS || 0,
+      month: s._id.month,
+    });
   }
 
   // Include all supply entries
@@ -358,8 +430,12 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
         : `${s._id.year}-${s._id.month}`;
     const salesData = salesMap.get(key) || {
       totalSales: 0,
+      totalCOGS: 0,
       month: s._id.month,
     };
+
+    // Calculate profit as Sales - COGS (not Sales - Supply Cost)
+    const profit = salesData.totalSales - (salesData.totalCOGS || 0);
 
     combined.push({
       year: s._id.year,
@@ -371,7 +447,8 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
       month: s._id.month,
       totalSupplyCost: s.totalSupplyCost,
       totalSales: salesData.totalSales,
-      difference: salesData.totalSales - s.totalSupplyCost,
+      totalCOGS: salesData.totalCOGS || 0,
+      difference: profit, // Profit = Sales - COGS
     });
     salesMap.delete(key);
   }
@@ -381,6 +458,9 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
     const [yr, periodNum] = key.split("-");
     const yearInt = parseInt(yr);
     const periodInt = parseInt(periodNum);
+
+    // Calculate profit as Sales - COGS
+    const profit = salesData.totalSales - (salesData.totalCOGS || 0);
 
     combined.push({
       year: yearInt,
@@ -392,7 +472,8 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
       month: salesData.month,
       totalSupplyCost: 0,
       totalSales: salesData.totalSales,
-      difference: salesData.totalSales,
+      totalCOGS: salesData.totalCOGS || 0,
+      difference: profit, // Profit = Sales - COGS
     });
   }
 

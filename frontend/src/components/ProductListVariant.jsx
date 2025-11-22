@@ -110,11 +110,11 @@ function ProductListVariant({ product, user, isMobile }) {
                 >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap gap-2 mb-3">
-                          {variant.size && (
-                              <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold">
-                              {variant.size} {variant.unit}
-                              </span>
+                          <div className="flex items-center justify-between mb-2">
+                            {variant.price && (
+                              <div className="text-xl font-bold text-blue-600">
+                                ₱{variant.price.toLocaleString()}
+                            </div>
                           )}
                           {variant.color && (
                               <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize ${
@@ -125,18 +125,17 @@ function ProductListVariant({ product, user, isMobile }) {
                             )}
                           </div>
                           
-                          <div className="flex items-center justify-between">
-                            {variant.price && (
-                              <div className="text-xl font-bold text-blue-600">
-                                ₱{variant.price.toLocaleString()}
-                            </div>
-                          )}
                           {variant.quantity && (
-                              <span className="text-xs font-medium text-gray-500">
+                              <span className="text-xs font-medium text-gray-500 block mb-2">
                                 Stock: {variant.quantity}
                               </span>
                           )}
-                          </div>
+                          
+                          {variant.size && (
+                              <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold inline-block whitespace-nowrap">
+                              {variant.size} {variant.unit}
+                              </span>
+                          )}
                       </div>
                         
                         <div className="flex-shrink-0">
@@ -185,12 +184,12 @@ function ProductListVariant({ product, user, isMobile }) {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        {/* Badges */}
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {variant.size && (
-                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold">
-                              {variant.size} {variant.unit}
-                            </span>
+                        {/* Price and Color */}
+                        <div className="flex items-center justify-between mb-1">
+                          {variant.price && (
+                            <div className="text-base lg:text-lg font-bold text-blue-600">
+                              ₱{variant.price.toLocaleString()}
+                            </div>
                           )}
                           {variant.color && (
                             <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold capitalize ${
@@ -201,19 +200,19 @@ function ProductListVariant({ product, user, isMobile }) {
                           )}
                         </div>
                         
-                        {/* Price and Stock */}
-                        <div className="flex flex-col gap-1">
-                          {variant.price && (
-                            <div className="text-base lg:text-lg font-bold text-blue-600">
-                              ₱{variant.price.toLocaleString()}
-                            </div>
-                          )}
-                          {variant.quantity && (
-                            <span className="text-xs font-medium text-gray-500">
-                              Stock: {variant.quantity}
-                            </span>
-                          )}
-                        </div>
+                        {/* Stock */}
+                        {variant.quantity && (
+                          <span className="text-xs font-medium text-gray-500 block mb-1.5">
+                            Stock: {variant.quantity}
+                          </span>
+                        )}
+                        
+                        {/* Variant Size/Unit - Now below stock */}
+                        {variant.size && (
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold inline-block whitespace-nowrap">
+                            {variant.size} {variant.unit}
+                          </span>
+                        )}
                       </div>
                       
                       {/* Add to Cart Button */}

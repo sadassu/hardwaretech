@@ -25,6 +25,7 @@ const ReservationTable = () => {
     loading,
     expandedRow,
     statusFilter,
+    searchQuery,
     fetchReservations,
     toggleExpandedRow,
     updateReservation,
@@ -36,9 +37,9 @@ const ReservationTable = () => {
 
   useEffect(() => {
     if (user?.token) {
-      fetchReservations(user.token, { page, limit, status: statusFilter });
+      fetchReservations(user.token, { page, limit, status: statusFilter, search: searchQuery });
     }
-  }, [page, statusFilter, user?.token, fetchReservations]);
+  }, [page, statusFilter, searchQuery, user?.token, fetchReservations]);
 
   const getStatusConfig = (status) => {
     const configs = {
