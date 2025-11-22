@@ -14,7 +14,7 @@ function ProductGrid({ products, user, isMobile }) {
   }
 
   return (
-    <div className="grid gap-4 sm:gap-5 lg:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="grid gap-4 sm:gap-5 lg:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
       {products.map((product) => {
         const variantCount = product.variants ? product.variants.length : 0;
         const hasImageError = imageErrors[product._id];

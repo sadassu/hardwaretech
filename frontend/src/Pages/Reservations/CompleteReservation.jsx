@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import Modal from "../../components/Modal";
 import { useReservation } from "../../hooks/useReservation";
 
 function CompleteReservation({ reservation, onCompleteSuccess }) {
   const { completeReservation } = useReservation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState("");
   const [error, setError] = useState(null);
@@ -29,6 +31,9 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
 
       setIsOpen(false);
       if (onCompleteSuccess) onCompleteSuccess(updated);
+      
+      // Redirect to sales page to verify the sale was added
+      navigate("/sales", { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

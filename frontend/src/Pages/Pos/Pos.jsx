@@ -64,6 +64,7 @@ function Pos() {
     if (user?.token) {
       fetchProducts(user.token, {
         page: currentPage,
+        limit: 15, // 3 rows × 5 columns = 15 products per page
         search: debouncedSearch,
         category: selectedCategory,
       });

@@ -57,7 +57,7 @@ const StatusCards = ({ statusFilter, statusCounts, onStatusChange }) => {
     },
     {
       key: "cancelled",
-      label: "Cancelled",
+      label: "Cancelled/Failed",
       Icon: XCircle,
       gradient: "from-red-500 to-rose-600",
       bgColor: "bg-red-50",

@@ -199,12 +199,12 @@ const Product = () => {
                     <div className="flex flex-col lg:flex-row gap-6">
                       {/* Image */}
                       <div className="flex-shrink-0 w-20 h-20 rounded-2xl border-2 border-gray-100 bg-gray-50 overflow-hidden flex items-center justify-center">
-                        <img
-                          src={product?.image || "/placeholder.png"}
-                          alt={product?.name || "No image"}
+                          <img
+                            src={product?.image || "/placeholder.png"}
+                            alt={product?.name || "No image"}
                           className="w-full h-full object-cover"
                           onError={(e) => (e.currentTarget.src = "/placeholder.png")}
-                        />
+                          />
                       </div>
 
                       {/* Details */}
@@ -243,10 +243,10 @@ const Product = () => {
                               : "bg-green-100 text-green-700 border-green-200";
 
                           return (
-                            <div
-                              key={variant._id}
+                          <div
+                            key={variant._id}
                               className="rounded-2xl border-2 border-gray-100 bg-gray-50/70 hover:border-blue-200 transition-all duration-200 p-4 flex flex-col gap-3"
-                            >
+                          >
                               <div className="flex items-start justify-between gap-3">
                                 <div>
                                   <p className="text-lg font-semibold text-gray-900">
