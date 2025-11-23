@@ -63,8 +63,8 @@ app.use((err, req, res, next) => {
 });
 
 // Connect DB and start server
-connectDB().then(() => {
-  app.listen(PORT, () => {
+connectDB().then(async () => {
+  app.listen(PORT, async () => {
     console.log(`Server listening on port: ${PORT}`);
     
     // Check email configuration on startup
@@ -87,7 +87,28 @@ connectDB().then(() => {
                     process.env.SMTP_USER && process.env.SMTP_PASS;
     
     if (allSet) {
-      console.log("✅ Email service is configured\n");
+      console.log("✅ Email service is configured");
+      
+      // Test email connection (only in production or if TEST_EMAIL is set)
+      if (process.env.NODE_ENV === "production" || process.env.TEST_EMAIL === "true") {
+        try {
+          const { testEmailConfig } = await import("./utils/sendEmail.js");
+          const testResult = await testEmailConfig();
+          
+          if (testResult.success) {
+            console.log("✅ Email connection test: PASSED\n");
+          } else {
+            console.log("⚠️  Email connection test: FAILED");
+            console.log(`   Reason: ${testResult.message}`);
+            console.log("   ⚠️  Emails may not work. Check your SMTP settings.\n");
+          }
+        } catch (testError) {
+          console.log("⚠️  Email connection test: ERROR");
+          console.log(`   ${testError.message}\n`);
+        }
+      } else {
+        console.log("ℹ️  Email connection test skipped (set TEST_EMAIL=true to enable)\n");
+      }
     } else {
       console.log("⚠️  Email service is NOT fully configured. Emails will fail.\n");
       console.log("📖 See backend/EMAIL_SETUP.md for configuration guide\n");

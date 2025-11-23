@@ -59,9 +59,19 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     <a href="${resetUrl}">Reset Password</a>
     <p>This link will expire in 1 hour.</p>
   `;
-  await sendEmail(user.email, subject, html);
 
-  res.status(200).json({ message: "Password reset email sent" });
+  try {
+    await sendEmail(user.email, subject, html);
+    res.status(200).json({ message: "Password reset email sent" });
+  } catch (emailError) {
+    console.error("❌ Failed to send password reset email:", emailError.message);
+    // Still return success to prevent email enumeration attacks
+    // But log the error for debugging
+    res.status(200).json({ 
+      message: "If an account with that email exists, a password reset link has been sent.",
+      warning: "Email service may be experiencing issues. Please try again later or contact support."
+    });
+  }
 });
 
 // @desc    Reset password

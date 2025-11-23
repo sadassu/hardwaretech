@@ -25,6 +25,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { login, error, isLoading } = useLogin();
   const [captchaToken, setCaptchaToken] = useState("");
+  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
   const handleChange = (e) => {
     setFormData({
@@ -36,14 +37,14 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!captchaToken) {
+    if (recaptchaSiteKey && !captchaToken) {
       alert("Please complete the reCAPTCHA.");
       return;
     }
 
     // ✅ The useLogin hook already handles role-based navigation
     // No need to navigate here - it would override the hook's navigation
-    await login(formData.email, formData.password, captchaToken);
+    await login(formData.email, formData.password, captchaToken || "");
   };
 
   return (
@@ -119,11 +120,13 @@ function Login() {
             </span>
           </div>
 
-          {/* ✅ reCAPTCHA */}
-          <ReCAPTCHA
-            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-            onChange={(token) => setCaptchaToken(token)}
-          />
+          {/* ✅ reCAPTCHA - Only render if site key is configured */}
+          {recaptchaSiteKey && (
+            <ReCAPTCHA
+              sitekey={recaptchaSiteKey}
+              onChange={(token) => setCaptchaToken(token)}
+            />
+          )}
 
           {/* Submit */}
           <button
