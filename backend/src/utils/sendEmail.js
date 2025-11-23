@@ -15,87 +15,208 @@ const validateEmailConfig = () => {
 };
 
 /**
- * Sends an email using nodemailer
- * @param {string} to - Recipient email address
- * @param {string} subject - Email subject
- * @param {string} html - Email HTML content
- * @throws {Error} If email configuration is invalid or sending fails
+ * Creates a nodemailer transporter with optimized settings for deployment
+ * @returns {Object} Nodemailer transporter
  */
-export const sendEmail = async (to, subject, html) => {
-  // Validate email configuration
-  const configCheck = validateEmailConfig();
-  if (!configCheck.valid) {
-    const errorMsg = `Email configuration incomplete. Missing: ${configCheck.missing.join(", ")}`;
-    console.error("❌ Email Error:", errorMsg);
-    throw new Error(errorMsg);
-  }
-
-  // Parse port as integer
+const createTransporter = () => {
   const port = parseInt(process.env.SMTP_PORT, 10);
-  if (isNaN(port)) {
-    const errorMsg = `Invalid SMTP_PORT: ${process.env.SMTP_PORT}. Must be a number.`;
-    console.error("❌ Email Error:", errorMsg);
-    throw new Error(errorMsg);
-  }
-
-  // Determine if secure connection (SSL/TLS)
   const secure = port === 465;
   const requireTLS = port === 587;
 
-  try {
-    // Create transporter with proper configuration
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: port,
-      secure: secure, // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      // Additional options for better compatibility
-      tls: {
-        rejectUnauthorized: false, // Accept self-signed certificates (useful for some SMTP servers)
-      },
-      // For port 587 (STARTTLS)
-      ...(requireTLS && {
-        requireTLS: true,
-      }),
-    });
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: port,
+    secure: secure, // true for 465, false for other ports
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    // Connection timeout settings (important for deployment)
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000, // 10 seconds
+    socketTimeout: 10000, // 10 seconds
+    // TLS/SSL configuration
+    tls: {
+      rejectUnauthorized: false, // Accept self-signed certificates
+      minVersion: "TLSv1.2", // Minimum TLS version
+    },
+    // For port 587 (STARTTLS)
+    ...(requireTLS && {
+      requireTLS: true,
+    }),
+    // Connection pooling for better performance
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    // Rate limiting
+    rateDelta: 1000, // 1 second
+    rateLimit: 5, // 5 messages per second
+  });
+};
 
-    // Verify connection before sending (optional but recommended)
-    if (process.env.NODE_ENV !== "production" || process.env.VERIFY_SMTP === "true") {
-      try {
-        await transporter.verify();
-        console.log("✅ SMTP connection verified successfully");
-      } catch (verifyError) {
-        console.error("❌ SMTP verification failed:", verifyError.message);
-        // Don't throw here, some servers don't support verify
+/**
+ * Sends an email using nodemailer with retry logic
+ * @param {string} to - Recipient email address
+ * @param {string} subject - Email subject
+ * @param {string} html - Email HTML content
+ * @param {number} retries - Number of retry attempts (default: 2)
+ * @throws {Error} If email configuration is invalid or sending fails after retries
+ */
+export const sendEmail = async (to, subject, html, retries = 2) => {
+  // Validate email configuration
+  const configCheck = validateEmailConfig();
+  if (!configCheck.valid) {
+    const errorMsg = `Email configuration incomplete. Missing: ${configCheck.missing.join(", ")}. Please check your environment variables.`;
+    console.error("❌ Email Configuration Error:", errorMsg);
+    console.error("📖 See backend/EMAIL_SETUP.md for configuration guide");
+    throw new Error(errorMsg);
+  }
+
+  // Validate port
+  const port = parseInt(process.env.SMTP_PORT, 10);
+  if (isNaN(port)) {
+    const errorMsg = `Invalid SMTP_PORT: ${process.env.SMTP_PORT}. Must be a number (e.g., 587 or 465).`;
+    console.error("❌ Email Configuration Error:", errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  // Validate email address
+  if (!to || typeof to !== "string" || !to.includes("@")) {
+    const errorMsg = `Invalid recipient email address: ${to}`;
+    console.error("❌ Email Error:", errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  let lastError = null;
+
+  // Retry logic
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // Create transporter (new instance for each attempt to avoid connection issues)
+      const transporter = createTransporter();
+
+      // Verify connection (only on first attempt or if VERIFY_SMTP is enabled)
+      if ((attempt === 0 && process.env.NODE_ENV !== "production") || process.env.VERIFY_SMTP === "true") {
+        try {
+          await Promise.race([
+            transporter.verify(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error("SMTP verification timeout")), 5000)
+            )
+          ]);
+          console.log("✅ SMTP connection verified successfully");
+        } catch (verifyError) {
+          console.warn("⚠️ SMTP verification failed (continuing anyway):", verifyError.message);
+          // Don't throw, some servers don't support verify but can still send emails
+        }
+      }
+
+      // Send email with timeout
+      const sendPromise = transporter.sendMail({
+        from: process.env.EMAIL_FROM || `"Hardwaretech" <${process.env.SMTP_USER}>`,
+        to,
+        subject,
+        html,
+        // Additional headers for better deliverability
+        headers: {
+          "X-Priority": "3",
+          "X-MSMail-Priority": "Normal",
+        },
+      });
+
+      // Add timeout to sending
+      const info = await Promise.race([
+        sendPromise,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Email sending timeout after 15 seconds")), 15000)
+        )
+      ]);
+
+      console.log(`✅ Email sent successfully to ${to}. Message ID: ${info.messageId}`);
+      
+      // Close transporter connection
+      transporter.close();
+      
+      return info;
+    } catch (error) {
+      lastError = error;
+      
+      // Enhanced error logging
+      const errorDetails = {
+        attempt: attempt + 1,
+        maxAttempts: retries + 1,
+        to,
+        subject: subject.substring(0, 50) + (subject.length > 50 ? "..." : ""),
+        error: error.message,
+        code: error.code,
+        command: error.command,
+        response: error.response,
+        responseCode: error.responseCode,
+        errno: error.errno,
+        syscall: error.syscall,
+        hostname: error.hostname,
+      };
+
+      console.error(`❌ Email sending failed (attempt ${attempt + 1}/${retries + 1}):`, errorDetails);
+
+      // If this is not the last attempt, wait before retrying
+      if (attempt < retries) {
+        const waitTime = (attempt + 1) * 1000; // Exponential backoff: 1s, 2s, 3s...
+        console.log(`⏳ Retrying in ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
+  }
 
-    // Send email
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || `"Hardwaretech" <${process.env.SMTP_USER}>`,
-      to,
-      subject,
-      html,
-    });
+  // All retries failed
+  const finalError = `Failed to send email after ${retries + 1} attempts. Last error: ${lastError?.message || "Unknown error"}`;
+  console.error("❌ Email sending failed completely:", {
+    to,
+    subject,
+    finalError,
+    lastError: lastError?.message,
+    code: lastError?.code,
+  });
 
-    console.log(`✅ Email sent successfully to ${to}. Message ID: ${info.messageId}`);
-    return info;
-  } catch (error) {
-    // Enhanced error logging
-    console.error("❌ Email sending failed:", {
-      to,
-      subject,
-      error: error.message,
-      code: error.code,
-      command: error.command,
-      response: error.response,
-      responseCode: error.responseCode,
-    });
+  throw new Error(finalError);
+};
+
+/**
+ * Tests the email configuration by attempting to verify SMTP connection
+ * @returns {Promise<Object>} { success: boolean, message: string }
+ */
+export const testEmailConfig = async () => {
+  const configCheck = validateEmailConfig();
+  if (!configCheck.valid) {
+    return {
+      success: false,
+      message: `Email configuration incomplete. Missing: ${configCheck.missing.join(", ")}`,
+      missing: configCheck.missing,
+    };
+  }
+
+  try {
+    const transporter = createTransporter();
     
-    // Re-throw with more context
-    throw new Error(`Failed to send email: ${error.message}`);
+    // Test connection with timeout
+    await Promise.race([
+      transporter.verify(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Connection test timeout")), 10000)
+      )
+    ]);
+    
+    transporter.close();
+    
+    return {
+      success: true,
+      message: "Email configuration is valid and connection successful",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Email connection test failed: ${error.message}`,
+      error: error.message,
+    };
   }
 };

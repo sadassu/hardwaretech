@@ -15,6 +15,7 @@ function Register() {
   const { signup, error, isLoading } = useSignup();
   const [captchaToken, setCaptchaToken] = useState("");
   const navigate = useNavigate();
+  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
   const handleChange = (e) => {
     setFormData({
@@ -29,7 +30,7 @@ function Register() {
 
     if (formData.password !== formData.confirmPassword) return;
 
-    if (!captchaToken) {
+    if (recaptchaSiteKey && !captchaToken) {
       alert("Please complete the reCAPTCHA.");
       return;
     }
@@ -186,10 +187,13 @@ function Register() {
               </p>
             )}
 
-          <ReCAPTCHA
-            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-            onChange={(token) => setCaptchaToken(token)}
-          />
+          {/* ✅ reCAPTCHA - Only render if site key is configured */}
+          {recaptchaSiteKey && (
+            <ReCAPTCHA
+              sitekey={recaptchaSiteKey}
+              onChange={(token) => setCaptchaToken(token)}
+            />
+          )}
 
           {/* Submit */}
           <button
