@@ -87,6 +87,25 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
     throw new Error(errorMsg);
   }
 
+  // Gmail-specific validation and warnings
+  if (process.env.SMTP_HOST === "smtp.gmail.com") {
+    // Check if using Gmail and provide helpful warnings
+    const smtpUser = process.env.SMTP_USER || "";
+    const smtpPass = process.env.SMTP_PASS || "";
+    
+    // Warn if password looks like a regular password (too short or contains spaces)
+    if (smtpPass.length < 16 || smtpPass.includes(" ")) {
+      console.warn("⚠️  Gmail Warning: App Password should be 16 characters with no spaces.");
+      console.warn("   If you're using a regular password, Gmail will reject it.");
+      console.warn("   Generate an App Password: https://myaccount.google.com/apppasswords");
+    }
+    
+    // Warn if email format looks wrong
+    if (!smtpUser.includes("@gmail.com") && !smtpUser.includes("@googlemail.com")) {
+      console.warn("⚠️  Gmail Warning: SMTP_USER should be your Gmail address (e.g., yourname@gmail.com)");
+    }
+  }
+
   let lastError = null;
 
   // Retry logic
@@ -141,7 +160,7 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
     } catch (error) {
       lastError = error;
       
-      // Enhanced error logging
+      // Enhanced error logging with Gmail-specific help
       const errorDetails = {
         attempt: attempt + 1,
         maxAttempts: retries + 1,
@@ -158,6 +177,30 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
       };
 
       console.error(`❌ Email sending failed (attempt ${attempt + 1}/${retries + 1}):`, errorDetails);
+
+      // Gmail-specific error help
+      if (process.env.SMTP_HOST === "smtp.gmail.com") {
+        const isAuthError = error.message?.includes("Invalid login") || 
+                           error.message?.includes("BadCredentials") ||
+                           error.message?.includes("535-5.7.8") ||
+                           error.responseCode === 535;
+        
+        if (isAuthError) {
+          console.error("\n🔴 GMAIL AUTHENTICATION ERROR DETECTED:");
+          console.error("   This usually means:");
+          console.error("   1. You're using your regular Gmail password (NOT allowed)");
+          console.error("   2. You need to use a Gmail App Password instead");
+          console.error("   3. 2-Factor Authentication must be enabled");
+          console.error("\n   📝 How to fix:");
+          console.error("   1. Go to: https://myaccount.google.com/apppasswords");
+          console.error("   2. Enable 2-Factor Authentication if not already enabled");
+          console.error("   3. Generate a new App Password (select 'Mail' and your device)");
+          console.error("   4. Copy the 16-character password (no spaces)");
+          console.error("   5. Use it as SMTP_PASS in your environment variables");
+          console.error("   6. Make sure SMTP_USER is your full Gmail address");
+          console.error("");
+        }
+      }
 
       // If this is not the last attempt, wait before retrying
       if (attempt < retries) {
