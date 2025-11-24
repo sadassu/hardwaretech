@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Sale from "../models/Sale.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import ProductVariant from "../models/ProductVariant.js";
+import { ensureVariantStock } from "../utils/variantStock.js";
 
 // this is what the pos use to insert the sale from the mongodb
 // it accepts the items the amount paid and the cashier or the user logged in
@@ -48,6 +49,12 @@ export const createSale = asyncHandler(async (req, res) => {
           .status(404)
           .json({ error: `Variant not found for ${item.productId}` });
       }
+
+      await ensureVariantStock({
+        variant,
+        requiredQuantity: item.quantity,
+        session,
+      });
 
       if (variant.quantity < item.quantity) {
         await session.abortTransaction();

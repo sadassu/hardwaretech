@@ -12,7 +12,6 @@ import UpdateProduct from "./UpdateProduct";
 import CreateVariant from "../Variants/CreateVariant";
 import DeleteVariant from "../Variants/DeleteVariant";
 import UpdateVariant from "../Variants/UpdateVariant";
-import RestockVariant from "../Variants/RestockVariant";
 
 import Pagination from "../../components/Pagination";
 import SearchBar from "../../components/SearchBar";
@@ -30,9 +29,8 @@ const Product = () => {
 
   const { user } = useAuthContext();
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -41,38 +39,31 @@ const Product = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // ✅ Debounce search input
-  useEffect(() => {
-    if (search !== debouncedSearch) setIsSearching(true);
-
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-      setIsSearching(false);
-    }, 500);
-
-    return () => clearTimeout(handler);
-  }, [search, debouncedSearch]);
-
   // ✅ Fetch products
   useEffect(() => {
     if (!user?.token) return;
     fetchProducts(user.token, {
       page: currentPage,
-      search: debouncedSearch,
+      search: searchQuery,
       category: selectedCategory,
     });
   }, [
     user?.token,
     currentPage,
-    debouncedSearch,
+    searchQuery,
     selectedCategory,
     fetchProducts,
   ]);
 
-  const handleSearchChange = (e) => setSearch(e.target.value);
+  const handleSearchChange = (e) => setSearchInput(e.target.value);
+  const handleSearchSubmit = () => {
+    setSearchQuery(searchInput.trim());
+    setCurrentPage(1);
+  };
   const clearSearch = () => {
-    setSearch("");
-    setDebouncedSearch("");
+    setSearchInput("");
+    setSearchQuery("");
+    setCurrentPage(1);
   };
 
   const handleCategoryChange = (categoryId) => {
@@ -81,8 +72,8 @@ const Product = () => {
   };
 
   const clearAllFilters = () => {
-    setSearch("");
-    setDebouncedSearch("");
+    setSearchInput("");
+    setSearchQuery("");
     setSelectedCategory("");
     setCurrentPage(1);
   };
@@ -106,10 +97,11 @@ const Product = () => {
             </div>
 
             <SearchBar
-              search={search}
+              search={searchInput}
               onSearchChange={handleSearchChange}
               onClear={clearSearch}
-              isSearching={isSearching}
+              onSearchSubmit={handleSearchSubmit}
+              isSearching={loading}
               placeholder="Search products..."
             />
           </div>
@@ -125,12 +117,12 @@ const Product = () => {
         </div>
 
         {/* 🧩 Filters Active */}
-        {(search || selectedCategory) && (
+        {(searchQuery || selectedCategory) && (
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <span className="text-base">Active filters:</span>
-            {search && (
+            {searchQuery && (
               <div className="badge badge-primary badge-lg gap-2">
-                Search: "{search}"
+                Search: "{searchQuery}"
                 <button onClick={clearSearch} className="btn btn-ghost btn-xs">
                   ✕
                 </button>
@@ -235,12 +227,19 @@ const Product = () => {
                     {product.variants?.length > 0 ? (
                       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {product.variants.map((variant) => {
+                          const availableQty =
+                            variant.availableQuantity ?? variant.quantity ?? 0;
                           const qtyClass =
-                            variant.quantity === 0
+                            availableQty === 0
                               ? "bg-red-100 text-red-700 border-red-200"
-                              : variant.quantity <= 15
+                              : availableQty <= 15
                               ? "bg-yellow-100 text-yellow-700 border-yellow-200"
                               : "bg-green-100 text-green-700 border-green-200";
+                          const sourceVariant = variant.conversionSource
+                            ? product.variants.find(
+                                (v) => v._id === variant.conversionSource
+                              )
+                            : null;
 
                           return (
                           <div
@@ -256,7 +255,7 @@ const Product = () => {
                                     <span
                                       className={`px-2.5 py-1 rounded-full border font-semibold ${qtyClass}`}
                                     >
-                                      Qty: {variant.quantity}
+                                      Qty: {availableQty}
                                     </span>
                                     <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 border border-green-200 font-semibold">
                                       ₱{variant.price}
@@ -265,10 +264,24 @@ const Product = () => {
                                 </div>
                               </div>
 
+                              {(variant.autoConvert && sourceVariant) ||
+                              variant.conversionNotes ? (
+                                <div className="text-xs text-blue-500 font-medium">
+                                  {variant.autoConvert && sourceVariant
+                                    ? `Auto converts from ${
+                                        sourceVariant.size
+                                          ? `${sourceVariant.size} ${sourceVariant.unit || ""}`
+                                          : sourceVariant.unit || "source"
+                                      } · ${variant.conversionQuantity || 1} ${
+                                        variant.unit
+                                      } each`
+                                    : variant.conversionNotes}
+                                </div>
+                              ) : null}
+
                               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 mt-auto">
-                                <UpdateVariant variant={variant} />
+                                <UpdateVariant variant={variant} product={product} />
                                 <DeleteVariant variant={variant} />
-                                <RestockVariant variantId={variant._id} />
                               </div>
                             </div>
                           );
@@ -289,11 +302,11 @@ const Product = () => {
                     No products found
                   </h3>
                   <p className="text-base-content/70">
-                    {search || selectedCategory
+                    {searchQuery || selectedCategory
                       ? "No products match your filters"
                       : "Start by creating your first product"}
                   </p>
-                  {(search || selectedCategory) && (
+                  {(searchQuery || selectedCategory) && (
                     <button
                       onClick={clearAllFilters}
                       className="btn btn-primary btn-wide mt-4"

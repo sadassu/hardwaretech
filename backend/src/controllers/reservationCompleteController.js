@@ -3,6 +3,7 @@ import Reservation from "../models/Reservation.js";
 import ReservationDetail from "../models/ReservationDetail.js";
 import Sale from "../models/Sale.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { ensureVariantStock } from "../utils/variantStock.js";
 
 export const completeReservation = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -46,6 +47,12 @@ export const completeReservation = asyncHandler(async (req, res) => {
           error: `Product variant not found for reservation detail ${detail._id}`,
         });
       }
+
+      await ensureVariantStock({
+        variant,
+        requiredQuantity: detail.quantity,
+        session,
+      });
 
       if (variant.quantity < detail.quantity) {
         await session.abortTransaction();

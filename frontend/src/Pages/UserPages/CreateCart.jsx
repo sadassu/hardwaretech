@@ -10,11 +10,13 @@ function CreateCart({ product, variant }) {
   const [isOpen, setIsOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [maxStockMessage, setMaxStockMessage] = useState("");
-  const outOfStock = (variant?.quantity ?? 0) <= 0;
+  const computedQuantity =
+    variant?.availableQuantity ?? variant?.quantity ?? 0;
+  const outOfStock = computedQuantity <= 0;
   
   // Calculate available stock (considering items already in cart)
   const getAvailableStock = () => {
-    const variantStock = variant?.quantity ?? 0;
+    const variantStock = computedQuantity;
     if (!variant?._id) return variantStock;
     
     // Find existing quantity in cart for this variant
@@ -76,7 +78,7 @@ function CreateCart({ product, variant }) {
       price: variant?.price ?? product.price,
       quantity: Number(quantity),
       total: Number(quantity) * (variant?.price ?? product.price),
-      quantityAvailable: variant?.quantity ?? 0,
+      quantityAvailable: computedQuantity,
     });
 
     setIsOpen(false);

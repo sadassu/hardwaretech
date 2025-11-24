@@ -2,6 +2,38 @@ import { create } from "zustand";
 import api from "../utils/api";
 import { persist } from "zustand/middleware";
 
+const mapVariantsWithAvailability = (variants = []) => {
+  const variantMap = new Map(
+    variants.map((variant) => [variant._id, variant])
+  );
+
+  return variants.map((variant) => {
+    const baseQuantity = Number(variant.quantity) || 0;
+    let convertibleQuantity = 0;
+
+    if (variant.autoConvert && variant.conversionSource) {
+      const source = variantMap.get(variant.conversionSource);
+      if (source) {
+        const sourceQty = Number(source.quantity) || 0;
+        const multiplier = Number(variant.conversionQuantity) || 1;
+        convertibleQuantity = sourceQty * multiplier;
+      }
+    }
+
+    return {
+      ...variant,
+      availableQuantity: baseQuantity + convertibleQuantity,
+      canAutoConvert: Boolean(variant.autoConvert && variant.conversionSource),
+    };
+  });
+};
+
+const enhanceProducts = (products = []) =>
+  products.map((product) => ({
+    ...product,
+    variants: mapVariantsWithAvailability(product.variants || []),
+  }));
+
 export const useProductStore = create(
   persist(
     (set, get) => ({
@@ -15,7 +47,12 @@ export const useProductStore = create(
 
       // ✅ Set products (used after fetching)
       setProducts: ({ products, total, page, pages }) =>
-        set({ products, total, page, pages }),
+        set({
+          products: enhanceProducts(products),
+          total,
+          page,
+          pages,
+        }),
 
       // ✅ Set success message (used by CreateProduct)
       setSuccess: (message) => set({ successMessage: message }),
@@ -44,7 +81,13 @@ export const useProductStore = create(
           });
 
           const { products, total, pages } = res.data;
-          set({ products, total, page, pages, loading: false });
+          set({
+            products: enhanceProducts(products),
+            total,
+            page,
+            pages,
+            loading: false,
+          });
         } catch (err) {
           set({
             error: err.response?.data?.message || "Failed to fetch products",
@@ -93,7 +136,10 @@ export const useProductStore = create(
             p._id === productId ? updatedProduct : p
           );
 
-          set({ products: updatedProducts, loading: false });
+          set({
+            products: enhanceProducts(updatedProducts),
+            loading: false,
+          });
           return updatedProduct;
         } catch (err) {
           set({

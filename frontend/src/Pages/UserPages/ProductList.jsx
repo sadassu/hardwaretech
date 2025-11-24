@@ -19,25 +19,9 @@ function ProductList() {
   const { isMobile } = useIsMobile();
 
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-
-  // Debounce search
-  useEffect(() => {
-    if (search !== debouncedSearch) {
-      setIsSearching(true);
-    }
-
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-      setIsSearching(false);
-    }, 500);
-
-    return () => clearTimeout(handler);
-  }, [search, debouncedSearch]);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -49,19 +33,25 @@ function ProductList() {
     if (user?.token) {
       fetchProducts(user.token, {
         page,
-        search: debouncedSearch,
+        search: searchQuery,
         category: selectedCategory,
       });
     }
-  }, [page, debouncedSearch, selectedCategory, user?.token, fetchProducts]);
+  }, [page, searchQuery, selectedCategory, user?.token, fetchProducts]);
 
   const handleSearchChange = (e) => {
-    setSearch(e.target.value);
+    setSearchInput(e.target.value);
+  };
+
+  const handleSearchSubmit = () => {
+    setSearchQuery(searchInput.trim());
+    setPage(1);
   };
 
   const clearSearch = () => {
-    setSearch("");
-    setDebouncedSearch("");
+    setSearchInput("");
+    setSearchQuery("");
+    setPage(1);
   };
 
   const handleCategoryChange = (categoryId) => {
@@ -70,13 +60,13 @@ function ProductList() {
   };
 
   const clearAllFilters = () => {
-    setSearch("");
-    setDebouncedSearch("");
+    setSearchInput("");
+    setSearchQuery("");
     setSelectedCategory("");
     setPage(1);
   };
 
-  if (loading && !products?.length && !search && !selectedCategory) {
+  if (loading && !products?.length && !searchQuery && !selectedCategory) {
     return <Loading message="Loading products..." />;
   }
 
@@ -98,10 +88,11 @@ function ProductList() {
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex-1 w-full md:w-auto">
             <SearchBar
-              search={search}
+              search={searchInput}
               onSearchChange={handleSearchChange}
               onClear={clearSearch}
-              isSearching={isSearching}
+              onSearchSubmit={handleSearchSubmit}
+              isSearching={loading}
               placeholder="Search for products..."
             />
           </div>
@@ -118,12 +109,12 @@ function ProductList() {
         </div>
 
         {/* Active Filters Indicator */}
-        {(search || selectedCategory) && (
+        {(searchQuery || selectedCategory) && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="text-base">Active filters:</span>
-            {search && (
+            {searchQuery && (
               <div className="badge badge-primary badge-lg gap-2">
-                Search: "{search}"
+                Search: "{searchQuery}"
                 <button onClick={clearSearch} className="btn btn-ghost btn-xs">
                   ✕
                 </button>
@@ -196,7 +187,7 @@ function ProductList() {
               We couldn't find any products matching your search criteria. Try
               using different keywords or browse all products.
             </p>
-            {(search || selectedCategory) && (
+            {(searchQuery || selectedCategory) && (
               <button
                 onClick={clearAllFilters}
                 className="btn btn-primary btn-wide"
