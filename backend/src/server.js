@@ -29,7 +29,7 @@ app.use(express.json());
 app.use(rateLimiter);
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: [process.env.CLIENT_URL, "https://hardware-tech.shop"],
     credentials: true,
   })
 );
