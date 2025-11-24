@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "key:generate": "node src/scripts/generateKey.js"
+    "key:generate": "node src/scripts/generateKey.js",
+    "check:roles": "node scripts/checkUserRoles.js",
+    "update:role": "node scripts/updateUserRole.js"
   },
   "dependencies": {
     "@upstash/ratelimit": "^2.0.6",

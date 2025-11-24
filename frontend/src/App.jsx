@@ -45,11 +45,18 @@ const App = () => {
   const location = useLocation();
 
   useEffect(() => {
+    // Only redirect regular users (not admin/cashier) who are not verified
+    const isAdminOrCashier = user?.roles?.includes("admin") || user?.roles?.includes("cashier");
+    
     if (
       user &&
       user.isVerified === false &&
+      !isAdminOrCashier && // Don't redirect admin/cashier users
       location.pathname !== "/verification" &&
-      location.pathname !== "/logout"
+      location.pathname !== "/logout" &&
+      location.pathname !== "/login/success" && // Don't redirect during Google OAuth callback
+      location.pathname !== "/dashboard" && // Don't redirect admin users away from dashboard
+      location.pathname !== "/pos" // Don't redirect cashier users away from POS
     ) {
       navigate("/verification", { replace: true });
     }
@@ -66,19 +73,59 @@ const App = () => {
 
           <Route
             path="/login"
-            element={!user ? <Login /> : <Navigate to="/" />}
+            element={
+              !user ? (
+                <Login />
+              ) : user.roles?.includes("admin") ? (
+                <Navigate to="/dashboard" replace />
+              ) : user.roles?.includes("cashier") ? (
+                <Navigate to="/pos" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
           <Route
             path="/forgot-password"
-            element={!user ? <ForgotPassword /> : <Navigate to="/" />}
+            element={
+              !user ? (
+                <ForgotPassword />
+              ) : user.roles?.includes("admin") ? (
+                <Navigate to="/dashboard" replace />
+              ) : user.roles?.includes("cashier") ? (
+                <Navigate to="/pos" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
           <Route
             path="/reset-password/:token"
-            element={!user ? <ResetPassword /> : <Navigate to="/" />}
+            element={
+              !user ? (
+                <ResetPassword />
+              ) : user.roles?.includes("admin") ? (
+                <Navigate to="/dashboard" replace />
+              ) : user.roles?.includes("cashier") ? (
+                <Navigate to="/pos" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
           <Route
             path="/register"
-            element={!user ? <Register /> : <Navigate to="/" />}
+            element={
+              !user ? (
+                <Register />
+              ) : user.roles?.includes("admin") ? (
+                <Navigate to="/dashboard" replace />
+              ) : user.roles?.includes("cashier") ? (
+                <Navigate to="/pos" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
           <Route path="/login/success" element={<LoginSuccess />} />
           <Route path="/user/product-list" element={<ProductList />} />

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import Modal from "../../components/Modal";
 import api from "../../utils/api.js";
 import { useAuthContext } from "../../hooks/useAuthContext.js";
-import TextInput from "../../components/TextInput.jsx";
 import { useCategoriesStore } from "../../store/categoriesStore.js";
 import { useProductStore } from "../../store/productStore.js";
 import StatusToast from "../../components/StatusToast.jsx";
@@ -85,45 +84,62 @@ const CreateProduct = () => {
         Add Product
       </button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
-          Create Product
-        </h2>
+      <Modal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="bg-white text-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl p-0"
+      >
+        <div className="border-b border-gray-200 px-6 py-4 flex flex-col gap-1">
+          <h2 className="text-xl font-semibold">Create Product</h2>
+          <p className="text-sm text-gray-500">
+            Provide basic details to add a new product to the catalog.
+          </p>
+        </div>
 
-        {localError && <div className="text-red-500 mb-4">{localError}</div>}
+        <div className="p-6">
+          {localError && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {localError}
+            </div>
+          )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 w-full max-w-md sm:max-w-lg mx-auto px-4 sm:px-0"
-        >
-          <TextInput
-            label="Product Name"
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product Name
+                </label>
+                <input
             type="text"
             name="name"
             placeholder="Product Name"
             value={formData.name}
             onChange={handleChange}
+                  className="input input-bordered w-full bg-white text-gray-900"
             required
-            className="w-full"
           />
+              </div>
 
-          <label className="label">
-            <span className="label-text font-semibold text-gray-200">
+              <div className="md:col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
               Description
-            </span>
           </label>
+                  <span className="text-xs text-gray-500">Optional</span>
+                </div>
           <textarea
             name="description"
-            placeholder="Description"
+                  placeholder="Brief description (optional)"
             value={formData.description}
             onChange={handleChange}
-            className="textarea textarea-bordered w-full bg-[#30475E] text-white"
+                  className="textarea textarea-bordered w-full bg-white text-gray-900"
+                  rows={3}
           />
+              </div>
 
-          <label className="label">
-            <span className="label-text font-semibold text-gray-200">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
               Category
-            </span>
           </label>
           <input
             list="categories-list"
@@ -132,7 +148,7 @@ const CreateProduct = () => {
             placeholder="Select or type a category"
             value={formData.category}
             onChange={handleChange}
-            className="input input-bordered w-full bg-[#30475E] text-white"
+                  className="input input-bordered w-full bg-white text-gray-900"
             required
           />
           <datalist id="categories-list">
@@ -141,29 +157,45 @@ const CreateProduct = () => {
             ))}
           </datalist>
           {loading && (
-            <p className="text-gray-400 text-sm mt-1">Loading categories...</p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    Loading categories...
+                  </p>
           )}
+              </div>
 
-          <label className="label">
-            <span className="label-text font-semibold text-gray-200">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
               Image URL
-            </span>
           </label>
           <textarea
             name="image"
             placeholder="Paste image URL"
             value={formData.image}
             onChange={handleChange}
-            className="textarea textarea-bordered w-full bg-[#30475E] text-white"
-          />
+                  className="textarea textarea-bordered w-full bg-white text-gray-900"
+                  rows={2}
+                  required
+                />
+              </div>
+            </div>
 
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="btn btn-ghost border border-gray-200"
+              >
+                Cancel
+              </button>
           <button
             type="submit"
-            className="btn bg-red-500 text-white border-red-500 w-full"
+                className="btn bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
           >
-            Create
+                Create Product
           </button>
+            </div>
         </form>
+        </div>
       </Modal>
 
       {/* ✅ Show only success toast */}

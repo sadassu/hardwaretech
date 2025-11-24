@@ -9,6 +9,7 @@ function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
   const { user, dispatch } = useAuthContext();
   const [name, setName] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -35,8 +36,12 @@ function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
       dispatch({ type: "UPDATED_USER", payload: res.data.user });
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      setIsOpen(false);
-      if (onUpdateSuccess) onUpdateSuccess(res.data.user);
+      setSuccess(true);
+      setTimeout(() => {
+        setIsOpen(false);
+        setSuccess(false);
+        if (onUpdateSuccess) onUpdateSuccess(res.data.user);
+      }, 1500);
     } catch (error) {
       console.error("Failed to update name:", error);
     }
@@ -72,9 +77,16 @@ function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
               className="w-full"
             />
 
+            {success && (
+              <p className="text-green-400 text-xs sm:text-sm text-center">
+                Name updated successfully!
+              </p>
+            )}
+
             <button
               type="submit"
               className="btn btn-primary w-full text-sm sm:text-base py-2 sm:py-3"
+              disabled={success}
             >
               Update
             </button>

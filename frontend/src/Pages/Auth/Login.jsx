@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useLogin } from "../../hooks/useLogin";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -8,7 +8,6 @@ function Login() {
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ""
   );
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (successMessage) {
@@ -26,6 +25,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { login, error, isLoading } = useLogin();
   const [captchaToken, setCaptchaToken] = useState("");
+  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
   const handleChange = (e) => {
     setFormData({
@@ -37,27 +37,14 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!captchaToken) {
+    if (recaptchaSiteKey && !captchaToken) {
       alert("Please complete the reCAPTCHA.");
       return;
     }
 
-    try {
-      const json = await login(formData.email, formData.password, captchaToken);
-
-      // ✅ Role-based redirect
-      const roles = json?.roles || [];
-      if (roles.includes("admin")) {
-        navigate("/dashboard");
-      } else if (roles.includes("cashier")) {
-        navigate("/pos");
-      } else {
-        navigate("/");
-      }
-    } catch (error) {
-      console.error("Login failed:", error);
-      alert("Login failed. Please check your credentials and try again.");
-    }
+    // ✅ The useLogin hook already handles role-based navigation
+    // No need to navigate here - it would override the hook's navigation
+    await login(formData.email, formData.password, captchaToken || "");
   };
 
   return (
@@ -133,11 +120,13 @@ function Login() {
             </span>
           </div>
 
-          {/* ✅ reCAPTCHA */}
-          <ReCAPTCHA
-            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-            onChange={(token) => setCaptchaToken(token)}
-          />
+          {/* ✅ reCAPTCHA - Only render if site key is configured */}
+          {recaptchaSiteKey && (
+            <ReCAPTCHA
+              sitekey={recaptchaSiteKey}
+              onChange={(token) => setCaptchaToken(token)}
+            />
+          )}
 
           {/* Submit */}
           <button

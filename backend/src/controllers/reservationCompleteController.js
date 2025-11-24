@@ -92,6 +92,46 @@ export const completeReservation = asyncHandler(async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
+    // ✅ Send email notification to user
+    try {
+      const populatedReservation = await Reservation.findById(id).populate("userId", "name email");
+      
+      if (populatedReservation.userId && populatedReservation.userId.email) {
+        // Extract product information from already populated details
+        const products = details.map(detail => ({
+          name: detail.productVariantId?.product?.name || "Unknown Product",
+          size: detail.productVariantId?.size || detail.size || "",
+          unit: detail.productVariantId?.unit || detail.unit || "",
+          quantity: detail.quantity || 1,
+          price: detail.productVariantId?.price || 0
+        }));
+
+        const { sendEmail } = await import("../utils/sendEmail.js");
+        const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
+
+        const emailHtml = getReservationStatusEmailTemplate(
+          populatedReservation.userId.name,
+          populatedReservation._id.toString(),
+          "completed",
+          populatedReservation.reservationDate,
+          populatedReservation.totalPrice,
+          populatedReservation.remarks || "",
+          products
+        );
+
+        await sendEmail(
+          populatedReservation.userId.email,
+          "Reservation Completed - Hardware Tech",
+          emailHtml
+        );
+
+        console.log(`✅ Completion email sent to ${populatedReservation.userId.email}`);
+      }
+    } catch (emailError) {
+      console.error("❌ Failed to send completion email:", emailError);
+      // Don't fail the request if email fails
+    }
+
     return res.status(200).json({
       message: "Reservation completed and sale recorded successfully",
       reservation,

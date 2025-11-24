@@ -64,6 +64,7 @@ function Pos() {
     if (user?.token) {
       fetchProducts(user.token, {
         page: currentPage,
+        limit: 15, // 3 rows × 5 columns = 15 products per page
         search: debouncedSearch,
         category: selectedCategory,
       });
@@ -123,23 +124,30 @@ function Pos() {
 
   // ✅ Main Render
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="bg-base-200 border-b border-base-300">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-base-content">
-                Point of Sale
-              </h1>
-              <p className="text-base-content/70">
-                Select products to add to cart
-              </p>
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 border-b-4 border-blue-800 shadow-lg">
+        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
+                  Point of Sale
+                </h1>
+                <p className="text-blue-100 text-sm sm:text-base mt-1">
+                  Select products to add to cart
+                </p>
+              </div>
             </div>
-            <div className="stats shadow bg-base-100">
-              <div className="stat place-items-center">
-                <div className="stat-title">Total Products</div>
-                <div className="stat-value text-primary">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/20">
+              <div className="text-center">
+                <div className="text-blue-100 text-xs sm:text-sm font-medium">Total Products</div>
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mt-1">
                   {products?.length || 0}
                 </div>
               </div>
@@ -148,72 +156,39 @@ function Pos() {
         </div>
       </div>
 
-      <div className="mb-2">
-        <SaleCards />
-      </div>
-      <div className="mb-2 p-6">
-        <StockCards />
-      </div>
-
-      <div className="container mx-auto px-6 py-6">
-        {/* Search Section */}
-        <div className="mb-6 relative">
-          <SearchBar
-            search={search}
-            onSearchChange={handleSearchChange}
-            onClear={clearSearch}
-            isSearching={isSearching || loading}
-            placeholder="Search products for POS..."
-          />
-          {(isSearching || loading) && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <span className="loading loading-spinner loading-sm text-primary"></span>
-            </div>
-          )}
+      {/* Stats Cards */}
+      <div className="container mx-auto px-4 sm:px-6 py-6">
+        <div className="mb-6">
+          <SaleCards />
         </div>
+        <div className="mb-6">
+          <StockCards />
+        </div>
+      </div>
 
-        {/* Active Filters */}
-        {(search || selectedCategory) && (
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-base">Active filters:</span>
-            {search && (
-              <div className="badge badge-primary badge-lg gap-2">
-                Search: "{search}"
-                <button onClick={clearSearch} className="btn btn-ghost btn-xs">
-                  ✕
-                </button>
-              </div>
-            )}
-            {selectedCategory && (
-              <div className="badge badge-secondary badge-lg gap-2">
-                Category:{" "}
-                {categories.find((c) => c._id === selectedCategory)?.name ||
-                  "Selected"}
-                <button
-                  onClick={() => handleCategoryChange("")}
-                  className="btn btn-ghost btn-xs"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-            <button
-              onClick={clearAllFilters}
-              className="btn btn-ghost btn-sm ml-2"
-            >
-              Clear All Filters
-            </button>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 sm:px-6 pb-6">
+        {/* Enhanced Search Section */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+          <div className="mb-6">
+            <SearchBar
+              search={search}
+              onSearchChange={handleSearchChange}
+              onClear={clearSearch}
+              isSearching={isSearching || loading}
+              placeholder="Search products for POS..."
+              className="max-w-full"
+            />
           </div>
-        )}
 
-        {/* Category Filter */}
-        <CategoryFilter
-          className={"mb-4"}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onCategoryChange={handleCategoryChange}
-          loading={loading}
-        />
+          {/* Category Filter */}
+          <CategoryFilter
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onCategoryChange={handleCategoryChange}
+            loading={loading}
+          />
+        </div>
 
         {/* Product Grid */}
         {loading ? (
@@ -245,7 +220,7 @@ function Pos() {
 
         {/* Pagination */}
         {pages > 1 && (
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8">
             <Pagination
               page={currentPage}
               pages={pages}

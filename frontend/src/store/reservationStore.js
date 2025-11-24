@@ -14,6 +14,7 @@ export const useReservationStore = create(
       error: null,
       expandedRow: null,
       statusFilter: "all",
+      searchQuery: "",
       statusCounts: {
         all: 0,
         pending: 0,
@@ -33,11 +34,13 @@ export const useReservationStore = create(
         })),
       setStatusFilter: (status) =>
         set({ statusFilter: status, page: 1, expandedRow: null }),
+      setSearchQuery: (query) =>
+        set({ searchQuery: query, page: 1, expandedRow: null }),
 
       // ✅ Fetch reservations from API
       fetchReservations: async (
         token,
-        { page = 1, limit = 20, status = "all" } = {}
+        { page = 1, limit = 20, status = "all", search = "" } = {}
       ) => {
         set({ loading: true, error: null });
         try {
@@ -48,6 +51,7 @@ export const useReservationStore = create(
             sortOrder: "desc",
           };
           if (status !== "all") params.status = status;
+          if (search && search.trim()) params.search = search.trim();
 
           const res = await api.get("/reservations", {
             params,
@@ -114,12 +118,53 @@ export const useReservationStore = create(
         set({ reservations, total, page, pages }),
 
       // ✅ Update a single reservation in the list
-      updateReservation: (updated) =>
-        set({
-          reservations: get().reservations.map((r) =>
-            r._id === updated._id ? updated : r
-          ),
-        }),
+      // If the new status doesn't match the current filter, remove it from the list
+      // If it does match, update it in place
+      updateReservation: (updated) => {
+        const state = get();
+        const currentFilter = state.statusFilter;
+        const newStatus = updated.status;
+        
+        // If filtering by a specific status and the updated reservation's status doesn't match, remove it
+        if (currentFilter !== "all" && newStatus !== currentFilter) {
+          const newReservations = state.reservations.filter((r) => r._id !== updated._id);
+          const newTotal = Math.max(0, state.total - 1);
+          
+          // If current page becomes empty and we're not on page 1, adjust page
+          let newPage = state.page;
+          if (newReservations.length === 0 && state.page > 1) {
+            newPage = Math.max(1, state.page - 1);
+          }
+          
+          set({
+            reservations: newReservations,
+            total: newTotal,
+            page: newPage,
+          });
+        } else {
+          // Update in place if status matches filter or filter is "all"
+          set({
+            reservations: state.reservations.map((r) =>
+              r._id === updated._id ? updated : r
+            ),
+          });
+        }
+      },
+
+      // ✅ Update status counts after a reservation status change
+      updateStatusCounts: async (token) => {
+        try {
+          const res = await api.get("/reservations", {
+            params: { page: 1, limit: 1 },
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.data.statusCounts) {
+            set({ statusCounts: res.data.statusCounts });
+          }
+        } catch (err) {
+          console.error("Failed to update status counts:", err);
+        }
+      },
 
       // ✅ Reset store state
       reset: () =>

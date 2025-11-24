@@ -66,19 +66,13 @@ const UpdateVariant = ({ variant }) => {
 
   return (
     <>
-      <div className="relative group inline-block">
         <button
-          className="btn btn-square btn-ghost"
+        className="btn btn-sm btn-ghost gap-1.5 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-200"
           onClick={() => setIsOpen(true)}
+        title="Update Variant"
         >
-          <Edit className="size-5 text-gray-700 hover:text-blue-500 transition-colors" />
+        <Edit className="w-4 h-4" />
         </button>
-
-        {/* Tooltip */}
-        <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
-          Update Variant
-        </span>
-      </div>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">

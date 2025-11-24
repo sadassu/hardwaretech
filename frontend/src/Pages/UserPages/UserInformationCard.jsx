@@ -1,11 +1,32 @@
 import React from "react";
 import ChangeName from "./ChangeName";
 import ChangePassword from "./ChangePassword";
-import ChangeAvatar from "./ChangeAvatar";
-import { AlertTriangle, BarChart3, LockIcon, SquarePen } from "lucide-react";
+import { AlertTriangle, BarChart3, LockIcon, SquarePen, Shield, UserCog } from "lucide-react";
 import DeleteAccount from "./DeleteAccount";
 
 function UserInformationCard({ user }) {
+  // Get role badge styling
+  const getRoleBadge = (role) => {
+    const badges = {
+      admin: {
+        label: "Admin",
+        icon: Shield,
+        classes: "bg-red-500 text-white",
+      },
+      cashier: {
+        label: "Cashier",
+        icon: UserCog,
+        classes: "bg-blue-500 text-white",
+      },
+      user: {
+        label: "User",
+        icon: UserCog,
+        classes: "bg-gray-500 text-white",
+      },
+    };
+    return badges[role] || null;
+  };
+
   return (
     <div className="lg:col-span-1">
       <h2 className="card-title text-xl mb-4 flex items-center gap-2">
@@ -15,16 +36,42 @@ function UserInformationCard({ user }) {
         <div className="card-body">
           {/* User Details */}
           <div className="space-y-4 flex gap-5">
-            {/* Avatar Upload Section */}
-            <ChangeAvatar /> {/* ✅ Avatar change */}
+            {/* Avatar Display (Read-only) */}
+            <div className="flex-shrink-0">
+              <img
+                src={user?.avatar || "/default-avatar.png"}
+                alt="avatar"
+                className="w-24 h-24 rounded-full object-cover border-4 border-blue-200 shadow-lg"
+              />
+            </div>
             <div className="mt">
               <p>
                 <span className="text-2xl font-semibold capitalize text-green-800">
                   {user?.name || ""}
                 </span>
               </p>
-              <p className=" text-gray-700">{user?.roles || ""}</p>
-              <p className=" text-gray-700">{user?.email || ""}</p>
+              
+              {/* Role Badges */}
+              {user?.roles && user.roles.length > 0 && (
+                <div className="flex flex-wrap gap-2 my-2">
+                  {user.roles.map((role) => {
+                    const badge = getRoleBadge(role);
+                    if (!badge) return null;
+                    const Icon = badge.icon;
+                    return (
+                      <div
+                        key={role}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${badge.classes} font-medium text-sm`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{badge.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              <p className="text-gray-700">{user?.email || ""}</p>
             </div>
           </div>
 

@@ -67,10 +67,11 @@ const ReturnSales = ({ sale }) => {
     <div className="inline-block">
       <button
         onClick={() => setIsOpen(true)}
-        className="btn btn-error btn-sm flex gap-2"
+        className="btn btn-sm btn-ghost gap-1.5 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
+        title="Return Sale"
       >
-        <RotateCcw className="h-4 w-4" />
-        Return
+        <RotateCcw className="w-4 h-4" />
+        <span className="hidden sm:inline">Return</span>
       </button>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>

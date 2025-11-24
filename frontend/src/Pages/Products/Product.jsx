@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Calendar } from "lucide-react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useProductStore } from "../../store/productStore";
 import { useCategoriesStore } from "../../store/categoriesStore";
@@ -191,39 +192,39 @@ const Product = () => {
               products.map((product) => (
                 <div
                   key={product._id}
-                  className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-300"
+                  className="bg-white border-2 border-gray-100 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300"
                 >
-                  <div className="card-body p-6">
+                  <div className="p-6 space-y-6">
                     {/* Product Header */}
-                    <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+                    <div className="flex flex-col lg:flex-row gap-6">
                       {/* Image */}
-                      <div className="avatar">
-                        <div className="w-16 h-16 rounded-xl ring ring-primary ring-offset-base-100 ring-offset-2">
+                      <div className="flex-shrink-0 w-20 h-20 rounded-2xl border-2 border-gray-100 bg-gray-50 overflow-hidden flex items-center justify-center">
                           <img
                             src={product?.image || "/placeholder.png"}
                             alt={product?.name || "No image"}
-                            className="w-12 h-12 object-cover rounded"
+                          className="w-full h-full object-cover"
+                          onError={(e) => (e.currentTarget.src = "/placeholder.png")}
                           />
-                        </div>
                       </div>
 
                       {/* Details */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <h2 className="card-title text-xl lg:text-2xl">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h2 className="text-2xl font-bold text-gray-900">
                             {product.name}
                           </h2>
-                          <div className="badge badge-secondary badge-lg font-semibold">
+                          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold uppercase tracking-wide">
                             {product.category?.name || "Uncategorized"}
-                          </div>
+                          </span>
                         </div>
-                        <div className="text-sm text-base-content/70">
+                        <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
                           Created {formatDatePHT(product.createdAt)}
-                        </div>
+                        </p>
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-wrap gap-2 lg:flex-nowrap">
+                      <div className="flex flex-wrap gap-2">
                         <CreateVariant product={product} />
                         <UpdateProduct product={product} />
                         <DeleteProduct product={product} />
@@ -231,49 +232,50 @@ const Product = () => {
                     </div>
 
                     {/* Variants */}
-                    <div className="divider my-4"></div>
                     {product.variants?.length > 0 ? (
-                      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                        {product.variants.map((variant) => (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {product.variants.map((variant) => {
+                          const qtyClass =
+                            variant.quantity === 0
+                              ? "bg-red-100 text-red-700 border-red-200"
+                              : variant.quantity <= 15
+                              ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                              : "bg-green-100 text-green-700 border-green-200";
+
+                          return (
                           <div
                             key={variant._id}
-                            className="card bg-base-200 shadow-md hover:shadow-lg transition-shadow duration-200 border border-base-300"
+                              className="rounded-2xl border-2 border-gray-100 bg-gray-50/70 hover:border-blue-200 transition-all duration-200 p-4 flex flex-col gap-3"
                           >
-                            <div className="card-body p-4">
-                              <div className="flex justify-between items-start mb-2">
+                              <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <p className="font-medium">
+                                  <p className="text-lg font-semibold text-gray-900">
                                     {variant.size} {variant.unit}
                                   </p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <div
-                                      className={`badge badge-sm ${
-                                        variant.quantity === 0
-                                          ? "bg-[#F05454] text-white"
-                                          : variant.quantity <= 15
-                                          ? "bg-yellow-400 text-black"
-                                          : "badge-outline"
-                                      }`}
+                                  <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                                    <span
+                                      className={`px-2.5 py-1 rounded-full border font-semibold ${qtyClass}`}
                                     >
                                       Qty: {variant.quantity}
-                                    </div>
-                                    <div className="badge badge-success badge-sm text-success-content font-semibold">
+                                    </span>
+                                    <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 border border-green-200 font-semibold">
                                       ₱{variant.price}
-                                    </div>
+                                    </span>
                                   </div>
                                 </div>
                               </div>
-                              <div className="card-actions justify-end mt-3">
+
+                              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 mt-auto">
                                 <UpdateVariant variant={variant} />
                                 <DeleteVariant variant={variant} />
                                 <RestockVariant variantId={variant._id} />
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-base-content/70 italic">
+                      <div className="text-center py-8 text-gray-500 italic border-2 border-dashed border-gray-200 rounded-2xl">
                         No variants available — add one to manage stock.
                       </div>
                     )}

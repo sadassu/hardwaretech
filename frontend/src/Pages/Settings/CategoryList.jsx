@@ -18,7 +18,7 @@ function CategoryList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null); // "add" or "delete"
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [formData, setFormData] = useState({ name: "", description: "" });
+  const [formData, setFormData] = useState({ name: "" });
 
   // Fetch categories once
   useEffect(() => {
@@ -41,7 +41,7 @@ function CategoryList() {
   // ADD CATEGORY
   const openAddModal = () => {
     setModalType("add");
-    setFormData({ name: "", description: "" });
+    setFormData({ name: "" });
     setIsModalOpen(true);
   };
 
@@ -50,7 +50,7 @@ function CategoryList() {
     if (!formData.name.trim()) return alert("Category name is required.");
     await addCategory(formData);
     setIsModalOpen(false);
-    setFormData({ name: "", description: "" });
+    setFormData({ name: "" });
   };
 
   // COMMON
@@ -133,9 +133,15 @@ function CategoryList() {
                       <td className="text-center">
                         <button
                           onClick={() => openDeleteModal(cat)}
-                          className="btn btn-error btn-sm text-white"
+                          className="btn btn-sm btn-ghost gap-1.5 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
+                          title="Delete Category"
                         >
-                          Delete
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            <line x1="10" y1="11" x2="10" y2="17"/>
+                            <line x1="14" y1="11" x2="14" y2="17"/>
+                          </svg>
+                          <span className="hidden sm:inline">Delete</span>
                         </button>
                       </td>
                     </tr>
@@ -172,75 +178,85 @@ function CategoryList() {
       </div>
 
       {/* Add / Delete Modals */}
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
-        {modalType === "delete" && (
-          <div className="p-4 text-center">
-            <h3 className="text-lg font-semibold mb-2">
-              Delete “{selectedCategory?.name}”?
-            </h3>
-            <p className="text-base-content/70 mb-4">
-              This action cannot be undone. Are you sure you want to proceed?
-            </p>
-            <div className="flex justify-center gap-3">
-              <button onClick={handleCloseModal} className="btn btn-ghost">
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="btn btn-error text-white"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        )}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        className="bg-white text-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-0"
+      >
+        <div className="border-b border-gray-200 px-5 py-4">
+          <h3 className="text-lg font-semibold">
+            {modalType === "add" ? "Add New Category" : "Delete Category"}
+          </h3>
+          <p className="text-xs text-gray-500 mt-1">
+            {modalType === "add"
+              ? "Create a new category to organize your products."
+              : "This action cannot be undone."}
+          </p>
+        </div>
 
-        {modalType === "add" && (
-          <form onSubmit={handleAddCategory} className="p-4">
-            <h3 className="text-lg font-semibold mb-3">Add New Category</h3>
-
-            <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="input input-bordered w-full"
-                placeholder="Category name"
-                required
-              />
+        <div className="p-5">
+          {modalType === "delete" && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-gray-900">
+                  {selectedCategory?.name}
+                </span>
+                ?
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={handleCloseModal}
+                  className="btn btn-ghost border border-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="btn bg-red-500 text-white border-red-500 hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
+          )}
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                className="textarea textarea-bordered w-full"
-                placeholder="Optional description"
-              />
-            </div>
+          {modalType === "add" && (
+            <form onSubmit={handleAddCategory} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="input input-bordered w-full bg-white text-gray-900"
+                  placeholder="Category name"
+                  required
+                />
+              </div>
 
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                className="btn btn-ghost"
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary text-white">
-                Add
-              </button>
-            </div>
-          </form>
-        )}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="btn btn-ghost border border-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                >
+                  Add Category
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </Modal>
     </div>
   );

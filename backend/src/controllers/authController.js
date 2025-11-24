@@ -39,12 +39,26 @@ export const register = asyncHandler(async (req, res) => {
   }
 
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  const { data } = await axios.post(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
-  );
+  if (!secretKey) {
+    console.error("RECAPTCHA_SECRET_KEY is not set in environment variables");
+    return res.status(500).json({ error: "Server configuration error. Please contact support." });
+  }
 
-  if (!data.success) {
-    return res.status(400).json({ error: "Captcha verification failed" });
+  try {
+    const { data } = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
+    );
+
+    if (!data.success) {
+      return res.status(400).json({ 
+        error: data["error-codes"]?.length > 0 
+          ? `Captcha verification failed: ${data["error-codes"].join(", ")}`
+          : "Captcha verification failed. Please try again." 
+      });
+    }
+  } catch (error) {
+    console.error("reCAPTCHA verification error:", error.message);
+    return res.status(500).json({ error: "Captcha verification error. Please try again." });
   }
 
   const { token: verificationToken, tokenHash } = createVerificationToken();
@@ -53,15 +67,21 @@ export const register = asyncHandler(async (req, res) => {
   const defaultAvatar =
     "https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/no-profile-picture-icon.png";
 
-  const user = await User.signup({
-    name,
-    email,
-    password,
-    confirmPassword,
-    verificationTokenHash: tokenHash,
-    verificationTokenExpires: new Date(expires),
-    avatar: defaultAvatar,
-  });
+  let user;
+  try {
+    user = await User.signup({
+      name,
+      email,
+      password,
+      confirmPassword,
+      verificationTokenHash: tokenHash,
+      verificationTokenExpires: new Date(expires),
+      avatar: defaultAvatar,
+    });
+  } catch (error) {
+    // User.signup throws Error objects with validation messages
+    return res.status(400).json({ error: error.message || "Registration failed. Please check your input." });
+  }
 
   // verification link
   const verifyUrl = `${
@@ -77,19 +97,24 @@ export const register = asyncHandler(async (req, res) => {
     <p>This link expires in 24 hours.</p>
   `;
 
+  // Try to send email, but don't fail registration if it fails
   try {
     await sendEmail(user.email, "Verify Your Email", html);
+    res.status(201).json({
+      message: "User registered successfully! Verification email sent.",
+      email: user.email,
+    });
   } catch (error) {
-    console.error("Failed to send email:", error);
-    return res
-      .status(500)
-      .json({ error: "Failed to send verification email." });
+    console.error("Failed to send verification email:", error.message);
+    // Registration succeeded, but email failed - still return success
+    // User can verify via the link manually or request a new verification email
+    res.status(201).json({
+      message: "User registered successfully! However, we couldn't send the verification email. Please contact support or try logging in to request a new verification link.",
+      email: user.email,
+      verificationLink: verifyUrl, // Include link in response for manual verification
+      warning: "Email service is currently unavailable. Please save this verification link.",
+    });
   }
-
-  res.status(201).json({
-    message: "User registered successfully! Verification email sent.",
-    email: user.email,
-  });
 });
 
 // login

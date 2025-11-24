@@ -42,18 +42,18 @@ function SupplyHistoryCard() {
   const last10 = supplyHistories.slice(0, 10);
 
   return (
-    <div className="space-y-3 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+    <div className="space-y-3 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+      <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-3">
         Recent Supply History
       </h3>
-      <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+      <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto pr-1">
         {last10.map((h) => (
           <div
             key={h._id}
-            className="p-3 border bg-base-200 border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+            className="p-2.5 sm:p-3 border bg-base-200 border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
           >
-            <div className="flex items-start justify-between mb-2">
-              <h4 className="text-sm font-medium text-gray-900 line-clamp-1 flex-1">
+            <div className="flex items-start justify-between mb-1.5 sm:mb-2">
+              <h4 className="text-xs sm:text-sm font-medium text-gray-900 line-clamp-1 flex-1">
                 {h.product_variant?.product?.name || "Unknown Product"}
               </h4>
               <span className="text-xs font-semibold text-gray-900 ml-2 whitespace-nowrap">

@@ -6,7 +6,7 @@ import { LockKeyhole } from "lucide-react";
 import TextInput from "../../components/TextInput";
 
 function ChangePassword({ className = "", icon: Icon }) {
-  const { user } = useAuthContext();
+  const { user, dispatch } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -44,7 +44,7 @@ function ChangePassword({ className = "", icon: Icon }) {
     }
 
     try {
-      await api.put(
+      const res = await api.put(
         `/profile/${user.userId}/change-password`,
         {
           password: formData.password,
@@ -58,9 +58,30 @@ function ChangePassword({ className = "", icon: Icon }) {
         }
       );
 
-      setSuccess("Password updated successfully!");
+      // Update user state with new isVerified status
+      if (res.data.isVerified !== undefined) {
+        const updatedUser = {
+          userId: res.data.userId,
+          name: res.data.name,
+          email: res.data.email,
+          roles: res.data.roles,
+          isVerified: res.data.isVerified,
+          token: res.data.token || user.token
+        };
+        
+        dispatch({ 
+          type: "UPDATED_USER", 
+          payload: updatedUser
+        });
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      }
+
+      setSuccess(res.data.message || "Password updated successfully! Please verify your email.");
       setFormData({ password: "", confirmPassword: "" });
-      setTimeout(() => setIsOpen(false), 1500);
+      setTimeout(() => {
+        setIsOpen(false);
+        setSuccess(null);
+      }, 3000);
     } catch (error) {
       console.error("Failed to update password", error);
       setError(error.response?.data?.message);

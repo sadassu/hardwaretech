@@ -27,16 +27,13 @@ function RestockVariant({ variantId }) {
 
   return (
     <>
-      <div className="relative group inline-block">
-        <button className="btn btn-square" onClick={() => setIsOpen(true)}>
-          <RotateCcw className="size-5 text-gray-700 hover:text-green-500 transition-colors" />
-        </button>
-
-        {/* Tooltip */}
-        <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-gray-800 text-white text-xs font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
-          Restock Variant
-        </span>
-      </div>
+      <button
+        className="btn btn-sm btn-ghost gap-1.5 hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition-all duration-200"
+        onClick={() => setIsOpen(true)}
+        title="Restock Variant"
+      >
+        <RotateCcw className="w-4 h-4" />
+      </button>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
