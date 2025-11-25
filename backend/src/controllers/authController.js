@@ -22,7 +22,10 @@ import Reservation from "../models/Reservation.js";
 import axios from "axios";
 
 import crypto from "crypto";
-import { sendEmail } from "../utils/sendEmail.js";
+import { 
+  sendVerificationCodeEmail, 
+  sendVerificationLinkEmail 
+} from "../services/emailService.js";
 import { verificationLimiter } from "../config/upstash.js";
 import { createVerificationToken } from "../utils/tokens.js";
 
@@ -90,16 +93,9 @@ export const register = asyncHandler(async (req, res) => {
     email
   )}`;
 
-  const html = `
-    <p>Hi ${name},</p>
-    <p>Click the link below to verify your account:</p>
-    <a href="${verifyUrl}">${verifyUrl}</a>
-    <p>This link expires in 24 hours.</p>
-  `;
-
   // Try to send email, but don't fail registration if it fails
   try {
-    await sendEmail(user.email, "Verify Your Email", html);
+    await sendVerificationLinkEmail(user.email, user.name, verifyUrl);
     res.status(201).json({
       message: "User registered successfully! Verification email sent.",
       email: user.email,
@@ -285,21 +281,14 @@ export const sendVerificationCode = asyncHandler(async (req, res) => {
   user.verificationCodeExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
   await user.save();
 
-  // email template
-  const html = `
-    <h2>Email Verification</h2>
-    <p>Use the code below to verify your email address:</p>
-    <h1>${code}</h1>
-    <p>This code will expire in 10 minutes.</p>
-  `;
-
   try {
-    await sendEmail(user.email, "Verify Your Email", html);
+    await sendVerificationCodeEmail(user.email, user.name, code);
 
     res.status(200).json({
       message: "Verification code sent successfully.",
     });
   } catch (error) {
+    console.error("Failed to send verification code:", error.message);
     res.status(500).json({
       error: "Failed to send verification email.",
     });

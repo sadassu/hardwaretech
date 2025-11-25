@@ -26,6 +26,7 @@ const productVariantSchema = new mongoose.Schema(
         "box",
         "pack",
         "roll",
+        "Wey",
       ],
       required: true,
     },

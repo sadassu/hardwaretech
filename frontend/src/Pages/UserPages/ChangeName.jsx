@@ -33,8 +33,18 @@ function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
         }
       );
 
-      dispatch({ type: "UPDATED_USER", payload: res.data.user });
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      // Merge with existing user data to preserve all fields (token, roles, etc.)
+      const updatedUser = {
+        ...user,
+        ...res.data.user,
+        // Ensure token is preserved
+        token: res.data.user.token || user.token,
+        // Ensure roles are preserved
+        roles: res.data.user.roles || user.roles || [],
+      };
+      
+      dispatch({ type: "UPDATED_USER", payload: updatedUser });
+      localStorage.setItem("user", JSON.stringify(updatedUser));
 
       setSuccess(true);
       setTimeout(() => {

@@ -21,6 +21,7 @@ const UNIT_OPTIONS = [
   "box",
   "pack",
   "roll",
+  "Wey",
 ];
 
 const CreateVariant = ({ product }) => {

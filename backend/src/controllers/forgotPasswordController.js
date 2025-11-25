@@ -4,7 +4,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import validator from "validator";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { sendEmail } from "../utils/sendEmail.js";
+import { sendPasswordResetEmail } from "../services/emailService.js";
 import { verificationLimiter } from "../config/upstash.js";
 
 // @desc    Request password reset
@@ -50,18 +50,11 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.resetPasswordTokenExpires = tokenExpires;
   await user.save();
 
-  // Send email
+  // Send password reset email
   const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
-  const subject = "Password Reset Request";
-  const html = `
-    <p>Hello ${user.name},</p>
-    <p>You requested a password reset. Click the link below to reset your password:</p>
-    <a href="${resetUrl}">Reset Password</a>
-    <p>This link will expire in 1 hour.</p>
-  `;
 
   try {
-    await sendEmail(user.email, subject, html);
+    await sendPasswordResetEmail(user.email, user.name, resetUrl);
     res.status(200).json({ message: "Password reset email sent" });
   } catch (emailError) {
     console.error("❌ Failed to send password reset email:", emailError.message);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ChevronDown, AlertTriangle, X, ShoppingCart, Package } from "lucide-react";
 import CreateCart from "../Pages/UserPages/CreateCart";
 
-function ProductListVariant({ product, user, isMobile }) {
+function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = false }) {
   const [showVariants, setShowVariants] = useState(false);
   const variantMap = new Map(
     (product?.variants || []).map((variant) => [variant._id, variant])
@@ -149,7 +149,7 @@ function ProductListVariant({ product, user, isMobile }) {
                           <span className="text-xs font-medium text-gray-500 block mb-2">
                             Stock: {getAvailableQuantity(variant)}
                           </span>
-                          {variant.autoConvert && variant.conversionSource && (() => {
+                          {showAutoConvertInfo && variant.autoConvert && variant.conversionSource && (() => {
                             const sourceVariant = variantMap.get(
                               variant.conversionSource
                             );
@@ -238,7 +238,7 @@ function ProductListVariant({ product, user, isMobile }) {
                         <span className="text-xs font-medium text-gray-500 block mb-1.5">
                           Stock: {getAvailableQuantity(variant)}
                         </span>
-                        {variant.autoConvert && variant.conversionSource && (() => {
+                        {showAutoConvertInfo && variant.autoConvert && variant.conversionSource && (() => {
                           const sourceVariant = variantMap.get(
                             variant.conversionSource
                           );

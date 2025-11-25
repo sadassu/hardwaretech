@@ -71,26 +71,23 @@ export const createReservation = asyncHandler(async (req, res) => {
           price: detail.productVariantId?.price || 0
         }));
 
-        const { sendEmail } = await import("../utils/sendEmail.js");
-        const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
+        const { sendReservationCreatedEmail } = await import("../services/emailService.js");
 
-        const emailHtml = getReservationStatusEmailTemplate(
-          populatedReservation.userId.name,
-          populatedReservation._id.toString(),
-          "pending",
-          populatedReservation.reservationDate,
-          populatedReservation.totalPrice,
-          populatedReservation.notes || "",
-          products
-        );
-
-        await sendEmail(
+        // Non-blocking: Send email asynchronously without waiting
+        sendReservationCreatedEmail(
           populatedReservation.userId.email,
-          "Reservation Created - Hardware Tech",
-          emailHtml
-        );
-
-        console.log(`✅ New reservation email sent to ${populatedReservation.userId.email}`);
+          populatedReservation.userId.name,
+          {
+            reservationId: populatedReservation._id.toString(),
+            status: "pending",
+            reservationDate: populatedReservation.reservationDate,
+            totalPrice: populatedReservation.totalPrice,
+            remarks: populatedReservation.notes || "",
+            products: products
+          }
+        ).then(() => {
+          console.log(`✅ New reservation email sent to ${populatedReservation.userId.email}`);
+        });
       }
     } catch (emailError) {
       console.error("❌ Failed to send new reservation email:", emailError);
@@ -156,26 +153,23 @@ export const cancelReservation = asyncHandler(async (req, res) => {
         price: detail.productVariantId?.price || 0
       }));
 
-      const { sendEmail } = await import("../utils/sendEmail.js");
-      const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
+      const { sendReservationStatusEmail } = await import("../services/emailService.js");
 
-      const emailHtml = getReservationStatusEmailTemplate(
-        reservation.userId.name,
-        reservation._id.toString(),
-        "cancelled",
-        reservation.reservationDate,
-        reservation.totalPrice,
-        reservation.remarks || "",
-        products
-      );
-
-      await sendEmail(
+      // Non-blocking: Send email asynchronously without waiting
+      sendReservationStatusEmail(
         reservation.userId.email,
-        "Reservation Cancelled - Hardware Tech",
-        emailHtml
-      );
-
-      console.log(`✅ Cancellation email sent to ${reservation.userId.email}`);
+        reservation.userId.name,
+        {
+          reservationId: reservation._id.toString(),
+          status: "cancelled",
+          reservationDate: reservation.reservationDate,
+          totalPrice: reservation.totalPrice,
+          remarks: reservation.remarks || "",
+          products: products
+        }
+      ).then(() => {
+        console.log(`✅ Cancellation email sent to ${reservation.userId.email}`);
+      });
     } catch (emailError) {
       console.error("❌ Failed to send cancellation email:", emailError);
       // Don't fail the request if email fails
@@ -423,33 +417,23 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
         price: detail.productVariantId?.price || 0
       }));
 
-      const { sendEmail } = await import("../utils/sendEmail.js");
-      const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
+      const { sendReservationStatusEmail } = await import("../services/emailService.js");
 
-      const emailHtml = getReservationStatusEmailTemplate(
-        reservation.userId.name,
-        reservation._id.toString(),
-        status,
-        reservation.reservationDate,
-        reservation.totalPrice,
-        reservation.remarks || "",
-        products
-      );
-
-      const statusTitles = {
-        pending: "Reservation Pending",
-        confirmed: "Reservation Confirmed",
-        cancelled: "Reservation Cancelled",
-        failed: "Reservation Failed",
-      };
-
-      await sendEmail(
+      // Non-blocking: Send email asynchronously without waiting
+      sendReservationStatusEmail(
         reservation.userId.email,
-        `${statusTitles[status]} - Hardware Tech`,
-        emailHtml
-      );
-
-      console.log(`✅ Status change email sent to ${reservation.userId.email}`);
+        reservation.userId.name,
+        {
+          reservationId: reservation._id.toString(),
+          status: status,
+          reservationDate: reservation.reservationDate,
+          totalPrice: reservation.totalPrice,
+          remarks: reservation.remarks || "",
+          products: products
+        }
+      ).then(() => {
+        console.log(`✅ Status change email sent to ${reservation.userId.email}`);
+      });
     } catch (emailError) {
       console.error("❌ Failed to send status change email:", emailError);
       // Don't fail the request if email fails

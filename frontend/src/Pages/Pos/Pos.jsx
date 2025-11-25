@@ -186,7 +186,7 @@ function Pos() {
         {loading ? (
           <Loading />
         ) : products?.length > 0 ? (
-          <ProductGrid products={products} user={user} isMobile={isMobile} />
+          <ProductGrid products={products} user={user} isMobile={isMobile} showAutoConvertInfo={true} />
         ) : (
           <div className="hero min-h-[400px]">
             <div className="hero-content text-center">

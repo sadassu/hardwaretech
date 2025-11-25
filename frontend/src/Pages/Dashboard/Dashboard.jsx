@@ -35,12 +35,31 @@ function Dashboard() {
     [option]
   );
 
+  // Fetch overall sales since business start
+  const {
+    data: overallStats,
+    loading: overallLoading,
+  } = useFetch(
+    "dashboard/sales/overall",
+    {
+      headers: { Authorization: `Bearer ${user.token}` },
+    },
+    []
+  );
+
   const handleOptionChange = (e) => setOption(e.target.value);
 
-  const totalSales =
+  // Total sales for the selected filter period
+  const periodTotalSales =
     salesData?.reduce((sum, item) => sum + (item.totalSales || 0), 0) || 0;
-  const averageSales =
-    salesData?.length > 0 ? (totalSales / salesData.length).toFixed(2) : 0;
+  
+  // Overall sales since business start
+  const overallTotalSales = overallStats?.totalSales || 0;
+  
+  // Average sales since business start (total sales / total count of sales)
+  const overallAverageSales = overallStats?.totalCount > 0 
+    ? (overallTotalSales / overallStats.totalCount).toFixed(2) 
+    : 0;
 
   // Calculate summary statistics
   const getStatsSummary = () => {
@@ -52,21 +71,13 @@ function Dashboard() {
     const highestSale = sortedData[0];
     const lowestSale = sortedData[sortedData.length - 1];
 
-    // Calculate trend (compare first half vs second half)
-    const midPoint = Math.floor(salesData.length / 2);
-    const firstHalfAvg =
-      salesData.slice(0, midPoint).reduce((sum, item) => sum + item.totalSales, 0) /
-      midPoint;
-    const secondHalfAvg =
-      salesData.slice(midPoint).reduce((sum, item) => sum + item.totalSales, 0) /
-      (salesData.length - midPoint);
-    const trendPercentage = ((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100;
+    // Total sales for the selected filter period (replaces trend)
+    const periodTotal = periodTotalSales;
 
     return {
       highest: highestSale,
       lowest: lowestSale,
-      trend: trendPercentage,
-      isPositive: trendPercentage >= 0,
+      periodTotal: periodTotal,
     };
   };
 
@@ -113,9 +124,10 @@ function Dashboard() {
             {/* Stats Cards */}
             <SalesCards
               salesData={salesData}
-              loading={loading}
-              totalSales={totalSales}
-              averageSales={averageSales}
+              loading={loading || overallLoading}
+              totalSales={overallTotalSales}
+              averageSales={overallAverageSales}
+              totalDataPoints={overallStats?.totalCount || 0}
             />
 
             {/* Main Chart Container */}
@@ -262,7 +274,9 @@ function Dashboard() {
                   <h3 className="text-sm font-semibold text-gray-700 mb-4">
                     Period Summary
                   </h3>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  
+                  {/* Top Row - 2 Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                     {/* Highest Sale */}
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 sm:p-4 border border-green-100">
                       <div className="flex items-center gap-2 mb-1">
@@ -294,7 +308,10 @@ function Dashboard() {
                         {formatDatePHT(statsSummary.lowest.period)}
                       </p>
                     </div>
+                  </div>
 
+                  {/* Bottom Row - 3 Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     {/* Average Sale */}
                     <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 sm:p-4 border border-blue-100">
                       <div className="flex items-center gap-2 mb-1">
@@ -304,43 +321,40 @@ function Dashboard() {
                         </p>
                       </div>
                       <p className="text-lg sm:text-xl font-bold text-blue-600 mb-0.5">
-                        {formatPrice(averageSales)}
+                        {formatPrice(overallAverageSales)}
                       </p>
-                      <p className="text-xs text-gray-500">Per period</p>
+                      <p className="text-xs text-gray-500">Since business start</p>
                     </div>
 
-                    {/* Trend */}
-                    <div
-                      className={`bg-gradient-to-br ${
-                        statsSummary.isPositive
-                          ? "from-purple-50 to-violet-50 border-purple-100"
-                          : "from-red-50 to-rose-50 border-red-100"
-                      } rounded-xl p-3 sm:p-4 border`}
-                    >
+                    {/* Total Sales (Period) */}
+                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-3 sm:p-4 border border-purple-100">
                       <div className="flex items-center gap-2 mb-1">
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            statsSummary.isPositive
-                              ? "bg-purple-500"
-                              : "bg-red-500"
-                          }`}
-                        ></div>
+                        <div className="w-2 h-2 rounded-full bg-purple-500"></div>
                         <p className="text-xs text-gray-600 font-medium">
-                          Trend
+                          Total Sales
                         </p>
                       </div>
-                      <p
-                        className={`text-lg sm:text-xl font-bold mb-0.5 ${
-                          statsSummary.isPositive
-                            ? "text-purple-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {statsSummary.isPositive ? "+" : ""}
-                        {statsSummary.trend.toFixed(1)}%
+                      <p className="text-lg sm:text-xl font-bold text-purple-600 mb-0.5">
+                        {formatPrice(statsSummary.periodTotal)}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {statsSummary.isPositive ? "Growth" : "Decline"}
+                        {option === "daily" ? "Last 14 days" : option === "monthly" ? "This year" : "All years"}
+                      </p>
+                    </div>
+
+                    {/* Data Points (Period) */}
+                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-3 sm:p-4 border border-indigo-100">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                        <p className="text-xs text-gray-600 font-medium">
+                          Data Points
+                        </p>
+                      </div>
+                      <p className="text-lg sm:text-xl font-bold text-indigo-600 mb-0.5">
+                        {salesData.length}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {option === "daily" ? "Days" : option === "monthly" ? "Months" : "Years"}
                       </p>
                     </div>
                   </div>

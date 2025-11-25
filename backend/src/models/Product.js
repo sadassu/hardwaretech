@@ -4,7 +4,7 @@ import ProductVariant from "./ProductVariant.js";
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    description: { type: String, default: "", require: true },
+    description: { type: String, default: "" },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",

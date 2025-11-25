@@ -113,26 +113,23 @@ export const completeReservation = asyncHandler(async (req, res) => {
           price: detail.productVariantId?.price || 0
         }));
 
-        const { sendEmail } = await import("../utils/sendEmail.js");
-        const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
+        const { sendReservationCompletedEmail } = await import("../services/emailService.js");
 
-        const emailHtml = getReservationStatusEmailTemplate(
-          populatedReservation.userId.name,
-          populatedReservation._id.toString(),
-          "completed",
-          populatedReservation.reservationDate,
-          populatedReservation.totalPrice,
-          populatedReservation.remarks || "",
-          products
-        );
-
-        await sendEmail(
+        // Non-blocking: Send email asynchronously without waiting
+        sendReservationCompletedEmail(
           populatedReservation.userId.email,
-          "Reservation Completed - Hardware Tech",
-          emailHtml
-        );
-
-        console.log(`✅ Completion email sent to ${populatedReservation.userId.email}`);
+          populatedReservation.userId.name,
+          {
+            reservationId: populatedReservation._id.toString(),
+            status: "completed",
+            reservationDate: populatedReservation.reservationDate,
+            totalPrice: populatedReservation.totalPrice,
+            remarks: populatedReservation.remarks || "",
+            products: products
+          }
+        ).then(() => {
+          console.log(`✅ Completion email sent to ${populatedReservation.userId.email}`);
+        });
       }
     } catch (emailError) {
       console.error("❌ Failed to send completion email:", emailError);

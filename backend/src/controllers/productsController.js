@@ -90,9 +90,9 @@ export const createProduct = asyncHandler(async (req, res) => {
   const { name, description, category, image } = req.body || {};
 
   // ✅ Validate required fields
-  if (!name || !category || !description || !image) {
+  if (!name || !category || !image) {
     return res.status(400).json({
-      message: "Name, description, category, and image are required",
+      message: "Name, category, and image are required",
     });
   }
 
@@ -150,9 +150,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
   }
 
   // ✅ Ensure all required fields
-  if (!name || !category || !description || !image) {
+  if (!name || !category || !image) {
     return res.status(400).json({
-      message: "Name, description, category, and image are required",
+      message: "Name, category, and image are required",
     });
   }
 
@@ -191,7 +191,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
   // ✅ Update fields
   product.name = name;
-  product.description = description;
+  if (description !== undefined) {
+    product.description = description;
+  }
   product.category = categoryId;
   product.image = image;
 
