@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ImageOff, Package, Tag } from "lucide-react";
 import ProductListVariant from "./ProductListVariant";
 
-function ProductGrid({ products, user, isMobile }) {
+function ProductGrid({ products, user, isMobile, showAutoConvertInfo = false }) {
   const [imageErrors, setImageErrors] = useState({});
 
   const handleImageError = (productId) => {
@@ -100,6 +100,7 @@ function ProductGrid({ products, user, isMobile }) {
                     product={product}
                     user={user}
                     isMobile={isMobile}
+                    showAutoConvertInfo={showAutoConvertInfo}
                   />
                 </div>
               </div>

@@ -3,6 +3,7 @@ import {
   getDashboardSales,
   getStockStatus,
   getSupplyAndSalesComparison,
+  getOverallSalesStats,
 } from "../controllers/dashboardController.js";
 import requireAuth from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -14,6 +15,13 @@ router.get(
   requireAuth,
   requireRole(["admin", "cashier"]),
   getDashboardSales
+);
+
+router.get(
+  "/sales/overall",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  getOverallSalesStats
 );
 
 router.get(

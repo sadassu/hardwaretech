@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import dotenv from "dotenv";
 import crypto from "crypto";
-import { sendEmail } from "../utils/sendEmail.js";
+import { sendVerificationCodeEmail } from "../services/emailService.js";
 
 dotenv.config();
 
@@ -32,14 +32,21 @@ export const changeName = asyncHandler(async (req, res) => {
   user.name = name;
   await user.save();
 
+  // Extract token from authorization header
+  const token = req.headers?.authorization?.replace("Bearer ", "") || null;
+
+  // Return all necessary user fields to prevent logout
   res.status(200).json({
     message: "Name updated successfully",
     user: {
-      userId: user._id,
+      userId: user._id.toString(),
       name: user.name,
       email: user.email,
-      isVerified: user.isVerified, // Preserve verification status
-      token: req.user.token || undefined,
+      isVerified: user.isVerified,
+      roles: user.roles || [],
+      avatar: user.avatar || null,
+      googleLoggedIn: user.googleLoggedIn || false,
+      token: token, // Preserve the existing token
     },
   });
 });
@@ -60,15 +67,8 @@ export const changePassword = asyncHandler(async (req, res) => {
   await user.save();
 
   // Send verification email
-  const html = `
-    <h2>Email Verification Required</h2>
-    <p>Your password has been changed. Please verify your email address using the code below:</p>
-    <h1>${code}</h1>
-    <p>This code will expire in 10 minutes.</p>
-  `;
-
   try {
-    await sendEmail(user.email, "Verify Your Email - Password Changed", html);
+    await sendVerificationCodeEmail(user.email, user.name, code);
   } catch (error) {
     console.error("Failed to send verification email:", error);
     // Don't fail the request if email fails

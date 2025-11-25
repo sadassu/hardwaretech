@@ -36,23 +36,9 @@ function Pos() {
 
   // ✅ Local state
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [search, setSearch] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
-  // ✅ Debounce search input
-  useEffect(() => {
-    if (search !== debouncedSearch) setIsSearching(true);
-
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-      setCurrentPage(1);
-      setIsSearching(false);
-    }, 500);
-
-    return () => clearTimeout(handler);
-  }, [search, debouncedSearch]);
 
   // ✅ Fetch categories once
   useEffect(() => {
@@ -65,17 +51,22 @@ function Pos() {
       fetchProducts(user.token, {
         page: currentPage,
         limit: 15, // 3 rows × 5 columns = 15 products per page
-        search: debouncedSearch,
+        search: searchQuery,
         category: selectedCategory,
       });
     }
-  }, [user, currentPage, debouncedSearch, selectedCategory, fetchProducts]);
+  }, [user, currentPage, searchQuery, selectedCategory, fetchProducts]);
 
   // ✅ Handlers
-  const handleSearchChange = (e) => setSearch(e.target.value);
+  const handleSearchChange = (e) => setSearchInput(e.target.value);
+  const handleSearchSubmit = () => {
+    setSearchQuery(searchInput.trim());
+    setCurrentPage(1);
+  };
   const clearSearch = () => {
-    setSearch("");
-    setDebouncedSearch("");
+    setSearchInput("");
+    setSearchQuery("");
+    setCurrentPage(1);
   };
 
   const handleCategoryChange = (categoryId) => {
@@ -84,8 +75,8 @@ function Pos() {
   };
 
   const clearAllFilters = () => {
-    setSearch("");
-    setDebouncedSearch("");
+    setSearchInput("");
+    setSearchQuery("");
     setSelectedCategory("");
     setCurrentPage(1);
   };
@@ -172,10 +163,11 @@ function Pos() {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
           <div className="mb-6">
             <SearchBar
-              search={search}
+              search={searchInput}
               onSearchChange={handleSearchChange}
               onClear={clearSearch}
-              isSearching={isSearching || loading}
+              onSearchSubmit={handleSearchSubmit}
+              isSearching={loading}
               placeholder="Search products for POS..."
               className="max-w-full"
             />
@@ -194,7 +186,7 @@ function Pos() {
         {loading ? (
           <Loading />
         ) : products?.length > 0 ? (
-          <ProductGrid products={products} user={user} isMobile={isMobile} />
+          <ProductGrid products={products} user={user} isMobile={isMobile} showAutoConvertInfo={true} />
         ) : (
           <div className="hero min-h-[400px]">
             <div className="hero-content text-center">
@@ -204,11 +196,11 @@ function Pos() {
                   No Products Found
                 </h1>
                 <p className="py-4 text-base-content/50">
-                  {search
+                  {searchQuery
                     ? "Try adjusting your search terms"
                     : "No products available at the moment"}
                 </p>
-                {search && (
+                {searchQuery && (
                   <button className="btn btn-primary" onClick={clearSearch}>
                     Clear Search
                   </button>

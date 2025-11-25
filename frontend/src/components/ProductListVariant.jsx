@@ -2,8 +2,29 @@ import React, { useState, useEffect } from "react";
 import { ChevronDown, AlertTriangle, X, ShoppingCart, Package } from "lucide-react";
 import CreateCart from "../Pages/UserPages/CreateCart";
 
-function ProductListVariant({ product, user, isMobile }) {
+function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = false }) {
   const [showVariants, setShowVariants] = useState(false);
+  const variantMap = new Map(
+    (product?.variants || []).map((variant) => [variant._id, variant])
+  );
+
+  const getAvailableQuantity = (variant) => {
+    if (!variant) return 0;
+    if (variant.availableQuantity !== undefined) {
+      return Number(variant.availableQuantity) || 0;
+    }
+
+    const baseQuantity = Number(variant.quantity) || 0;
+    if (variant.autoConvert && variant.conversionSource) {
+      const source = variantMap.get(variant.conversionSource);
+      if (source) {
+        const sourceQty = Number(source.quantity) || 0;
+        const multiplier = Number(variant.conversionQuantity) || 1;
+        return baseQuantity + sourceQty * multiplier;
+      }
+    }
+    return baseQuantity;
+  };
 
   // Handle escape key to close modal
   useEffect(() => {
@@ -35,9 +56,9 @@ function ProductListVariant({ product, user, isMobile }) {
 
   // Check if no variants or all variants have zero or no quantity
   const hasNoVariants = !product.variants?.length;
-  const allOutOfStock = product.variants?.every(
-    (variant) => !variant.quantity || variant.quantity === 0
-  );
+  const allOutOfStock = hasNoVariants
+    ? true
+    : product.variants.every((variant) => getAvailableQuantity(variant) <= 0);
 
   // If no variants or all out of stock, show message
   if (hasNoVariants || allOutOfStock) {
@@ -125,11 +146,24 @@ function ProductListVariant({ product, user, isMobile }) {
                             )}
                           </div>
                           
-                          {variant.quantity && (
-                              <span className="text-xs font-medium text-gray-500 block mb-2">
-                                Stock: {variant.quantity}
-                              </span>
-                          )}
+                          <span className="text-xs font-medium text-gray-500 block mb-2">
+                            Stock: {getAvailableQuantity(variant)}
+                          </span>
+                          {showAutoConvertInfo && variant.autoConvert && variant.conversionSource && (() => {
+                            const sourceVariant = variantMap.get(
+                              variant.conversionSource
+                            );
+                            if (!sourceVariant) return null;
+                            const sourceLabel = sourceVariant.size
+                              ? `${sourceVariant.size} ${sourceVariant.unit || ""}`
+                              : sourceVariant.unit || "source";
+                            return (
+                              <p className="text-[11px] text-blue-500">
+                                Auto converts from {sourceLabel} •{" "}
+                                {variant.conversionQuantity || 1} {variant.unit} each
+                              </p>
+                            );
+                          })()}
                           
                           {variant.size && (
                               <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold inline-block whitespace-nowrap">
@@ -201,11 +235,24 @@ function ProductListVariant({ product, user, isMobile }) {
                         </div>
                         
                         {/* Stock */}
-                        {variant.quantity && (
-                          <span className="text-xs font-medium text-gray-500 block mb-1.5">
-                            Stock: {variant.quantity}
-                          </span>
-                        )}
+                        <span className="text-xs font-medium text-gray-500 block mb-1.5">
+                          Stock: {getAvailableQuantity(variant)}
+                        </span>
+                        {showAutoConvertInfo && variant.autoConvert && variant.conversionSource && (() => {
+                          const sourceVariant = variantMap.get(
+                            variant.conversionSource
+                          );
+                          if (!sourceVariant) return null;
+                          const sourceLabel = sourceVariant.size
+                            ? `${sourceVariant.size} ${sourceVariant.unit || ""}`
+                            : sourceVariant.unit || "source";
+                          return (
+                            <p className="text-[11px] text-blue-500">
+                              Auto converts from {sourceLabel} •{" "}
+                              {variant.conversionQuantity || 1} {variant.unit} each
+                            </p>
+                          );
+                        })()}
                         
                         {/* Variant Size/Unit - Now below stock */}
                         {variant.size && (

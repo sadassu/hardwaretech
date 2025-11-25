@@ -14,16 +14,25 @@ const validateEmailConfig = () => {
   };
 };
 
+// Singleton transporter for connection pooling (faster delivery)
+let cachedTransporter = null;
+
 /**
- * Creates a nodemailer transporter with optimized settings for deployment
+ * Creates a nodemailer transporter with optimized settings for fast delivery
+ * Uses singleton pattern for connection pooling
  * @returns {Object} Nodemailer transporter
  */
 const createTransporter = () => {
+  // Return cached transporter if available and still connected
+  if (cachedTransporter) {
+    return cachedTransporter;
+  }
+
   const port = parseInt(process.env.SMTP_PORT, 10);
   const secure = port === 465;
   const requireTLS = port === 587;
 
-  return nodemailer.createTransport({
+  cachedTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: port,
     secure: secure, // true for 465, false for other ports
@@ -31,10 +40,10 @@ const createTransporter = () => {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    // Connection timeout settings (important for deployment)
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000, // 10 seconds
-    socketTimeout: 10000, // 10 seconds
+    // Optimized timeout settings for faster delivery
+    connectionTimeout: 5000, // 5 seconds (reduced from 10)
+    greetingTimeout: 5000, // 5 seconds (reduced from 10)
+    socketTimeout: 8000, // 8 seconds (reduced from 10)
     // TLS/SSL configuration
     tls: {
       rejectUnauthorized: false, // Accept self-signed certificates
@@ -44,14 +53,16 @@ const createTransporter = () => {
     ...(requireTLS && {
       requireTLS: true,
     }),
-    // Connection pooling for better performance
+    // Connection pooling for better performance and faster delivery
     pool: true,
     maxConnections: 5,
     maxMessages: 100,
-    // Rate limiting
+    // Optimized rate limiting for faster throughput
     rateDelta: 1000, // 1 second
-    rateLimit: 5, // 5 messages per second
+    rateLimit: 10, // 10 messages per second (increased from 5)
   });
+
+  return cachedTransporter;
 };
 
 /**
@@ -108,19 +119,19 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
 
   let lastError = null;
 
-  // Retry logic
+  // Retry logic with optimized backoff
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      // Create transporter (new instance for each attempt to avoid connection issues)
+      // Use singleton transporter for connection pooling (faster)
       const transporter = createTransporter();
 
-      // Verify connection (only on first attempt or if VERIFY_SMTP is enabled)
-      if ((attempt === 0 && process.env.NODE_ENV !== "production") || process.env.VERIFY_SMTP === "true") {
+      // Skip verification in production for faster delivery (only verify if explicitly enabled)
+      if (process.env.VERIFY_SMTP === "true" && attempt === 0) {
         try {
           await Promise.race([
             transporter.verify(),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("SMTP verification timeout")), 5000)
+              setTimeout(() => reject(new Error("SMTP verification timeout")), 3000)
             )
           ]);
           console.log("✅ SMTP connection verified successfully");
@@ -143,18 +154,21 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
         },
       });
 
-      // Add timeout to sending
+      // Optimized timeout for faster delivery (reduced from 15s to 10s)
       const info = await Promise.race([
         sendPromise,
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Email sending timeout after 15 seconds")), 15000)
+          setTimeout(() => reject(new Error("Email sending timeout after 10 seconds")), 10000)
         )
       ]);
 
       console.log(`✅ Email sent successfully to ${to}. Message ID: ${info.messageId}`);
       
-      // Close transporter connection
-      transporter.close();
+      // Don't close pooled connection - keep it open for reuse (faster subsequent sends)
+      // Only close if not using connection pooling
+      if (!cachedTransporter) {
+        transporter.close();
+      }
       
       return info;
     } catch (error) {
@@ -202,9 +216,9 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
         }
       }
 
-      // If this is not the last attempt, wait before retrying
+      // Optimized backoff for faster retries
       if (attempt < retries) {
-        const waitTime = (attempt + 1) * 1000; // Exponential backoff: 1s, 2s, 3s...
+        const waitTime = Math.min((attempt + 1) * 500, 2000); // Faster backoff: 500ms, 1000ms, max 2000ms
         console.log(`⏳ Retrying in ${waitTime}ms...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }

@@ -114,6 +114,34 @@ export const getDashboardSales = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get overall sales statistics since business start
+ * Returns total sales and total number of sales records
+ */
+export const getOverallSalesStats = asyncHandler(async (req, res) => {
+  const result = await Sale.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalSales: { $sum: "$totalPrice" },
+        totalCount: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const stats = result.length > 0 
+    ? { 
+        totalSales: result[0].totalSales || 0, 
+        totalCount: result[0].totalCount || 0 
+      }
+    : { 
+        totalSales: 0, 
+        totalCount: 0 
+      };
+
+  res.json(stats);
+});
+
+/**
  * Controller: getStockStatus
  *
  * Fetches product variants based on stock status (low, out, or all).

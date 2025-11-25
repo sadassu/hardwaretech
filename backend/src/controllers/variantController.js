@@ -3,6 +3,9 @@ import Product from "../models/Product.js";
 import ProductVariant from "../models/ProductVariant.js";
 import SupplyHistory from "../models/SupplyHistory.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import {
+  validateConversionRequest,
+} from "../utils/variantStock.js";
 
 // ✅ Create Variant
 export const createVariant = asyncHandler(async (req, res) => {
@@ -19,6 +22,10 @@ export const createVariant = asyncHandler(async (req, res) => {
       supplier_price,
       color,
       notes,
+      conversionSource,
+      conversionQuantity,
+      autoConvert,
+      conversionNotes,
     } = req.body;
 
     const existingProduct = await Product.findById(productId).session(session);
@@ -26,6 +33,13 @@ export const createVariant = asyncHandler(async (req, res) => {
       await session.abortTransaction();
       session.endSession();
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (conversionSource) {
+      await validateConversionRequest({
+        productId: existingProduct._id,
+        conversionSourceId: conversionSource,
+      });
     }
 
     // Build variant data
@@ -38,6 +52,14 @@ export const createVariant = asyncHandler(async (req, res) => {
       supplier_price,
     };
     if (color) newVariantData.color = color;
+    if (conversionNotes) newVariantData.conversionNotes = conversionNotes;
+
+    newVariantData.conversionSource = conversionSource || null;
+    newVariantData.autoConvert = Boolean(autoConvert) && Boolean(conversionSource);
+    newVariantData.conversionQuantity =
+      conversionSource && Number(conversionQuantity) > 0
+        ? Number(conversionQuantity)
+        : 1;
 
     const newVariant = await ProductVariant.create([newVariantData], {
       session,
@@ -78,8 +100,19 @@ export const updateVariant = asyncHandler(async (req, res) => {
   session.startTransaction();
 
   try {
-    const { unit, size, price, quantity, supplier_price, color, notes } =
-      req.body;
+    const {
+      unit,
+      size,
+      price,
+      quantity,
+      supplier_price,
+      color,
+      notes,
+      conversionSource,
+      conversionQuantity,
+      autoConvert,
+      conversionNotes,
+    } = req.body;
 
     const existingVariant = await ProductVariant.findById(
       req.params.id
@@ -90,9 +123,37 @@ export const updateVariant = asyncHandler(async (req, res) => {
       return res.status(404).json({ message: "Product variant not found" });
     }
 
+    if (conversionSource) {
+      await validateConversionRequest({
+        productId: existingVariant.product,
+        conversionSourceId: conversionSource,
+        variantId: existingVariant._id,
+      });
+    }
+
     // Build update data
-    const updateData = { unit, size, price, quantity, supplier_price };
+    const updateData = {
+      unit,
+      size,
+      price,
+      quantity,
+      supplier_price,
+    };
     if (color !== undefined) updateData.color = color;
+    if (conversionNotes !== undefined) updateData.conversionNotes = conversionNotes;
+
+    if (conversionSource !== undefined) {
+      updateData.conversionSource = conversionSource || null;
+    }
+
+    if (autoConvert !== undefined) {
+      updateData.autoConvert = Boolean(autoConvert) && Boolean(conversionSource || existingVariant.conversionSource);
+    }
+
+    if (conversionQuantity !== undefined) {
+      updateData.conversionQuantity =
+        Number(conversionQuantity) > 0 ? Number(conversionQuantity) : 1;
+    }
 
     const updatedVariant = await ProductVariant.findByIdAndUpdate(
       req.params.id,

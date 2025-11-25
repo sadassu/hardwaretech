@@ -18,9 +18,13 @@ const UNIT_OPTIONS = [
   "V",
   "amphere",
   "gang",
+  "box",
+  "pack",
+  "roll",
+  "Wey",
 ];
 
-const UpdateVariant = ({ variant }) => {
+const UpdateVariant = ({ variant, product }) => {
   const { updateVariant } = useVariant();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,6 +34,10 @@ const UpdateVariant = ({ variant }) => {
     supplier_price: "",
     price: "",
     quantity: "",
+    conversionSource: "",
+    conversionQuantity: 1,
+    autoConvert: false,
+    conversionNotes: "",
   });
 
   useEffect(() => {
@@ -41,14 +49,31 @@ const UpdateVariant = ({ variant }) => {
         price: variant.price || "",
         supplier_price: variant.supplier_price || "",
         quantity: variant.quantity || "",
+        conversionSource:
+          (typeof variant.conversionSource === "object"
+            ? variant.conversionSource?._id
+            : variant.conversionSource) || "",
+        conversionQuantity: variant.conversionQuantity || 1,
+        autoConvert: Boolean(variant.autoConvert),
+        conversionNotes: variant.conversionNotes || "",
       });
     }
   }, [isOpen, variant]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => {
+      const nextValue = type === "checkbox" ? checked : value;
+      const updated = {
+        ...prev,
+        [name]: nextValue,
+      };
+
+      if (name === "autoConvert" && !checked) {
+        updated.conversionSource = "";
+      }
+
+      return updated;
     });
   };
 
@@ -74,94 +99,160 @@ const UpdateVariant = ({ variant }) => {
         <Edit className="w-4 h-4" />
         </button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
-          Update Variant
-        </h2>
+      <Modal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="bg-[#222831] text-white rounded-2xl w-full max-w-2xl shadow-2xl p-4 sm:p-6"
+      >
+        <div className="max-h-[80vh] overflow-y-auto pr-1 sm:pr-2 space-y-6">
+          <h2 className="text-xl font-semibold">Update Variant</h2>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 w-full max-w-md sm:max-w-lg mx-auto px-4 sm:px-0"
-        >
-          {/* Unit dropdown */}
-          <label className="label">
-            <span className="label-text font-semibold text-gray-200">Unit</span>
-          </label>
-          <select
-            name="unit"
-            value={formData.unit}
-            onChange={handleChange}
-            className="select select-bordered w-full bg-[#30475E] text-white"
-            required
-          >
-            <option value="">No Unit</option>
-            {UNIT_OPTIONS.map((unit) => (
-              <option key={unit} value={unit}>
-                {unit.toUpperCase()}
-              </option>
-            ))}
-          </select>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="label">
+                  <span className="label-text font-semibold text-gray-200">
+                    Unit
+                  </span>
+                </label>
+                <select
+                  name="unit"
+                  value={formData.unit}
+                  onChange={handleChange}
+                  className="select select-bordered w-full bg-[#30475E] text-white"
+                  required
+                >
+                  <option value="">No Unit</option>
+                  {UNIT_OPTIONS.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {unit.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Size */}
-          <TextInput
-            label="Size"
-            type="text"
-            name="size"
-            placeholder="Size (e.g., Small, Medium)"
-            value={formData.size}
-            onChange={handleChange}
-          />
+              <TextInput
+                label="Size"
+                type="text"
+                name="size"
+                placeholder="Size (e.g., Small, Medium)"
+                value={formData.size}
+                onChange={handleChange}
+              />
+            </div>
 
-          {/* Supplier Price */}
-          <TextInput
-            label="Supplier Price"
-            type="number"
-            name="supplier_price"
-            placeholder="Supplier price"
-            value={formData.supplier_price}
-            onChange={handleChange}
-            required
-          />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextInput
+                label="Supplier Price"
+                type="number"
+                name="supplier_price"
+                placeholder="Supplier price"
+                value={formData.supplier_price}
+                onChange={handleChange}
+                required
+              />
 
-          {/* Price */}
-          <TextInput
-            label="Price"
-            type="number"
-            name="price"
-            placeholder="Price"
-            value={formData.price}
-            onChange={handleChange}
-            required
-          />
+              <TextInput
+                label="Price"
+                type="number"
+                name="price"
+                placeholder="Price"
+                value={formData.price}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          {/* Quantity */}
-          <TextInput
-            label="Quantity"
-            type="number"
-            name="quantity"
-            placeholder="Quantity"
-            value={formData.quantity}
-            onChange={handleChange}
-            required
-          />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextInput
+                label="Quantity"
+                type="number"
+                name="quantity"
+                placeholder="Quantity"
+                value={formData.quantity}
+                onChange={handleChange}
+                required
+              />
 
-          {/* Color */}
-          <TextInput
-            label="Color (if only applicable)"
-            type="text"
-            name="color"
-            placeholder="Color (e.g., Red, Blue)"
-            value={formData.color}
-            onChange={handleChange}
-          />
+              <TextInput
+                label="Color (if applicable)"
+                type="text"
+                name="color"
+                placeholder="Color (e.g., Red, Blue)"
+                value={formData.color}
+                onChange={handleChange}
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="btn bg-red-500 text-white border-red-500 w-full"
-          >
-            Update Variant
-          </button>
-        </form>
+            <div className="p-4 border border-dashed border-gray-300/60 rounded-2xl space-y-3">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  name="autoConvert"
+                  checked={formData.autoConvert}
+                  onChange={handleChange}
+                  className="checkbox checkbox-primary"
+                />
+                Allow this variant to convert from another variant
+              </label>
+
+              {formData.autoConvert && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Source Variant
+                    </label>
+                    <select
+                      name="conversionSource"
+                      value={formData.conversionSource}
+                      onChange={handleChange}
+                      className="select select-bordered w-full bg-[#30475E] text-white"
+                      required
+                    >
+                      <option value="">Select a variant</option>
+                      {product?.variants
+                        ?.filter((v) => v._id !== variant?._id)
+                        .map((v) => (
+                          <option key={v._id} value={v._id}>
+                            {v.size ? `${v.size} ${v.unit}` : v.unit} • Stock:{" "}
+                            {v.quantity ?? 0}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <TextInput
+                      label="Units per source"
+                      type="number"
+                      name="conversionQuantity"
+                      min="1"
+                      value={formData.conversionQuantity}
+                      onChange={handleChange}
+                      required
+                    />
+
+                    <TextInput
+                      label="Conversion Notes (optional)"
+                      type="text"
+                      name="conversionNotes"
+                      placeholder="e.g., 1 box = 24 pcs"
+                      value={formData.conversionNotes}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="btn bg-red-500 text-white border-red-500 w-full"
+            >
+              Update Variant
+            </button>
+          </form>
+        </div>
       </Modal>
     </>
   );

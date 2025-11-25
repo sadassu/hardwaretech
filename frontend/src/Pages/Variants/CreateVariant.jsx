@@ -18,6 +18,10 @@ const UNIT_OPTIONS = [
   "V",
   "amphere", 
   "gang",
+  "box",
+  "pack",
+  "roll",
+  "Wey",
 ];
 
 const CreateVariant = ({ product }) => {
@@ -31,12 +35,26 @@ const CreateVariant = ({ product }) => {
     quantity: "",
     supplier_price: "",
     color: "",
+    conversionSource: "",
+    conversionQuantity: 1,
+    autoConvert: false,
+    conversionNotes: "",
   });
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => {
+      const nextValue = type === "checkbox" ? checked : value;
+      const updated = {
+        ...prev,
+        [name]: nextValue,
+      };
+
+      if (name === "autoConvert" && !checked) {
+        updated.conversionSource = "";
+      }
+
+      return updated;
     });
   };
 
@@ -57,6 +75,10 @@ const CreateVariant = ({ product }) => {
       quantity: "",
       supplier_price: "",
       color: "",
+      conversionSource: "",
+      conversionQuantity: 1,
+      autoConvert: false,
+      conversionNotes: "",
     });
 
     setHasColor(false);
@@ -74,117 +96,182 @@ const CreateVariant = ({ product }) => {
         <span className="hidden sm:inline">Add Variant</span>
       </button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
-          Add Variant for "{product?.name}"
-        </h2>
+      <Modal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="bg-[#222831] text-white rounded-2xl w-full max-w-2xl shadow-2xl p-4 sm:p-6"
+      >
+        <div className="max-h-[80vh] overflow-y-auto pr-1 sm:pr-2 space-y-6">
+          <h2 className="text-xl font-semibold">
+            Add Variant for "{product?.name}"
+          </h2>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 w-full max-w-md sm:max-w-lg mx-auto px-4 sm:px-0"
-        >
-          {/* Unit dropdown */}
-          <div>
-            <label htmlFor="unit" className="block text-sm font-medium mb-1">
-              Unit
-            </label>
-            <select
-              id="unit"
-              name="unit"
-              value={formData.unit}
-              onChange={handleChange}
-              className="select select-bordered w-full bg-[#30475E] text-white"
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="unit" className="block text-sm font-medium mb-1">
+                  Unit
+                </label>
+                <select
+                  id="unit"
+                  name="unit"
+                  value={formData.unit}
+                  onChange={handleChange}
+                  className="select select-bordered w-full bg-[#30475E] text-white"
+                >
+                  {UNIT_OPTIONS.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {unit.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <TextInput
+                label="Size"
+                type="text"
+                name="size"
+                placeholder="e.g., small, medium"
+                value={formData.size}
+                onChange={handleChange}
+                className="w-full"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextInput
+                label="Supplier Price"
+                type="number"
+                name="supplier_price"
+                placeholder="Supplier price"
+                value={formData.supplier_price}
+                onChange={handleChange}
+                required
+                className="w-full"
+              />
+
+              <TextInput
+                label="Retail Price"
+                type="number"
+                name="price"
+                placeholder="Retail Price"
+                value={formData.price}
+                onChange={handleChange}
+                required
+                className="w-full"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextInput
+                label="Quantity"
+                type="number"
+                name="quantity"
+                placeholder="Quantity"
+                value={formData.quantity}
+                onChange={handleChange}
+                required
+                className="w-full"
+              />
+
+              <div className="flex items-center gap-3 rounded-2xl border border-gray-600/40 px-4 py-3">
+                <input
+                  type="checkbox"
+                  id="hasColor"
+                  checked={hasColor}
+                  onChange={(e) => setHasColor(e.target.checked)}
+                  className="checkbox checkbox-primary"
+                />
+                <label htmlFor="hasColor" className="text-sm font-medium">
+                  Variant has a color option
+                </label>
+              </div>
+            </div>
+
+            {hasColor && (
+              <TextInput
+                label="Color"
+                type="text"
+                name="color"
+                placeholder="e.g., Red, Blue"
+                value={formData.color}
+                onChange={handleChange}
+                required={hasColor}
+                className="w-full"
+              />
+            )}
+
+            <div className="p-4 border border-dashed border-gray-300/60 rounded-2xl space-y-3">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  name="autoConvert"
+                  checked={formData.autoConvert}
+                  onChange={handleChange}
+                  className="checkbox checkbox-primary"
+                />
+                Allow this variant to convert from another variant
+              </label>
+
+              {formData.autoConvert && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Source Variant
+                    </label>
+                    <select
+                      name="conversionSource"
+                      value={formData.conversionSource}
+                      onChange={handleChange}
+                      className="select select-bordered w-full bg-[#30475E] text-white"
+                      required
+                    >
+                      <option value="">Select a variant to break down</option>
+                      {product?.variants?.map((variant) => (
+                        <option key={variant._id} value={variant._id}>
+                          {variant.size
+                            ? `${variant.size} ${variant.unit}`
+                            : variant.unit}{" "}
+                          • Stock: {variant.quantity ?? 0}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <TextInput
+                      label="Units per source"
+                      type="number"
+                      name="conversionQuantity"
+                      min="1"
+                      value={formData.conversionQuantity}
+                      onChange={handleChange}
+                      required
+                      className="w-full"
+                    />
+
+                    <TextInput
+                      label="Conversion Notes (optional)"
+                      type="text"
+                      name="conversionNotes"
+                      placeholder="e.g., 1 set = 100 meters"
+                      value={formData.conversionNotes}
+                      onChange={handleChange}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="btn text-white border-red-500 bg-red-500 w-full"
             >
-              {UNIT_OPTIONS.map((unit) => (
-                <option key={unit} value={unit}>
-                  {unit.toUpperCase()}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Size */}
-          <TextInput
-            label="Size"
-            type="text"
-            name="size"
-            placeholder="e.g., small, medium"
-            value={formData.size}
-            onChange={handleChange}
-            className="w-full"
-          />
-
-          {/* Supplier Price */}
-          <TextInput
-            label="Supplier Price"
-            type="number"
-            name="supplier_price"
-            placeholder="Supplier price"
-            value={formData.supplier_price}
-            onChange={handleChange}
-            required
-            className="w-full"
-          />
-
-          {/* Price */}
-          <TextInput
-            label="Retail Price"
-            type="number"
-            name="price"
-            placeholder="Retail Price"
-            value={formData.price}
-            onChange={handleChange}
-            required
-            className="w-full"
-          />
-
-          {/* Quantity */}
-          <TextInput
-            label="Quantity"
-            type="number"
-            name="quantity"
-            placeholder="Quantity"
-            value={formData.quantity}
-            onChange={handleChange}
-            required
-            className="w-full"
-          />
-
-          {/* Checkbox: has color */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="hasColor"
-              checked={hasColor}
-              onChange={(e) => setHasColor(e.target.checked)}
-              className="w-5 h-5 accent-[#f05454] border-2 border-[#f05454] rounded"
-            />
-            <label htmlFor="hasColor" className="text-sm font-medium">
-              This variant has a color
-            </label>
-          </div>
-
-          {/* Color input (conditionally rendered) */}
-          {hasColor && (
-            <TextInput
-              label="Color"
-              type="text"
-              name="color"
-              placeholder="e.g., Red, Blue"
-              value={formData.color}
-              onChange={handleChange}
-              required={hasColor}
-              className="w-full"
-            />
-          )}
-
-          <button
-            type="submit"
-            className="btn text-white border-red-500 bg-red-500 w-full"
-          >
-            Create Variant
-          </button>
-        </form>
+              Create Variant
+            </button>
+          </form>
+        </div>
       </Modal>
     </>
   );
