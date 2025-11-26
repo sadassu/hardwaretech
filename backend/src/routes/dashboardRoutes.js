@@ -4,6 +4,9 @@ import {
   getStockStatus,
   getSupplyAndSalesComparison,
   getOverallSalesStats,
+  getFastMovingProducts,
+  getProductSalesMovement,
+  getPendingReservationCount,
 } from "../controllers/dashboardController.js";
 import requireAuth from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -22,6 +25,27 @@ router.get(
   requireAuth,
   requireRole(["admin", "cashier"]),
   getOverallSalesStats
+);
+
+router.get(
+  "/supply/fast-moving",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  getFastMovingProducts
+);
+
+router.get(
+  "/sales/product-movement",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  getProductSalesMovement
+);
+
+router.get(
+  "/reservations/pending-count",
+  requireAuth,
+  requireRole(["admin", "cashier", "staff"]),
+  getPendingReservationCount
 );
 
 router.get(

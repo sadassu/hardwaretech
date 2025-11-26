@@ -22,10 +22,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && [401, 403].includes(error.response.status)) {
-      // Clear stale user data
-      localStorage.removeItem("user");
+      // Don't redirect or clear storage for user reservation cancellation
+      // Let the component handle the error gracefully
+      const url = error.config?.url || "";
+      if (url.includes("/reservations/") && url.includes("/cancel")) {
+        // Return error without clearing storage or redirecting
+        // The component will handle this error appropriately
+        return Promise.reject(error);
+      }
 
-      // Optional: redirect to login or reload
+      // For other endpoints, clear stale user data and redirect
+      localStorage.removeItem("user");
       window.location.href = "/login";
     }
     return Promise.reject(error);

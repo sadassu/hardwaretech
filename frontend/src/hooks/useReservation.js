@@ -70,7 +70,15 @@ export const useReservation = () => {
   };
 
   const cancelReservation = async (reservationId) => {
-    if (!user) throw new Error("You must be logged in.");
+    if (!user) {
+      setToast({
+        show: true,
+        color: "error-toast",
+        header: "Error",
+        message: "You must be logged in to cancel a reservation.",
+      });
+      throw new Error("You must be logged in.");
+    }
 
     try {
       const res = await api.patch(
@@ -88,14 +96,19 @@ export const useReservation = () => {
       updateReservation(updatedReservation);
       
       // Refresh user reservations with current filter
-      await fetchUserReservations(user.token, user.userId, {
-        page,
-        limit: 20,
-        status: "all", // User reservations page typically shows all
-      });
-      
-      // Update status counts
-      await updateStatusCounts(user.token);
+      try {
+        await fetchUserReservations(user.token, user.userId, {
+          page,
+          limit: 20,
+          status: "all", // User reservations page typically shows all
+        });
+        
+        // Update status counts
+        await updateStatusCounts(user.token);
+      } catch (refreshError) {
+        // If refresh fails, don't fail the cancellation - it's already successful
+        console.warn("Failed to refresh reservations after cancellation:", refreshError);
+      }
 
       setToast({
         show: true,
@@ -108,6 +121,18 @@ export const useReservation = () => {
     } catch (error) {
       console.error("Failed to cancel reservation:", error);
 
+      // Handle 401/403 errors gracefully without logging out
+      if (error.response && [401, 403].includes(error.response.status)) {
+        setToast({
+          show: true,
+          color: "error-toast",
+          header: "Authentication Error",
+          message: "Your session may have expired. Please try refreshing the page.",
+        });
+        // Don't throw the error to prevent redirect
+        return null;
+      }
+
       setToast({
         show: true,
         color: "error-toast",
@@ -118,7 +143,12 @@ export const useReservation = () => {
           "Failed to cancel reservation",
       });
 
-      throw error;
+      // Only throw non-auth errors
+      if (!error.response || ![401, 403].includes(error.response.status)) {
+        throw error;
+      }
+      
+      return null;
     }
   };
 

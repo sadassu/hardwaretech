@@ -35,6 +35,19 @@ const productVariantSchema = new mongoose.Schema(
     price: { type: Number, required: true, min: 0 },
     supplier_price: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, default: 0, min: 0 },
+    includePerText: {
+      type: Boolean,
+      default: false,
+    },
+    dimension: {
+      type: String,
+      trim: true,
+    },
+    dimensionType: {
+      type: String,
+      enum: ["diameter", "thickness", "length", "width", "height", null],
+      default: null,
+    },
     conversionSource: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ProductVariant",

@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
 import { Plus } from "lucide-react";
+import { formatVariantLabel } from "../../utils/formatVariantLabel.js";
 
 const UNIT_OPTIONS = [
   "pcs",
@@ -26,19 +27,21 @@ const UNIT_OPTIONS = [
 
 const CreateVariant = ({ product }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [hasColor, setHasColor] = useState(false);
   const { createVariant } = useVariant();
   const [formData, setFormData] = useState({
-    unit: "pcs",
+    unit: "",
     size: "",
+    dimension: "",
+    dimensionType: "",
+    color: "",
+    supplier_price: "",
     price: "",
     quantity: "",
-    supplier_price: "",
-    color: "",
     conversionSource: "",
     conversionQuantity: 1,
     autoConvert: false,
     conversionNotes: "",
+    includePerText: false,
   });
 
   const handleChange = (e) => {
@@ -65,23 +68,29 @@ const CreateVariant = ({ product }) => {
       return toast.error("Product not specified");
     }
 
-    await createVariant(product._id, formData, hasColor);
+    const payload = { ...formData };
+    if (!payload.unit) delete payload.unit;
+    if (!payload.color) delete payload.color;
+
+    await createVariant(product._id, payload);
 
     // reset
     setFormData({
-      unit: "pcs",
+      unit: "",
       size: "",
+      dimension: "",
+      dimensionType: "",
+      color: "",
+      supplier_price: "",
       price: "",
       quantity: "",
-      supplier_price: "",
-      color: "",
       conversionSource: "",
       conversionQuantity: 1,
       autoConvert: false,
       conversionNotes: "",
+      includePerText: false,
     });
 
-    setHasColor(false);
     setIsOpen(false);
   };
 
@@ -102,23 +111,24 @@ const CreateVariant = ({ product }) => {
         className="bg-[#222831] text-white rounded-2xl w-full max-w-2xl shadow-2xl p-4 sm:p-6"
       >
         <div className="max-h-[80vh] overflow-y-auto pr-1 sm:pr-2 space-y-6">
-          <h2 className="text-xl font-semibold">
-            Add Variant for "{product?.name}"
-          </h2>
+          <h2 className="text-xl font-semibold">Add Variant</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="unit" className="block text-sm font-medium mb-1">
-                  Unit
+                <label className="label">
+                  <span className="label-text font-semibold text-gray-200">
+                    Unit
+                  </span>
                 </label>
                 <select
-                  id="unit"
                   name="unit"
                   value={formData.unit}
                   onChange={handleChange}
                   className="select select-bordered w-full bg-[#30475E] text-white"
+                  required
                 >
+                  <option value="">No Unit</option>
                   {UNIT_OPTIONS.map((unit) => (
                     <option key={unit} value={unit}>
                       {unit.toUpperCase()}
@@ -127,15 +137,73 @@ const CreateVariant = ({ product }) => {
                 </select>
               </div>
 
-              <TextInput
-                label="Size"
-                type="text"
-                name="size"
-                placeholder="e.g., small, medium"
-                value={formData.size}
+              <div>
+                <label htmlFor="size" className="block text-sm font-medium mb-1">
+                  Size <span className="text-gray-400 text-xs font-normal">(optional)</span>
+                </label>
+                <input
+                  id="size"
+                  type="text"
+                  name="size"
+                  placeholder="Size (e.g., Small, Medium)"
+                  value={formData.size}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="dimension" className="block text-sm font-medium mb-1">
+                  Dimension <span className="text-gray-400 text-xs font-normal">(optional)</span>
+                </label>
+                <input
+                  id="dimension"
+                  type="text"
+                  name="dimension"
+                  placeholder="e.g., 1 inch, 2.5 cm"
+                  value={formData.dimension}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
+                />
+                <p className="text-xs text-gray-400 mt-1">e.g., diameter, thickness</p>
+              </div>
+
+              <div>
+                <label htmlFor="dimensionType" className="block text-sm font-medium mb-1">
+                  Dimension Type <span className="text-gray-400 text-xs font-normal">(optional)</span>
+                </label>
+                <select
+                  id="dimensionType"
+                  name="dimensionType"
+                  value={formData.dimensionType}
+                  onChange={handleChange}
+                  className="select select-bordered w-full bg-[#30475E] text-white"
+                >
+                  <option value="">None</option>
+                  <option value="diameter">Diameter</option>
+                  <option value="thickness">Thickness</option>
+                  <option value="length">Length</option>
+                  <option value="width">Width</option>
+                  <option value="height">Height</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-2xl border border-gray-600/40 px-4 py-3">
+              <input
+                type="checkbox"
+                id="includePerText"
+                name="includePerText"
+                checked={formData.includePerText}
                 onChange={handleChange}
-                className="w-full"
+                className="checkbox checkbox-primary mt-1"
               />
+              <label htmlFor="includePerText" className="text-sm font-medium leading-relaxed">
+                Insert the word <span className="font-semibold text-blue-200">"per"</span> between size and unit
+                (e.g., <span className="font-semibold">1 set per 30 m</span>)
+              </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -147,18 +215,16 @@ const CreateVariant = ({ product }) => {
                 value={formData.supplier_price}
                 onChange={handleChange}
                 required
-                className="w-full"
               />
 
               <TextInput
-                label="Retail Price"
+                label="Price"
                 type="number"
                 name="price"
-                placeholder="Retail Price"
+                placeholder="Price"
                 value={formData.price}
                 onChange={handleChange}
                 required
-                className="w-full"
               />
             </div>
 
@@ -171,35 +237,18 @@ const CreateVariant = ({ product }) => {
                 value={formData.quantity}
                 onChange={handleChange}
                 required
-                className="w-full"
+                min="0"
               />
 
-              <div className="flex items-center gap-3 rounded-2xl border border-gray-600/40 px-4 py-3">
-                <input
-                  type="checkbox"
-                  id="hasColor"
-                  checked={hasColor}
-                  onChange={(e) => setHasColor(e.target.checked)}
-                  className="checkbox checkbox-primary"
-                />
-                <label htmlFor="hasColor" className="text-sm font-medium">
-                  Variant has a color option
-                </label>
-              </div>
-            </div>
-
-            {hasColor && (
               <TextInput
-                label="Color"
+                label="Color (if applicable)"
                 type="text"
                 name="color"
-                placeholder="e.g., Red, Blue"
+                placeholder="Color (e.g., Red, Blue)"
                 value={formData.color}
                 onChange={handleChange}
-                required={hasColor}
-                className="w-full"
               />
-            )}
+            </div>
 
             <div className="p-4 border border-dashed border-gray-300/60 rounded-2xl space-y-3">
               <label className="flex items-center gap-2 text-sm font-medium">
@@ -226,13 +275,11 @@ const CreateVariant = ({ product }) => {
                       className="select select-bordered w-full bg-[#30475E] text-white"
                       required
                     >
-                      <option value="">Select a variant to break down</option>
+                      <option value="">Select a variant</option>
                       {product?.variants?.map((variant) => (
                         <option key={variant._id} value={variant._id}>
-                          {variant.size
-                            ? `${variant.size} ${variant.unit}`
-                            : variant.unit}{" "}
-                          • Stock: {variant.quantity ?? 0}
+                          {formatVariantLabel(variant) || variant.unit || "variant"} • Stock:{" "}
+                          {variant.quantity ?? 0}
                         </option>
                       ))}
                     </select>
@@ -247,17 +294,15 @@ const CreateVariant = ({ product }) => {
                       value={formData.conversionQuantity}
                       onChange={handleChange}
                       required
-                      className="w-full"
                     />
 
                     <TextInput
                       label="Conversion Notes (optional)"
                       type="text"
                       name="conversionNotes"
-                      placeholder="e.g., 1 set = 100 meters"
+                      placeholder="e.g., 1 box = 24 pcs"
                       value={formData.conversionNotes}
                       onChange={handleChange}
-                      className="w-full"
                     />
                   </div>
                 </div>
@@ -266,7 +311,7 @@ const CreateVariant = ({ product }) => {
 
             <button
               type="submit"
-              className="btn text-white border-red-500 bg-red-500 w-full"
+              className="btn bg-red-500 text-white border-red-500 w-full"
             >
               Create Variant
             </button>

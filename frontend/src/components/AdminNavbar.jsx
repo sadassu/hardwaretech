@@ -46,12 +46,12 @@ function AdminNavbar() {
             <div className="h-6 w-px bg-gray-600/50"></div>
             
             {/* Time Display */}
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
               <span className="text-gray-200 font-mono font-semibold text-sm tracking-wider">
                 {currentTime}
               </span>
-            </div>
+                </div>
           </div>
         )}
 

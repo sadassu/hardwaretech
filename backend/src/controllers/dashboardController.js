@@ -1,6 +1,9 @@
+import mongoose from "mongoose";
+import Product from "../models/Product.js";
 import ProductVariant from "../models/ProductVariant.js";
 import Sale from "../models/Sale.js";
 import SupplyHistory from "../models/SupplyHistory.js";
+import Reservation from "../models/Reservation.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 /**
@@ -139,6 +142,573 @@ export const getOverallSalesStats = asyncHandler(async (req, res) => {
       };
 
   res.json(stats);
+});
+
+const getWeekRange = (year, week) => {
+  const simple = new Date(year, 0, 1 + (week - 1) * 7);
+  const dayOfWeek = simple.getDay() || 7; // Sunday => 7
+  const weekStart = new Date(simple);
+  weekStart.setDate(simple.getDate() - dayOfWeek + 1);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  return { start: weekStart, end: weekEnd };
+};
+
+const formatWeekRange = (start, end) => {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+  return `${formatter.format(start)} - ${formatter.format(end)}`;
+};
+
+/**
+ * Get supply history movement broken down per week for a specific month/year,
+ * optionally filtered by product category. Each week returns all products that
+ * moved within the selected category.
+ */
+export const getFastMovingProducts = asyncHandler(async (req, res) => {
+  const year = parseInt(req.query.year, 10);
+  const month = parseInt(req.query.month, 10);
+  const category = req.query.category;
+
+  if (!year || !month) {
+    return res.status(400).json({
+      success: false,
+      message: "Both 'year' and 'month' query params are required.",
+    });
+  }
+
+  const startOfMonth = new Date(year, month - 1, 1);
+  const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+
+  const productQuery =
+    category && category !== "all"
+      ? { category: new mongoose.Types.ObjectId(category) }
+      : {};
+
+  const products = await Product.find(productQuery)
+    .select("_id name")
+    .lean();
+
+  if (products.length === 0) {
+    return res.json({
+      success: true,
+      data: [],
+      meta: {
+        filters: { year, month, category: category || "all" },
+        series: [],
+        generatedAt: new Date(),
+      },
+    });
+  }
+
+  const productSeries = products.map((product) => ({
+    productId: product._id.toString(),
+    label: product.name,
+  }));
+
+  const productIdList = products.map((product) => product._id);
+
+  const basePipeline = [
+    {
+      $match: {
+        supplied_at: {
+          $gte: startOfMonth,
+          $lte: endOfMonth,
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "productvariants",
+        localField: "product_variant",
+        foreignField: "_id",
+        as: "variant",
+      },
+    },
+    { $unwind: "$variant" },
+    {
+      $lookup: {
+        from: "products",
+        localField: "variant.product",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    { $unwind: "$product" },
+  ];
+
+  if (category && category !== "all") {
+    basePipeline.push({
+      $match: {
+        "product._id": { $in: productIdList },
+      },
+    });
+  }
+
+  const weeklyPipeline = [
+    ...basePipeline,
+    {
+      $group: {
+        _id: {
+          year: { $isoWeekYear: "$supplied_at" },
+          week: { $isoWeek: "$supplied_at" },
+          productId: "$product._id",
+        },
+        totalQuantity: { $sum: "$quantity" },
+        productName: { $first: "$product.name" },
+        lastSupplied: { $max: "$supplied_at" },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: "$_id.year",
+          week: "$_id.week",
+        },
+        totalQuantity: { $sum: "$totalQuantity" },
+        products: {
+          $push: {
+            productId: "$_id.productId",
+            name: "$productName",
+            totalQuantity: "$totalQuantity",
+            lastSupplied: "$lastSupplied",
+          },
+        },
+      },
+    },
+    { $sort: { "_id.year": 1, "_id.week": 1 } },
+    {
+      $project: {
+        _id: 0,
+        year: "$_id.year",
+        week: "$_id.week",
+        totalQuantity: 1,
+        products: 1,
+      },
+    },
+  ];
+
+  const dailyPipeline = [
+    ...basePipeline,
+    {
+      $addFields: {
+        isoYear: { $isoWeekYear: "$supplied_at" },
+        isoWeek: { $isoWeek: "$supplied_at" },
+        isoDay: { $subtract: [{ $isoDayOfWeek: "$supplied_at" }, 1] },
+        dateParts: {
+          year: { $year: "$supplied_at" },
+          month: { $month: "$supplied_at" },
+          day: { $dayOfMonth: "$supplied_at" },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: "$isoYear",
+          week: "$isoWeek",
+          dayIndex: "$isoDay",
+          productId: "$product._id",
+        },
+        totalQuantity: { $sum: "$quantity" },
+        dateParts: { $first: "$dateParts" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        year: "$_id.year",
+        week: "$_id.week",
+        dayIndex: "$_id.dayIndex",
+        productId: "$_id.productId",
+        totalQuantity: 1,
+        date: {
+          $dateFromParts: {
+            year: "$dateParts.year",
+            month: "$dateParts.month",
+            day: "$dateParts.day",
+          },
+        },
+      },
+    },
+    { $sort: { year: 1, week: 1, dayIndex: 1 } },
+  ];
+
+  const [weeklyResults, dailyResults] = await Promise.all([
+    SupplyHistory.aggregate(weeklyPipeline),
+    SupplyHistory.aggregate(dailyPipeline),
+  ]);
+
+  const dailyMap = new Map();
+  dailyResults.forEach((entry) => {
+    const key = `${entry.year}-${entry.week}`;
+    if (!dailyMap.has(key)) {
+      dailyMap.set(key, []);
+    }
+    dailyMap.get(key).push(entry);
+  });
+
+  const formatted = weeklyResults.map((entry) => {
+    const { start, end } = getWeekRange(entry.year, entry.week);
+    const weekLabel = `Week ${String(entry.week).padStart(2, "0")}`;
+    const totals = productSeries.reduce((acc, product) => {
+      acc[product.productId] = 0;
+      return acc;
+    }, {});
+
+    entry.products.forEach((product) => {
+      const key = product.productId.toString();
+      if (key in totals) {
+        totals[key] = product.totalQuantity;
+      }
+    });
+
+    const weekKey = `${entry.year}-${entry.week}`;
+    const weekDailyEntries = dailyMap.get(weekKey) || [];
+    const dailyTotals = Array.from({ length: 7 }, (_, index) => {
+      const dayDate = new Date(start);
+      dayDate.setDate(start.getDate() + index);
+
+      const dayTotals = productSeries.reduce((acc, product) => {
+        acc[product.productId] = 0;
+        return acc;
+      }, {});
+
+      weekDailyEntries
+        .filter((day) => day.dayIndex === index)
+        .forEach((day) => {
+          const key = day.productId.toString();
+          if (key in dayTotals) {
+            dayTotals[key] = day.totalQuantity;
+          }
+        });
+
+      return {
+        dayIndex: index,
+        isoDate: dayDate.toISOString(),
+        label: dayDate.toLocaleDateString("en-US", { weekday: "short" }),
+        fullLabel: dayDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        totals: dayTotals,
+      };
+    });
+
+    return {
+      ...entry,
+      weekLabel,
+      rangeText: formatWeekRange(start, end),
+      weekStart: start,
+      weekEnd: end,
+      products: entry.products.sort(
+        (a, b) => b.totalQuantity - a.totalQuantity
+      ),
+      totals,
+      dailyTotals,
+    };
+  });
+
+  res.json({
+    success: true,
+    data: formatted,
+    meta: {
+      filters: {
+        year,
+        month,
+        category: category || "all",
+      },
+      series: productSeries,
+      generatedAt: new Date(),
+    },
+  });
+});
+
+/**
+ * Get product sales movement (similar to supply movement but based on sales)
+ */
+export const getProductSalesMovement = asyncHandler(async (req, res) => {
+  const year = parseInt(req.query.year, 10);
+  const month = parseInt(req.query.month, 10);
+  const category = req.query.category;
+
+  if (!year || !month) {
+    return res.status(400).json({
+      success: false,
+      message: "Both 'year' and 'month' query params are required.",
+    });
+  }
+
+  const startOfMonth = new Date(year, month - 1, 1);
+  const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+
+  const productQuery =
+    category && category !== "all"
+      ? { category: new mongoose.Types.ObjectId(category) }
+      : {};
+
+  const products = await Product.find(productQuery)
+    .select("_id name")
+    .lean();
+
+  if (products.length === 0) {
+    return res.json({
+      success: true,
+      data: [],
+      meta: {
+        filters: { year, month, category: category || "all" },
+        series: [],
+        generatedAt: new Date(),
+      },
+    });
+  }
+
+  const productSeries = products.map((product) => ({
+    productId: product._id.toString(),
+    label: product.name,
+  }));
+
+  const productIdList = products.map((product) => product._id);
+
+  const basePipeline = [
+    {
+      $match: {
+        saleDate: {
+          $gte: startOfMonth,
+          $lte: endOfMonth,
+        },
+      },
+    },
+    { $unwind: "$items" },
+    {
+      $lookup: {
+        from: "productvariants",
+        localField: "items.productVariantId",
+        foreignField: "_id",
+        as: "variant",
+      },
+    },
+    { $unwind: "$variant" },
+    {
+      $lookup: {
+        from: "products",
+        localField: "variant.product",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    { $unwind: "$product" },
+  ];
+
+  if (category && category !== "all") {
+    basePipeline.push({
+      $match: {
+        "product._id": { $in: productIdList },
+      },
+    });
+  }
+
+  const weeklyPipeline = [
+    ...basePipeline,
+    {
+      $group: {
+        _id: {
+          year: { $isoWeekYear: "$saleDate" },
+          week: { $isoWeek: "$saleDate" },
+          productId: "$product._id",
+        },
+        totalQuantity: { $sum: "$items.quantity" },
+        totalSales: { $sum: "$items.subtotal" },
+        productName: { $first: "$product.name" },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: "$_id.year",
+          week: "$_id.week",
+        },
+        totalQuantity: { $sum: "$totalQuantity" },
+        products: {
+          $push: {
+            productId: "$_id.productId",
+            name: "$productName",
+            totalQuantity: "$totalQuantity",
+            totalSales: "$totalSales",
+          },
+        },
+      },
+    },
+    { $sort: { "_id.year": 1, "_id.week": 1 } },
+    {
+      $project: {
+        _id: 0,
+        year: "$_id.year",
+        week: "$_id.week",
+        totalQuantity: 1,
+        products: 1,
+      },
+    },
+  ];
+
+  const dailyPipeline = [
+    ...basePipeline,
+    {
+      $addFields: {
+        isoYear: { $isoWeekYear: "$saleDate" },
+        isoWeek: { $isoWeek: "$saleDate" },
+        isoDay: { $subtract: [{ $isoDayOfWeek: "$saleDate" }, 1] },
+        dateParts: {
+          year: { $year: "$saleDate" },
+          month: { $month: "$saleDate" },
+          day: { $dayOfMonth: "$saleDate" },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: "$isoYear",
+          week: "$isoWeek",
+          dayIndex: "$isoDay",
+          productId: "$product._id",
+        },
+        totalQuantity: { $sum: "$items.quantity" },
+        totalSales: { $sum: "$items.subtotal" },
+        dateParts: { $first: "$dateParts" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        year: "$_id.year",
+        week: "$_id.week",
+        dayIndex: "$_id.dayIndex",
+        productId: "$_id.productId",
+        totalQuantity: 1,
+        totalSales: 1,
+        date: {
+          $dateFromParts: {
+            year: "$dateParts.year",
+            month: "$dateParts.month",
+            day: "$dateParts.day",
+          },
+        },
+      },
+    },
+    { $sort: { year: 1, week: 1, dayIndex: 1 } },
+  ];
+
+  const [weeklyResults, dailyResults] = await Promise.all([
+    Sale.aggregate(weeklyPipeline),
+    Sale.aggregate(dailyPipeline),
+  ]);
+
+  const dailyMap = new Map();
+  dailyResults.forEach((entry) => {
+    const key = `${entry.year}-${entry.week}`;
+    if (!dailyMap.has(key)) {
+      dailyMap.set(key, []);
+    }
+    dailyMap.get(key).push(entry);
+  });
+
+  const formatted = weeklyResults.map((entry) => {
+    const { start, end } = getWeekRange(entry.year, entry.week);
+    const weekLabel = `Week ${String(entry.week).padStart(2, "0")}`;
+    const totals = productSeries.reduce((acc, product) => {
+      acc[product.productId] = 0;
+      return acc;
+    }, {});
+    const salesTotals = productSeries.reduce((acc, product) => {
+      acc[product.productId] = 0;
+      return acc;
+    }, {});
+
+    entry.products.forEach((product) => {
+      const key = product.productId.toString();
+      if (key in totals) {
+        totals[key] = product.totalQuantity;
+        salesTotals[key] = product.totalSales || 0;
+      }
+    });
+
+    const weekKey = `${entry.year}-${entry.week}`;
+    const weekDailyEntries = dailyMap.get(weekKey) || [];
+    const dailyTotals = Array.from({ length: 7 }, (_, index) => {
+      const dayDate = new Date(start);
+      dayDate.setDate(start.getDate() + index);
+
+      const dayTotals = productSeries.reduce((acc, product) => {
+        acc[product.productId] = 0;
+        return acc;
+      }, {});
+      const daySalesTotals = productSeries.reduce((acc, product) => {
+        acc[product.productId] = 0;
+        return acc;
+      }, {});
+
+      weekDailyEntries
+        .filter((day) => day.dayIndex === index)
+        .forEach((day) => {
+          const key = day.productId.toString();
+          if (key in dayTotals) {
+            dayTotals[key] = day.totalQuantity;
+            daySalesTotals[key] = day.totalSales || 0;
+          }
+        });
+
+      return {
+        dayIndex: index,
+        isoDate: dayDate.toISOString(),
+        label: dayDate.toLocaleDateString("en-US", { weekday: "short" }),
+        fullLabel: dayDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        totals: dayTotals,
+        salesTotals: daySalesTotals,
+      };
+    });
+
+    return {
+      ...entry,
+      weekLabel,
+      rangeText: formatWeekRange(start, end),
+      weekStart: start,
+      weekEnd: end,
+      products: entry.products.sort(
+        (a, b) => (b.totalSales || 0) - (a.totalSales || 0)
+      ),
+      totals,
+      salesTotals,
+      dailyTotals,
+    };
+  });
+
+  res.json({
+    success: true,
+    data: formatted,
+    meta: {
+      filters: {
+        year,
+        month,
+        category: category || "all",
+      },
+      series: productSeries,
+      generatedAt: new Date(),
+    },
+  });
+});
+
+/**
+ * Get count of pending reservations (for notification badge)
+ */
+export const getPendingReservationCount = asyncHandler(async (req, res) => {
+  const count = await Reservation.countDocuments({ status: "pending" });
+  res.json({ count });
 });
 
 /**

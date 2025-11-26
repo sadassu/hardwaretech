@@ -12,10 +12,17 @@ function CancelReservation({ reservationId }) {
     setLoading(true);
 
     try {
-      await cancelReservation(reservationId);
-      setIsOpen(false);
+      const result = await cancelReservation(reservationId);
+      // Only close modal if cancellation was successful (result is not null)
+      if (result !== null) {
+        setIsOpen(false);
+      }
+      // If result is null, it means there was an auth error that was handled gracefully
+      // User stays on the page and sees the error toast
     } catch (error) {
       console.error("Error cancelling reservation:", error);
+      // Error is already handled in cancelReservation hook with toast notification
+      // User remains on the page
     } finally {
       setLoading(false);
     }

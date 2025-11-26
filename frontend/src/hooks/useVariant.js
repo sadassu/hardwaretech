@@ -80,12 +80,11 @@ export const useVariant = () => {
   };
 
   // ✅ Create Variant
-  const createVariant = async (productId, formData, hasColor) => {
+  const createVariant = async (productId, formData) => {
     try {
       const payload = {
         productId,
         ...formData,
-        color: hasColor ? formData.color : null,
         conversionSource: formData.conversionSource || null,
         conversionQuantity: formData.conversionQuantity
           ? Number(formData.conversionQuantity)

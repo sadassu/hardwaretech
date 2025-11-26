@@ -128,7 +128,7 @@ export const completeReservation = asyncHandler(async (req, res) => {
             products: products
           }
         ).then(() => {
-          console.log(`✅ Completion email sent to ${populatedReservation.userId.email}`);
+        console.log(`✅ Completion email sent to ${populatedReservation.userId.email}`);
         });
       }
     } catch (emailError) {

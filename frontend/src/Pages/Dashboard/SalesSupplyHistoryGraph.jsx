@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useFetch } from "../../hooks/useFetch";
 import {
@@ -71,6 +71,35 @@ function SalesSupplyHistoryGraph() {
   };
 
   const summary = getSummary();
+
+  const interpretation = useMemo(() => {
+    if (!summary || !salesData?.data?.length) return [];
+
+    const optionLabel = option === "weekly" ? "week" : "month";
+    const lines = [];
+
+      lines.push(
+      `Total supply spending was ${formatPrice(
+          summary.totalSupply
+      )} versus ${formatPrice(summary.totalSalesAmount)} in sales for this ${optionLabel} range.`
+      );
+
+    lines.push(
+      `Net profit reached ${formatPrice(summary.totalProfit)}, reflecting a ${summary.profitMargin.toFixed(
+        1
+      )}% margin and ${formatPrice(summary.avgProfit)} average profit per ${optionLabel}.`
+    );
+
+    if (summary.bestPeriod) {
+      lines.push(
+        `Top-performing ${optionLabel}: ${summary.bestPeriod.period} with ${formatPrice(
+          summary.bestPeriod.difference
+        )} profit.`
+      );
+    }
+
+    return lines;
+  }, [summary, salesData, option]);
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
@@ -276,6 +305,21 @@ function SalesSupplyHistoryGraph() {
                   </p>
                 </div>
               </div>
+
+              {interpretation.length > 0 && (
+                <div className="mt-5 rounded-xl border border-dashed border-amber-200 bg-amber-50/60 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-600 mb-3">
+                    Automatic Interpretation
+                  </p>
+                  <ul className="space-y-2 text-sm text-gray-800">
+                    {interpretation.map((line, idx) => (
+                      <li key={idx} className="leading-relaxed">
+                        • {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </>

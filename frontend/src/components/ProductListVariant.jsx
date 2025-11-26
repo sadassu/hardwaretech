@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, AlertTriangle, X, ShoppingCart, Package } from "lucide-react";
 import CreateCart from "../Pages/UserPages/CreateCart";
+import { formatVariantLabel } from "../utils/formatVariantLabel.js";
 
 function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = false }) {
   const [showVariants, setShowVariants] = useState(false);
   const variantMap = new Map(
     (product?.variants || []).map((variant) => [variant._id, variant])
   );
+
+  const getVariantLabel = (variant) =>
+    formatVariantLabel(variant) || variant.unit || variant.size || "";
 
   const getAvailableQuantity = (variant) => {
     if (!variant) return 0;
@@ -154,9 +158,8 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
                               variant.conversionSource
                             );
                             if (!sourceVariant) return null;
-                            const sourceLabel = sourceVariant.size
-                              ? `${sourceVariant.size} ${sourceVariant.unit || ""}`
-                              : sourceVariant.unit || "source";
+                            const sourceLabel =
+                              getVariantLabel(sourceVariant) || "source";
                             return (
                               <p className="text-[11px] text-blue-500">
                                 Auto converts from {sourceLabel} •{" "}
@@ -165,10 +168,10 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
                             );
                           })()}
                           
-                          {variant.size && (
-                              <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold inline-block whitespace-nowrap">
-                              {variant.size} {variant.unit}
-                              </span>
+                          {getVariantLabel(variant) && (
+                            <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold inline-block whitespace-nowrap">
+                              {getVariantLabel(variant)}
+                            </span>
                           )}
                       </div>
                         
@@ -243,9 +246,8 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
                             variant.conversionSource
                           );
                           if (!sourceVariant) return null;
-                          const sourceLabel = sourceVariant.size
-                            ? `${sourceVariant.size} ${sourceVariant.unit || ""}`
-                            : sourceVariant.unit || "source";
+                          const sourceLabel =
+                            getVariantLabel(sourceVariant) || "source";
                           return (
                             <p className="text-[11px] text-blue-500">
                               Auto converts from {sourceLabel} •{" "}
@@ -255,9 +257,9 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
                         })()}
                         
                         {/* Variant Size/Unit - Now below stock */}
-                        {variant.size && (
+                        {getVariantLabel(variant) && (
                           <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold inline-block whitespace-nowrap">
-                            {variant.size} {variant.unit}
+                            {getVariantLabel(variant)}
                           </span>
                         )}
                       </div>

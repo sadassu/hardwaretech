@@ -17,6 +17,8 @@ export const createVariant = asyncHandler(async (req, res) => {
       productId,
       unit,
       size,
+      dimension,
+      dimensionType,
       price,
       quantity,
       supplier_price,
@@ -26,6 +28,7 @@ export const createVariant = asyncHandler(async (req, res) => {
       conversionQuantity,
       autoConvert,
       conversionNotes,
+      includePerText,
     } = req.body;
 
     const existingProduct = await Product.findById(productId).session(session);
@@ -46,13 +49,16 @@ export const createVariant = asyncHandler(async (req, res) => {
     const newVariantData = {
       product: existingProduct._id,
       unit,
-      size,
+      size: size && size.trim() ? size.trim() : undefined,
       price,
       quantity,
       supplier_price,
     };
     if (color) newVariantData.color = color;
+    if (dimension) newVariantData.dimension = dimension;
+    if (dimensionType) newVariantData.dimensionType = dimensionType;
     if (conversionNotes) newVariantData.conversionNotes = conversionNotes;
+    newVariantData.includePerText = Boolean(includePerText);
 
     newVariantData.conversionSource = conversionSource || null;
     newVariantData.autoConvert = Boolean(autoConvert) && Boolean(conversionSource);
@@ -103,6 +109,8 @@ export const updateVariant = asyncHandler(async (req, res) => {
     const {
       unit,
       size,
+      dimension,
+      dimensionType,
       price,
       quantity,
       supplier_price,
@@ -112,6 +120,7 @@ export const updateVariant = asyncHandler(async (req, res) => {
       conversionQuantity,
       autoConvert,
       conversionNotes,
+      includePerText,
     } = req.body;
 
     const existingVariant = await ProductVariant.findById(
@@ -134,13 +143,18 @@ export const updateVariant = asyncHandler(async (req, res) => {
     // Build update data
     const updateData = {
       unit,
-      size,
+      size: size !== undefined ? (size && size.trim() ? size.trim() : null) : undefined,
       price,
       quantity,
       supplier_price,
     };
     if (color !== undefined) updateData.color = color;
+    if (dimension !== undefined) updateData.dimension = dimension || null;
+    if (dimensionType !== undefined) updateData.dimensionType = dimensionType || null;
     if (conversionNotes !== undefined) updateData.conversionNotes = conversionNotes;
+    if (includePerText !== undefined) {
+      updateData.includePerText = Boolean(includePerText);
+    }
 
     if (conversionSource !== undefined) {
       updateData.conversionSource = conversionSource || null;

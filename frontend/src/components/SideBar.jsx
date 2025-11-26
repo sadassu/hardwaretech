@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import ChangePassword from "../Pages/UserPages/ChangePassword";
 import ChangeName from "../Pages/UserPages/ChangeName";
+import api from "../utils/api";
 
 const SideBar = () => {
   const { user } = useAuthContext();
@@ -24,6 +25,7 @@ const SideBar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [pendingReservations, setPendingReservations] = useState(0);
   const userMenuRef = useRef(null);
 
   // ✅ Close dropdown on outside click
@@ -70,6 +72,37 @@ const SideBar = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const canSeeReservationBadge = user?.roles?.some((role) =>
+    ["admin", "staff", "cashier"].includes(role)
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+    let intervalId;
+
+    const fetchPendingReservations = async () => {
+      if (!canSeeReservationBadge) return;
+      try {
+        const res = await api.get("/dashboard/reservations/pending-count");
+        if (isMounted) {
+          setPendingReservations(res.data?.count || 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch pending reservations:", error.message);
+      }
+    };
+
+    if (canSeeReservationBadge) {
+      fetchPendingReservations();
+      intervalId = setInterval(fetchPendingReservations, 60000);
+    }
+
+    return () => {
+      isMounted = false;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [canSeeReservationBadge]);
 
   const menuItems = [
     {
@@ -213,18 +246,30 @@ const SideBar = () => {
       ${isCollapsed ? "justify-center" : "justify-start"}
     `;
 
+              const showBadge =
+                item.name === "Reservations" && pendingReservations > 0;
               return (
                 <li key={item.name}>
                   {item.isLink ? (
                     <Link
                       to={item.path}
-                      className={baseClasses}
-                      aria-label={item.name} // <-- added
+                      className={`${baseClasses} relative`}
+                      aria-label={item.name}
                     >
                       <Icon size={20} className="flex-shrink-0" />
                       {!isCollapsed && (
-                        <span className="ml-3 font-medium text-white">
+                        <span className="ml-3 font-medium text-white flex items-center gap-2">
                           {item.name}
+                          {showBadge && (
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-500 text-white">
+                              {pendingReservations}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {showBadge && isCollapsed && (
+                        <span className="absolute top-2 right-2 inline-flex items-center justify-center w-5 h-5 text-[10px] font-semibold rounded-full bg-red-500 text-white">
+                          {pendingReservations}
                         </span>
                       )}
                     </Link>

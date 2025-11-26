@@ -7,7 +7,7 @@ const supplyHistorySchema = new mongoose.Schema(
       ref: "ProductVariant",
       required: true,
     },
-    quantity: { type: Number, required: true, min: 1 },
+    quantity: { type: Number, required: true, min: 0 },
     supplier_price: { type: Number, required: true, min: 0 },
     total_cost: { type: Number, required: true, min: 0 }, 
     supplied_at: { type: Date, default: Date.now },
