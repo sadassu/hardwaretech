@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Edit, AlertTriangle } from "lucide-react";
+import { Edit, AlertTriangle, Plus, X, Search } from "lucide-react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import api from "../../utils/api";
 import Modal from "../../components/Modal";
 import { useProductStore } from "../../store/productStore";
 import { useReservationStore } from "../../store/reservationStore";
+import { formatVariantLabel } from "../../utils/formatVariantLabel";
 
 const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   const { user } = useAuthContext();
@@ -14,6 +15,9 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [stockMessages, setStockMessages] = useState({}); // Track stock messages per item
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [formData, setFormData] = useState({
     remarks: reservation?.remarks || "",
     reservationDetails: reservation?.reservationDetails || [],
@@ -21,22 +25,42 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
 
   // ✅ Fetch products with variants when modal opens
   useEffect(() => {
-    if (isOpen && user?.token && products.length === 0) {
+    if (isOpen && user?.token) {
       fetchProducts(user.token, { page: 1, limit: 1000 }); // Fetch all products to get variants
     }
-  }, [isOpen, user?.token, products.length, fetchProducts]);
+  }, [isOpen, user?.token, fetchProducts]);
+
+  // ✅ Reset add product state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowAddProduct(false);
+      setSearchQuery("");
+      setSelectedProduct(null);
+    }
+  }, [isOpen]);
 
   // ✅ Calculate available stock for a reservation detail
-  const getAvailableStock = (detail, originalDetail) => {
+  const getAvailableStock = (detail, originalDetail, matchedProduct) => {
     const variant = detail.productVariantId;
-    if (!variant || !variant.quantity) return 0;
+    if (!variant) return 0;
+    
+    // Get the actual variant from the product's variants (with availableQuantity)
+    let actualVariant = null;
+    if (matchedProduct?.variants) {
+      actualVariant = matchedProduct.variants.find(
+        (v) => v._id === variant._id || String(v._id) === String(variant._id)
+      );
+    }
+    
+    // Use availableQuantity if available (includes auto-convert), otherwise fallback to quantity
+    const variantStock = actualVariant?.availableQuantity ?? actualVariant?.quantity ?? variant.quantity ?? variant?.availableQuantity ?? 0;
     
     // Get original quantity from reservation (before editing)
     const originalQuantity = originalDetail?.quantity || detail.quantity || 0;
     
     // Available stock = current variant stock + original reservation quantity
     // (because the original quantity is currently reserved and will be released)
-    return (variant.quantity || 0) + originalQuantity;
+    return variantStock + originalQuantity;
   };
 
   // ✅ Update a detail field with stock validation
@@ -46,10 +70,67 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
       const originalDetail = reservation?.reservationDetails?.[index];
       const currentDetail = updatedDetails[index];
       
+      // Get product ID to find matched product
+      const productId = currentDetail.productId?._id || currentDetail.productId || currentDetail.productVariantId?.product?._id || currentDetail.productVariantId?.product;
+      const matchedProduct = products?.find((p) => p._id === productId);
+      
+      // If changing size, find the matching variant and update productVariantId
+      if (field === "size") {
+        if (!matchedProduct?.variants || matchedProduct.variants.length === 0) {
+          // No variants available, just update size
+          updatedDetails[index] = { ...currentDetail, [field]: value };
+        } else {
+          // Find variant that matches the selected size and current unit
+          const currentUnit = currentDetail.productVariantId?.unit || currentDetail.unit || "";
+          const matchingVariant = matchedProduct.variants.find(
+            (v) => v.size === value && v.unit === currentUnit
+          );
+          
+          if (matchingVariant) {
+            // Update to the matching variant
+            updatedDetails[index] = {
+              ...currentDetail,
+              [field]: value,
+              productVariantId: {
+                ...matchingVariant,
+                _id: matchingVariant._id,
+                unit: matchingVariant.unit,
+                price: matchingVariant.price,
+                quantity: matchingVariant.quantity,
+                availableQuantity: matchingVariant.availableQuantity,
+                product: {
+                  _id: matchedProduct._id,
+                  name: matchedProduct.name,
+                },
+              },
+              unit: matchingVariant.unit,
+            };
+            
+            // Reset quantity to 1 if it exceeds new variant's stock
+            const newAvailableStock = getAvailableStock(updatedDetails[index], originalDetail, matchedProduct);
+            if (updatedDetails[index].quantity > newAvailableStock) {
+              updatedDetails[index].quantity = Math.max(1, newAvailableStock);
+              setStockMessages((prev) => ({
+                ...prev,
+                [index]: `Maximum available stock: ${newAvailableStock}`,
+              }));
+            } else {
+              setStockMessages((prev) => {
+                const newMessages = { ...prev };
+                delete newMessages[index];
+                return newMessages;
+              });
+            }
+          } else {
+            // No matching variant found, just update size
+            updatedDetails[index] = { ...currentDetail, [field]: value };
+          }
+        }
+      }
       // If changing quantity, validate against available stock
-      if (field === "quantity") {
+      else if (field === "quantity") {
         const newQuantity = Math.max(1, parseInt(value, 10) || 1);
-        const availableStock = getAvailableStock(currentDetail, originalDetail);
+        const availableStock = getAvailableStock(currentDetail, originalDetail, matchedProduct);
         
         if (newQuantity > availableStock) {
           // Set to max available stock
@@ -82,6 +163,51 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
       return { ...prev, reservationDetails: updatedDetails };
     });
   };
+
+  // ✅ Add a new product to reservation
+  const handleAddProduct = (product, variant) => {
+    if (!product || !variant) return;
+
+    const newDetail = {
+      productId: product._id,
+      productVariantId: {
+        _id: variant._id,
+        unit: variant.unit,
+        price: variant.price,
+        product: {
+          _id: product._id,
+          name: product.name,
+        },
+      },
+      quantity: 1,
+      size: variant.size || "",
+      unit: variant.unit || "",
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      reservationDetails: [...prev.reservationDetails, newDetail],
+    }));
+
+    // Reset selection
+    setSelectedProduct(null);
+    setShowAddProduct(false);
+    setSearchQuery("");
+  };
+
+  // ✅ Filter products based on search query
+  const filteredProducts = products.filter((product) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      product.name?.toLowerCase().includes(query) ||
+      product.variants?.some((v) =>
+        formatVariantLabel(v).toLowerCase().includes(query) ||
+        v.size?.toLowerCase().includes(query) ||
+        v.unit?.toLowerCase().includes(query)
+      )
+    );
+  });
 
   // ✅ Validate all quantities before submit
   const validateQuantities = () => {
@@ -123,8 +249,13 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
           const variant = d.productVariantId;
           const unit = variant?.unit || d.unit;
           
+          // Handle both object and string ID formats
+          const variantId = typeof variant === 'object' 
+            ? (variant._id || variant) 
+            : (variant || d.productVariantId);
+          
           return {
-            productVariantId: variant?._id || d.productVariantId,
+            productVariantId: variantId,
             quantity: d.quantity,
             size: d.size,
             unit: unit,
@@ -215,7 +346,161 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                 <label className="text-sm font-semibold text-gray-700">
                   Order Items ({formData.reservationDetails?.length || 0})
                 </label>
+                <button
+                  type="button"
+                  onClick={() => setShowAddProduct(true)}
+                  className="btn btn-sm btn-primary gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Product
+                </button>
               </div>
+
+              {/* Add Product Modal */}
+              {showAddProduct && (
+                <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-gray-700">
+                      Select Product to Add
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddProduct(false);
+                        setSearchQuery("");
+                        setSelectedProduct(null);
+                      }}
+                      className="btn btn-ghost btn-sm btn-circle"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="mb-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search products or variants..."
+                        className="input input-bordered w-full pl-10 bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Product List */}
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {filteredProducts.length === 0 ? (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        No products found
+                      </p>
+                    ) : (
+                      filteredProducts.map((product) => (
+                        <div
+                          key={product._id}
+                          className="border border-gray-200 rounded-lg bg-white"
+                        >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedProduct(
+                                selectedProduct?._id === product._id
+                                  ? null
+                                  : product
+                              )
+                            }
+                            className="w-full p-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+                          >
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                {product.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {product.variants?.length || 0} variant
+                                {product.variants?.length !== 1 ? "s" : ""}
+                              </p>
+                            </div>
+                            <svg
+                              className={`w-5 h-5 text-gray-400 transition-transform ${
+                                selectedProduct?._id === product._id
+                                  ? "rotate-180"
+                                  : ""
+                              }`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </button>
+
+                          {/* Variants List */}
+                          {selectedProduct?._id === product._id &&
+                            product.variants?.length > 0 && (
+                              <div className="border-t border-gray-200 p-2 space-y-1 max-h-48 overflow-y-auto">
+                                {product.variants.map((variant) => {
+                                  const availableQty =
+                                    variant.availableQuantity ??
+                                    variant.quantity ??
+                                    0;
+                                  const variantLabel =
+                                    formatVariantLabel(variant) ||
+                                    `${variant.size || ""} ${variant.unit || ""}`.trim() ||
+                                    variant.unit ||
+                                    "Default";
+
+                                  return (
+                                    <button
+                                      key={variant._id}
+                                      type="button"
+                                      onClick={() =>
+                                        handleAddProduct(product, variant)
+                                      }
+                                      disabled={availableQty <= 0}
+                                      className={`w-full p-2 rounded-lg text-left transition-colors ${
+                                        availableQty > 0
+                                          ? "hover:bg-blue-50 border border-gray-200 hover:border-blue-300"
+                                          : "bg-gray-100 border border-gray-200 opacity-50 cursor-not-allowed"
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                          <p className="text-sm font-medium text-gray-900">
+                                            {variantLabel}
+                                          </p>
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-xs text-gray-600">
+                                              Stock: {availableQty}
+                                            </span>
+                                            {variant.price && (
+                                              <span className="text-xs font-semibold text-green-600">
+                                                ₱{variant.price.toLocaleString()}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        {availableQty > 0 && (
+                                          <Plus className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
 
           {formData.reservationDetails?.length > 0 ? (
                 <div className="space-y-3">
@@ -287,9 +572,9 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                                 </label>
                                 {(() => {
                                   const originalDetail = reservation?.reservationDetails?.[index];
-                                  const availableStock = getAvailableStock(detail, originalDetail);
+                                  const availableStock = getAvailableStock(detail, originalDetail, matchedProduct);
                                   const variant = detail.productVariantId;
-                                  return variant?.quantity !== undefined ? (
+                                  return variant ? (
                                     <span className="text-xs text-gray-500">
                                       Stock: {availableStock}
                                     </span>
@@ -301,7 +586,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                                 min={1}
                                 max={(() => {
                                   const originalDetail = reservation?.reservationDetails?.[index];
-                                  return getAvailableStock(detail, originalDetail);
+                                  return getAvailableStock(detail, originalDetail, matchedProduct);
                                 })()}
                                 value={detail.quantity || 1}
                                 onChange={(e) =>

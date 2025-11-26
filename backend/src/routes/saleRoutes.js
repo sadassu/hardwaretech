@@ -6,7 +6,8 @@ import {
   getDailySales,
   getSales,
   getThisYearSales,
-  getMonthlySales, // <-- add import
+  getMonthlySales,
+  exportSales,
 } from "../controllers/saleController.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { returnSales } from "../controllers/saleReturnController.js";
@@ -15,6 +16,13 @@ const router = express.Router();
 router.post("/", requireAuth, requireRole(["admin", "cashier"]), createSale);
 
 router.get("/", requireAuth, requireRole(["admin", "cashier"]), getSales);
+
+router.get(
+  "/export",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  exportSales
+);
 
 router.get(
   "/daily-sales",

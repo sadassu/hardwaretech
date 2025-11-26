@@ -8,6 +8,8 @@ const TextInput = ({
   value,
   onChange,
   required = false,
+  min,
+  ...rest
 }) => {
   return (
     <div className="form-control w-full">
@@ -26,6 +28,8 @@ const TextInput = ({
         onChange={onChange}
         className="input input-bordered w-full bg-[#30475E] text-white"
         required={required}
+        min={min}
+        {...rest}
       />
     </div>
   );

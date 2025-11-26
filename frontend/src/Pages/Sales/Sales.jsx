@@ -6,7 +6,8 @@ import Receipt from "../../components/Receipt";
 import Pagination from "../../components/Pagination";
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatPrice } from "../../utils/formatPrice";
-import { Printer, RotateCcw } from "lucide-react";
+import { Printer, RotateCcw, Download } from "lucide-react";
+import api from "../../utils/api";
 import SaleCards from "../Pos/SaleCards";
 import ReturnSales from "./ReturnSales";
 
@@ -77,6 +78,52 @@ const Sales = () => {
   const toggleExpandedRow = (saleId) =>
     setExpandedRow(expandedRow === saleId ? null : saleId);
 
+  const handleExportSales = async () => {
+    try {
+      // Build query parameters from current filters
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (cashierFilter) params.append("cashier", cashierFilter);
+      if (typeFilter) params.append("type", typeFilter);
+      if (statusFilter) params.append("status", statusFilter);
+      if (dateFrom) params.append("dateFrom", dateFrom);
+      if (dateTo) params.append("dateTo", dateTo);
+
+      const queryString = params.toString();
+      const url = `/sales/export${queryString ? `?${queryString}` : ""}`;
+
+      const response = await api.get(url, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+        responseType: "blob", // Important for file download
+      });
+
+      // Create blob and download
+      const blob = new Blob([response.data], { type: "text/csv" });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      
+      // Generate filename with date range if applicable
+      let filename = "sales-export";
+      if (dateFrom || dateTo) {
+        const from = dateFrom || "all";
+        const to = dateTo || "all";
+        filename = `sales-export-${from}-to-${to}`;
+      } else {
+        filename = `sales-export-${new Date().toISOString().split("T")[0]}`;
+      }
+      link.download = `${filename}.csv`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Error exporting sales:", error);
+      alert("Failed to export sales. Please try again.");
+    }
+  };
+
   return (
     <div className="container mx-auto p-6">
       {/* Header */}
@@ -87,6 +134,14 @@ const Sales = () => {
             Track and manage sales transactions from POS and reservations
           </p>
         </div>
+        <button
+          onClick={handleExportSales}
+          disabled={loading}
+          className="btn btn-primary gap-2"
+        >
+          <Download className="w-4 h-4" />
+          Export CSV
+        </button>
       </div>
 
       <SaleCards />

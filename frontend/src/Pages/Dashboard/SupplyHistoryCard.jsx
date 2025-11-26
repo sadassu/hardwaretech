@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useSupplyHistoryStore } from "../../store/supplyHistoryStore";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { Loader2, Package, Calendar, Boxes } from "lucide-react";
+import { formatVariantLabel } from "../../utils/formatVariantLabel";
 
 function SupplyHistoryCard() {
   const { user } = useAuthContext();
@@ -68,11 +69,12 @@ function SupplyHistoryCard() {
               <div className="flex items-center gap-1.5">
                 <Package className="w-3.5 h-3.5 text-gray-400" />
                 <span>
-                  {h.product_variant?.size
-                    ? `${h.product_variant.size} ${
-                        h.product_variant.unit || ""
-                      }`
-                    : h.product_variant?.unit || "N/A"}
+                  {formatVariantLabel(h.product_variant) || 
+                    (h.product_variant?.size
+                      ? `${h.product_variant.size} ${
+                          h.product_variant.unit || ""
+                        }`
+                      : h.product_variant?.unit || "N/A")}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">

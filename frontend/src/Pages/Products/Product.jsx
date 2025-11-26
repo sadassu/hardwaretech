@@ -5,6 +5,7 @@ import { useProductStore } from "../../store/productStore";
 import { useCategoriesStore } from "../../store/categoriesStore";
 
 import { formatDatePHT } from "../../utils/formatDate";
+import { formatVariantLabel } from "../../utils/formatVariantLabel";
 
 import CreateProduct from "./CreateProduct";
 import DeleteProduct from "./DeleteProduct";
@@ -249,7 +250,7 @@ const Product = () => {
                               <div className="flex items-start justify-between gap-3">
                                 <div>
                                   <p className="text-lg font-semibold text-gray-900">
-                                    {variant.size} {variant.unit}
+                                    {formatVariantLabel(variant) || `${variant.size || ""} ${variant.unit || ""}`.trim()}
                                   </p>
                                   <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
                                     <span

@@ -13,8 +13,13 @@ function ProductGrid({ products, user, isMobile, showAutoConvertInfo = false }) 
     return null;
   }
 
+  // Calculate how many empty slots needed to complete the last row (4 columns on large screens)
+  const itemsPerRow = 4; // For lg screens
+  const remainder = products.length % itemsPerRow;
+  const emptySlots = remainder > 0 ? itemsPerRow - remainder : 0;
+
   return (
-    <div className="grid gap-4 sm:gap-5 lg:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid gap-4 sm:gap-5 lg:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
       {products.map((product) => {
         const variantCount = product.variants ? product.variants.length : 0;
         const hasImageError = imageErrors[product._id];
@@ -108,6 +113,10 @@ function ProductGrid({ products, user, isMobile, showAutoConvertInfo = false }) 
           </div>
         );
       })}
+      {/* Empty placeholder divs to fill the last row */}
+      {Array.from({ length: emptySlots }).map((_, index) => (
+        <div key={`empty-${index}`} className="hidden lg:block" aria-hidden="true" />
+      ))}
     </div>
   );
 }

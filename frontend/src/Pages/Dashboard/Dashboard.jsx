@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useFetch } from "../../hooks/useFetch";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import {
+  BarChart,
+  Bar,
   LineChart,
   Line,
   XAxis,
@@ -17,10 +19,69 @@ import StockCards from "./StockCards";
 import { formatDatePHT } from "../../utils/formatDate";
 import SupplyHistoryCard from "./SupplyHistoryCard";
 import SalesSupplyHistoryGraph from "./SalesSupplyHistoryGraph";
+import { useCategoriesStore } from "../../store/categoriesStore";
+
+const MONTH_OPTIONS = [
+  { value: 1, label: "January" },
+  { value: 2, label: "February" },
+  { value: 3, label: "March" },
+  { value: 4, label: "April" },
+  { value: 5, label: "May" },
+  { value: 6, label: "June" },
+  { value: 7, label: "July" },
+  { value: 8, label: "August" },
+  { value: 9, label: "September" },
+  { value: 10, label: "October" },
+  { value: 11, label: "November" },
+  { value: 12, label: "December" },
+];
+
+const SUPPLY_COLORS = [
+  "#2563eb",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#6366f1",
+  "#0ea5e9",
+  "#f97316",
+  "#22c55e",
+  "#d946ef",
+  "#14b8a6",
+];
 
 function Dashboard() {
   const [option, setOption] = useState("daily");
+  const currentDate = new Date();
+  const [supplyYear, setSupplyYear] = useState(currentDate.getFullYear());
+  const [supplyMonth, setSupplyMonth] = useState(currentDate.getMonth() + 1);
+  const [supplyCategory, setSupplyCategory] = useState("all");
+  const [supplyWeek, setSupplyWeek] = useState("all");
+  const [selectedSupplyBar, setSelectedSupplyBar] = useState(null);
+  const [salesYear, setSalesYear] = useState(currentDate.getFullYear());
+  const [salesMonth, setSalesMonth] = useState(currentDate.getMonth() + 1);
+  const [salesCategory, setSalesCategory] = useState("all");
+  const [salesWeek, setSalesWeek] = useState("all");
+  const [selectedSalesBar, setSelectedSalesBar] = useState(null);
+  const yearOptions = useMemo(() => {
+    const latest = new Date().getFullYear();
+    return Array.from({ length: 6 }, (_, idx) => latest - idx);
+  }, []);
+  const selectedSupplyMonthLabel =
+    MONTH_OPTIONS.find((month) => month.value === supplyMonth)?.label ||
+    "Month";
+  const selectedSalesMonthLabel =
+    MONTH_OPTIONS.find((month) => month.value === salesMonth)?.label ||
+    "Month";
   const { user } = useAuthContext();
+  const categories = useCategoriesStore((state) => state.categories);
+  const fetchCategories = useCategoriesStore((state) => state.fetchCategories);
+  const categoriesLoading = useCategoriesStore((state) => state.loading);
+
+  useEffect(() => {
+    if (categories.length === 0) {
+      fetchCategories();
+    }
+  }, [categories.length, fetchCategories]);
 
   const {
     data: salesData,
@@ -36,15 +97,61 @@ function Dashboard() {
   );
 
   // Fetch overall sales since business start
+  const commonHeaders = user?.token
+    ? {
+        headers: { Authorization: `Bearer ${user.token}` },
+      }
+    : null;
+
   const {
     data: overallStats,
     loading: overallLoading,
   } = useFetch(
-    "dashboard/sales/overall",
+    user?.token ? "dashboard/sales/overall" : null,
+    commonHeaders || {},
+    [user?.token]
+  );
+
+  const supplyParams = {
+    year: supplyYear,
+    month: supplyMonth,
+  };
+  if (supplyCategory && supplyCategory !== "all") {
+    supplyParams.category = supplyCategory;
+  }
+
+  const {
+    data: fastMovingData,
+    loading: fastMovingLoading,
+    error: fastMovingError,
+  } = useFetch(
+    user?.token ? "dashboard/supply/fast-moving" : null,
     {
-      headers: { Authorization: `Bearer ${user.token}` },
+      ...(commonHeaders || {}),
+      params: supplyParams,
     },
-    []
+    [user?.token, supplyYear, supplyMonth, supplyCategory]
+  );
+
+  const salesMovementParams = {
+    year: salesYear,
+    month: salesMonth,
+  };
+  if (salesCategory && salesCategory !== "all") {
+    salesMovementParams.category = salesCategory;
+  }
+
+  const {
+    data: productSalesMovement,
+    loading: productSalesLoading,
+    error: productSalesError,
+  } = useFetch(
+    user?.token ? "dashboard/sales/product-movement" : null,
+    {
+      ...(commonHeaders || {}),
+      params: salesMovementParams,
+    },
+    [user?.token, salesYear, salesMonth, salesCategory]
   );
 
   const handleOptionChange = (e) => setOption(e.target.value);
@@ -82,6 +189,418 @@ function Dashboard() {
   };
 
   const statsSummary = getStatsSummary();
+  const supplyHistoryData = fastMovingData?.data || [];
+  const supplySeries = fastMovingData?.meta?.series || [];
+  const salesHistoryData = productSalesMovement?.data || [];
+  const salesSeries = productSalesMovement?.meta?.series || [];
+  const supplyWeekOptions = useMemo(() => {
+    if (!supplyHistoryData || supplyHistoryData.length === 0) return [];
+    return supplyHistoryData.map((week) => ({
+      value: `${week.year}-${week.week}`,
+      label: week.weekLabel,
+      rangeText: week.rangeText,
+    }));
+  }, [supplyHistoryData]);
+
+  const selectedSupplyWeekMeta = useMemo(() => {
+    if (supplyWeek === "all") return null;
+    return supplyWeekOptions.find((option) => option.value === supplyWeek) || null;
+  }, [supplyWeekOptions, supplyWeek]);
+
+  useEffect(() => {
+    if (
+      supplyWeek !== "all" &&
+      !supplyWeekOptions.some((option) => option.value === supplyWeek)
+    ) {
+      setSupplyWeek("all");
+    }
+  }, [supplyWeekOptions, supplyWeek]);
+
+  useEffect(() => {
+    setSelectedSupplyBar(null);
+  }, [supplyWeek, supplyMonth, supplyYear, supplyCategory, fastMovingData]);
+
+  const supplyFilteredWeeks = useMemo(() => {
+    if (!supplyHistoryData || supplyHistoryData.length === 0) return [];
+    if (supplyWeek === "all") return supplyHistoryData;
+    return supplyHistoryData.filter(
+      (week) => `${week.year}-${week.week}` === supplyWeek
+    );
+  }, [supplyHistoryData, supplyWeek]);
+
+  const { supplyChartData, supplyChartMeta } = useMemo(() => {
+    if (!supplyFilteredWeeks || supplyFilteredWeeks.length === 0 || supplySeries.length === 0) {
+      return { supplyChartData: [], supplyChartMeta: {} };
+    }
+
+    if (supplyWeek === "all") {
+      const weeklyRows = supplyFilteredWeeks.map((week) => {
+        const base = {
+          label: week.weekLabel,
+          rangeText: week.rangeText,
+        };
+
+        supplySeries.forEach((series) => {
+          base[series.productId] =
+            week.totals?.[series.productId] ?? 0;
+        });
+
+        return {
+          data: base,
+          meta: {
+            title: week.weekLabel,
+            subtitle: week.rangeText,
+          },
+        };
+      });
+
+      const metaMap = {};
+      const chartData = weeklyRows.map((row) => {
+        metaMap[row.data.label] = row.meta;
+        return row.data;
+      });
+
+      return { supplyChartData: chartData, supplyChartMeta: metaMap };
+    }
+
+    const selectedWeek = supplyFilteredWeeks[0];
+    if (!selectedWeek?.dailyTotals) {
+      return { supplyChartData: [], supplyChartMeta: {} };
+    }
+
+    const dailyRows = selectedWeek.dailyTotals.map((day) => {
+      const base = {
+        label: day.label,
+        rangeText: day.fullLabel,
+      };
+
+      supplySeries.forEach((series) => {
+        base[series.productId] = day.totals?.[series.productId] ?? 0;
+      });
+
+      return {
+        data: base,
+        meta: {
+          title: `${day.label} (${day.fullLabel})`,
+          subtitle: day.fullLabel,
+        },
+      };
+    });
+
+    const metaMap = {};
+    const chartData = dailyRows.map((row) => {
+      metaMap[row.data.label] = row.meta;
+      return row.data;
+    });
+
+    return { supplyChartData: chartData, supplyChartMeta: metaMap };
+  }, [supplyFilteredWeeks, supplySeries, supplyWeek]);
+
+  const salesWeekOptions = useMemo(() => {
+    if (!salesHistoryData || salesHistoryData.length === 0) return [];
+    return salesHistoryData.map((week) => ({
+      value: `${week.year}-${week.week}`,
+      label: week.weekLabel,
+      rangeText: week.rangeText,
+    }));
+  }, [salesHistoryData]);
+
+  const selectedSalesWeekMeta = useMemo(() => {
+    if (salesWeek === "all") return null;
+    return salesWeekOptions.find((option) => option.value === salesWeek) || null;
+  }, [salesWeekOptions, salesWeek]);
+
+  useEffect(() => {
+    if (
+      salesWeek !== "all" &&
+      !salesWeekOptions.some((option) => option.value === salesWeek)
+    ) {
+      setSalesWeek("all");
+    }
+  }, [salesWeekOptions, salesWeek]);
+
+  useEffect(() => {
+    setSelectedSalesBar(null);
+  }, [salesWeek, salesMonth, salesYear, salesCategory, productSalesMovement]);
+
+  const salesFilteredWeeks = useMemo(() => {
+    if (!salesHistoryData || salesHistoryData.length === 0) return [];
+    if (salesWeek === "all") return salesHistoryData;
+    return salesHistoryData.filter(
+      (week) => `${week.year}-${week.week}` === salesWeek
+    );
+  }, [salesHistoryData, salesWeek]);
+
+  const { salesChartData, salesChartMeta } = useMemo(() => {
+    if (!salesFilteredWeeks || salesFilteredWeeks.length === 0 || salesSeries.length === 0) {
+      return { salesChartData: [], salesChartMeta: {} };
+    }
+
+    if (salesWeek === "all") {
+      const weeklyRows = salesFilteredWeeks.map((week) => {
+        const base = {
+          label: week.weekLabel,
+          rangeText: week.rangeText,
+        };
+
+        salesSeries.forEach((series) => {
+          base[series.productId] =
+            week.totals?.[series.productId] ?? 0;
+        });
+
+        return {
+          data: base,
+          meta: {
+            title: week.weekLabel,
+            subtitle: week.rangeText,
+          },
+        };
+      });
+
+      const metaMap = {};
+      const chartData = weeklyRows.map((row) => {
+        metaMap[row.data.label] = row.meta;
+        return row.data;
+      });
+
+      return { salesChartData: chartData, salesChartMeta: metaMap };
+    }
+
+    const selectedWeek = salesFilteredWeeks[0];
+    if (!selectedWeek?.dailyTotals) {
+      return { salesChartData: [], salesChartMeta: {} };
+    }
+
+    const dailyRows = selectedWeek.dailyTotals.map((day) => {
+      const base = {
+        label: day.label,
+        rangeText: day.fullLabel,
+      };
+
+      salesSeries.forEach((series) => {
+        base[series.productId] = day.totals?.[series.productId] ?? 0;
+      });
+
+      return {
+        data: base,
+        meta: {
+          title: `${day.label} (${day.fullLabel})`,
+          subtitle: day.fullLabel,
+        },
+      };
+    });
+
+    const metaMap = {};
+    const chartData = dailyRows.map((row) => {
+      metaMap[row.data.label] = row.meta;
+      return row.data;
+    });
+
+    return { salesChartData: chartData, salesChartMeta: metaMap };
+  }, [salesFilteredWeeks, salesSeries, salesWeek]);
+
+  // Generate concise sales trend summary sentence
+  const salesTrendSummary = useMemo(() => {
+    if (!salesData || salesData.length < 2 || !statsSummary) return null;
+
+    const chronological = [...salesData];
+    const firstPoint = chronological[0];
+    const lastPoint = chronological[chronological.length - 1];
+    const avgSale =
+      statsSummary.periodTotal && salesData.length
+        ? statsSummary.periodTotal / salesData.length
+        : 0;
+    const percentChange =
+      firstPoint.totalSales > 0
+        ? ((lastPoint.totalSales - firstPoint.totalSales) /
+            firstPoint.totalSales) *
+          100
+        : null;
+
+    const optionLabel =
+      option === "daily"
+        ? "days"
+        : option === "monthly"
+        ? "months"
+        : "years";
+
+    if (percentChange !== null) {
+      const trendStrength = Math.abs(percentChange) > 10 ? "strong" : Math.abs(percentChange) > 5 ? "moderate" : "slight";
+      const direction = percentChange >= 0 ? "increasing" : "decreasing";
+      return `Sales are ${direction} with a ${trendStrength} ${Math.abs(percentChange).toFixed(1)}% ${direction === "increasing" ? "growth" : "decline"} over the selected ${optionLabel}, indicating ${direction === "increasing" ? "positive" : "challenging"} business momentum.`;
+    } else {
+      const direction = lastPoint.totalSales >= firstPoint.totalSales ? "improving" : "declining";
+      return `Sales show an ${direction} trajectory, with recent performance ${lastPoint.totalSales >= avgSale ? "above" : "below"} the period average, suggesting ${direction === "improving" ? "favorable" : "needs attention"} market conditions.`;
+    }
+  }, [salesData, statsSummary, option]);
+
+  const salesNarrative = useMemo(() => {
+    if (!statsSummary || !salesData?.length) return [];
+
+    const lines = [];
+    const avgSale =
+      statsSummary.periodTotal && salesData.length
+        ? statsSummary.periodTotal / salesData.length
+        : 0;
+    const optionLabel =
+      option === "daily"
+        ? "day"
+        : option === "monthly"
+        ? "month"
+        : "year";
+
+    lines.push(
+      `Highest ${optionLabel} recorded ${formatPrice(
+        statsSummary.highest.totalSales
+      )} on ${formatDatePHT(statsSummary.highest.period)}.`
+    );
+    lines.push(
+      `Lowest ${optionLabel} recorded ${formatPrice(
+        statsSummary.lowest.totalSales
+      )} on ${formatDatePHT(statsSummary.lowest.period)}.`
+    );
+    lines.push(
+      `Total sales for this period reached ${formatPrice(
+        statsSummary.periodTotal
+      )} across ${salesData.length} ${optionLabel}${salesData.length > 1 ? "s" : ""}, averaging ${formatPrice(
+        avgSale
+      )} per ${optionLabel}.`
+    );
+
+    return lines;
+  }, [statsSummary, salesData, option]);
+
+  // Supply History Movement Interpretation
+  const supplyInterpretation = useMemo(() => {
+    if (!supplyChartData || supplyChartData.length === 0 || supplySeries.length === 0) {
+      return [];
+    }
+
+    const lines = [];
+    const allProducts = supplySeries.map(s => s.productId);
+    
+    // Calculate total supply for the period
+    const totalSupply = supplyChartData.reduce((sum, week) => {
+      return sum + allProducts.reduce((weekSum, productId) => {
+        return weekSum + (Number(week[productId] || 0));
+      }, 0);
+    }, 0);
+
+    // Find top products by total supply
+    const productTotals = allProducts.map(productId => {
+      const total = supplyChartData.reduce((sum, week) => {
+        return sum + (Number(week[productId] || 0));
+      }, 0);
+      const product = supplySeries.find(s => s.productId === productId);
+      return {
+        productId,
+        label: product?.label || "Unknown",
+        total
+      };
+    }).sort((a, b) => b.total - a.total);
+
+    const topProduct = productTotals[0];
+    const periodLabel = supplyWeek === "all" 
+      ? `${supplyChartData.length} week${supplyChartData.length > 1 ? "s" : ""}`
+      : "selected week";
+
+    if (topProduct && topProduct.total > 0) {
+      lines.push(
+        `Total supply recorded ${totalSupply.toLocaleString()} units across ${periodLabel} for ${supplySeries.length} product${supplySeries.length > 1 ? "s" : ""}.`
+      );
+      lines.push(
+        `${topProduct.label} had the highest supply with ${topProduct.total.toLocaleString()} units, indicating strong inventory movement.`
+      );
+      
+      if (productTotals.length > 1) {
+        const secondProduct = productTotals[1];
+        if (secondProduct.total > 0) {
+          lines.push(
+            `${secondProduct.label} followed with ${secondProduct.total.toLocaleString()} units.`
+          );
+        }
+      }
+    } else {
+      lines.push("No supply movement recorded for this period.");
+    }
+
+    return lines;
+  }, [supplyChartData, supplySeries, supplyWeek]);
+
+  // Product Sales Movement Interpretation
+  const salesMovementInterpretation = useMemo(() => {
+    if (!salesChartData || salesChartData.length === 0 || salesSeries.length === 0) {
+      return [];
+    }
+
+    const lines = [];
+    const allProducts = salesSeries.map(s => s.productId);
+    
+    // Calculate total sales and revenue for the period
+    let totalUnits = 0;
+    let totalRevenue = 0;
+    const productStats = allProducts.map(productId => {
+      let units = 0;
+      let revenue = 0;
+      
+      salesChartData.forEach(week => {
+        units += Number(week[productId] || 0);
+      });
+
+      // Get revenue from salesFilteredWeeks
+      salesFilteredWeeks.forEach(week => {
+        if (week.salesTotals && week.salesTotals[productId]) {
+          revenue += Number(week.salesTotals[productId] || 0);
+        }
+        // Also check daily totals if viewing a specific week
+        if (week.dailyTotals) {
+          week.dailyTotals.forEach(day => {
+            if (day.salesTotals && day.salesTotals[productId]) {
+              revenue += Number(day.salesTotals[productId] || 0);
+            }
+          });
+        }
+      });
+
+      totalUnits += units;
+      totalRevenue += revenue;
+
+      const product = salesSeries.find(s => s.productId === productId);
+      return {
+        productId,
+        label: product?.label || "Unknown",
+        units,
+        revenue
+      };
+    }).sort((a, b) => b.revenue - a.revenue);
+
+    const topProduct = productStats[0];
+    const periodLabel = salesWeek === "all" 
+      ? `${salesChartData.length} week${salesChartData.length > 1 ? "s" : ""}`
+      : "selected week";
+
+    if (topProduct && topProduct.units > 0) {
+      lines.push(
+        `Total sales reached ${totalUnits.toLocaleString()} units generating ₱${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in revenue across ${periodLabel} for ${salesSeries.length} product${salesSeries.length > 1 ? "s" : ""}.`
+      );
+      lines.push(
+        `${topProduct.label} was the best-selling product with ${topProduct.units.toLocaleString()} units sold (₱${topProduct.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}), showing strong customer demand.`
+      );
+      
+      if (productStats.length > 1) {
+        const secondProduct = productStats[1];
+        if (secondProduct.units > 0) {
+          lines.push(
+            `${secondProduct.label} followed with ${secondProduct.units.toLocaleString()} units sold (₱${secondProduct.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).`
+          );
+        }
+      }
+    } else {
+      lines.push("No sales movement recorded for this period.");
+    }
+
+    return lines;
+  }, [salesChartData, salesSeries, salesWeek, salesFilteredWeeks]);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -99,7 +618,125 @@ function Dashboard() {
     return null;
   };
 
+  const SupplyHistoryTooltip = ({ active, label }) => {
+    if (!active) return null;
+    const meta = supplyChartMeta[label];
+
   return (
+      <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[220px] -translate-y-2">
+        <p className="text-xs font-semibold text-gray-700">
+          {meta?.title || label}
+        </p>
+        {meta?.subtitle && (
+          <p className="text-xs text-gray-500 mb-2">{meta.subtitle}</p>
+        )}
+        <p className="text-[11px] text-gray-500 italic">
+          Click any bar to view the full product list.
+        </p>
+      </div>
+    );
+  };
+
+  const handleSupplyBarClick = useCallback(
+    (barProps) => {
+      const payload = barProps?.payload;
+      if (!payload?.label) return;
+
+      const products = supplySeries
+        .map((series) => ({
+          productId: series.productId,
+          label: series.label,
+          value: Number(payload[series.productId] || 0),
+        }))
+        .sort((a, b) => b.value - a.value);
+
+      setSelectedSupplyBar({
+        label: supplyChartMeta[payload.label]?.title || payload.label,
+        subtitle: supplyChartMeta[payload.label]?.subtitle || payload.rangeText,
+        products,
+      });
+    },
+    [supplyChartMeta, supplySeries]
+  );
+
+  const closeSupplyBarDetails = useCallback(() => {
+    setSelectedSupplyBar(null);
+  }, []);
+
+  // Helper function to get color for a product in supply series
+  const getSupplyProductColor = useCallback(
+    (productId) => {
+      const index = supplySeries.findIndex(
+        (series) => series.productId === productId
+      );
+      return index >= 0
+        ? SUPPLY_COLORS[index % SUPPLY_COLORS.length]
+        : "#9ca3af"; // gray fallback
+    },
+    [supplySeries]
+  );
+
+  // Helper function to get color for a product in sales series
+  const getSalesProductColor = useCallback(
+    (productId) => {
+      const index = salesSeries.findIndex(
+        (series) => series.productId === productId
+      );
+      return index >= 0
+        ? SUPPLY_COLORS[index % SUPPLY_COLORS.length]
+        : "#9ca3af"; // gray fallback
+    },
+    [salesSeries]
+  );
+
+  const handleSalesBarClick = useCallback(
+    (barProps) => {
+      const payload = barProps?.payload;
+      if (!payload?.label) return;
+
+      // Find the week/day data to get sales totals
+      const weekData = salesFilteredWeeks.find(
+        (week) => week.weekLabel === payload.label || week.rangeText === payload.rangeText
+      );
+      const dayData = weekData?.dailyTotals?.find(
+        (day) => day.label === payload.label
+      );
+
+      const products = salesSeries
+        .map((series) => {
+          const quantity = Number(payload[series.productId] || 0);
+          // Get sales amount from week salesTotals or day salesTotals
+          let salesAmount = 0;
+          if (dayData?.salesTotals) {
+            salesAmount = Number(dayData.salesTotals[series.productId] || 0);
+          } else if (weekData?.salesTotals) {
+            salesAmount = Number(weekData.salesTotals[series.productId] || 0);
+          }
+          
+          return {
+            productId: series.productId,
+            label: series.label,
+            value: quantity,
+            salesAmount: salesAmount,
+          };
+        })
+        .sort((a, b) => b.salesAmount - a.salesAmount); // Sort by sales amount (revenue)
+
+      setSelectedSalesBar({
+        label: salesChartMeta[payload.label]?.title || payload.label,
+        subtitle: salesChartMeta[payload.label]?.subtitle || payload.rangeText,
+        products,
+      });
+    },
+    [salesChartMeta, salesSeries, salesFilteredWeeks]
+  );
+
+  const closeSalesBarDetails = useCallback(() => {
+    setSelectedSalesBar(null);
+  }, []);
+
+  return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
         {/* Header */}
@@ -308,7 +945,7 @@ function Dashboard() {
                         {formatDatePHT(statsSummary.lowest.period)}
                       </p>
                     </div>
-                  </div>
+                    </div>
 
                   {/* Bottom Row - 3 Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -349,7 +986,7 @@ function Dashboard() {
                         <p className="text-xs text-gray-600 font-medium">
                           Data Points
                         </p>
-                      </div>
+                  </div>
                       <p className="text-lg sm:text-xl font-bold text-indigo-600 mb-0.5">
                         {salesData.length}
                       </p>
@@ -358,10 +995,378 @@ function Dashboard() {
                       </p>
                     </div>
                   </div>
+
+                  {salesNarrative.length > 0 && (
+                    <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-3">
+                        Automatic Interpretation
+                      </p>
+                      <ul className="space-y-2 text-sm text-gray-700">
+                        {salesNarrative.map((line, idx) => (
+                          <li key={idx} className="leading-relaxed">
+                            • {line}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
             <SalesSupplyHistoryGraph />
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <div className="flex flex-col gap-4 mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Supply History Movement
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Weekly product movement for {selectedSupplyMonthLabel} {supplyYear}
+                    {selectedSupplyWeekMeta
+                      ? ` • ${selectedSupplyWeekMeta.label}`
+                      : ""}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Category
+                    </label>
+                    <select
+                      value={supplyCategory}
+                      onChange={(e) => setSupplyCategory(e.target.value)}
+                      disabled={categoriesLoading && categories.length === 0}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      <option value="all">All categories</option>
+                      {categories.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Year
+                    </label>
+                    <select
+                      value={supplyYear}
+                      onChange={(e) => setSupplyYear(parseInt(e.target.value, 10))}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      {yearOptions.map((yearOption) => (
+                        <option key={yearOption} value={yearOption}>
+                          {yearOption}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Month
+                    </label>
+                    <select
+                      value={supplyMonth}
+                      onChange={(e) => setSupplyMonth(parseInt(e.target.value, 10))}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      {MONTH_OPTIONS.map((monthOption) => (
+                        <option key={monthOption.value} value={monthOption.value}>
+                          {monthOption.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Week
+                    </label>
+                    <select
+                      value={supplyWeek}
+                      onChange={(e) => setSupplyWeek(e.target.value)}
+                      disabled={supplyWeekOptions.length === 0}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      <option value="all">All weeks</option>
+                      {supplyWeekOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}{" "}
+                          {option.rangeText ? `(${option.rangeText})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {fastMovingLoading && (
+                <div className="h-64 flex items-center justify-center text-sm text-gray-500">
+                  Loading weekly movement...
+                </div>
+              )}
+
+              {fastMovingError && (
+                <div className="text-sm text-red-500">{fastMovingError}</div>
+              )}
+
+              {!fastMovingLoading &&
+                !fastMovingError &&
+                supplySeries.length === 0 && (
+                  <div className="h-64 flex items-center justify-center text-sm text-gray-500">
+                    No products found for this selection.
+                  </div>
+                )}
+
+              {!fastMovingLoading &&
+                !fastMovingError &&
+                supplySeries.length > 0 &&
+                supplyChartData.length === 0 && (
+                  <div className="h-64 flex items-center justify-center text-sm text-gray-500">
+                    No supply movement recorded for this selection.
+                  </div>
+                )}
+
+              {!fastMovingLoading &&
+                !fastMovingError &&
+                supplySeries.length > 0 &&
+                supplyChartData.length > 0 && (
+                  <>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={supplyChartData}
+                          margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis
+                            dataKey="label"
+                            tick={{ fontSize: 10 }}
+                            interval={0}
+                          />
+                          <YAxis tick={{ fontSize: 10 }} />
+                          <Tooltip content={<SupplyHistoryTooltip />} />
+                          {supplySeries.map((series, idx) => (
+                            <Bar
+                              key={series.productId}
+                              dataKey={series.productId}
+                              stackId="week"
+                              fill={SUPPLY_COLORS[idx % SUPPLY_COLORS.length]}
+                              name={series.label}
+                              maxBarSize={60}
+                              className="cursor-pointer"
+                              onClick={handleSupplyBarClick}
+                            />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Supply History Movement Interpretation */}
+                    {supplyInterpretation.length > 0 && (
+                      <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-3">
+                          Automatic Interpretation
+                        </p>
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          {supplyInterpretation.map((line, idx) => (
+                            <li key={idx} className="leading-relaxed">
+                              • {line}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                )}
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <div className="flex flex-col gap-4 mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Product Sales Movement
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Weekly product sales for {selectedSalesMonthLabel} {salesYear}
+                    {selectedSalesWeekMeta
+                      ? ` • ${selectedSalesWeekMeta.label}`
+                      : ""}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Category
+                    </label>
+                    <select
+                      value={salesCategory}
+                      onChange={(e) => setSalesCategory(e.target.value)}
+                      disabled={categoriesLoading && categories.length === 0}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                    >
+                      <option value="all">All categories</option>
+                      {categories.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Year
+                    </label>
+                    <select
+                      value={salesYear}
+                      onChange={(e) => setSalesYear(parseInt(e.target.value, 10))}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                    >
+                      {yearOptions.map((yearOption) => (
+                        <option key={yearOption} value={yearOption}>
+                          {yearOption}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Month
+                    </label>
+                    <select
+                      value={salesMonth}
+                      onChange={(e) => setSalesMonth(parseInt(e.target.value, 10))}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                    >
+                      {MONTH_OPTIONS.map((monthOption) => (
+                        <option key={monthOption.value} value={monthOption.value}>
+                          {monthOption.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Week
+                    </label>
+                    <select
+                      value={salesWeek}
+                      onChange={(e) => setSalesWeek(e.target.value)}
+                      disabled={salesWeekOptions.length === 0}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                    >
+                      <option value="all">All weeks</option>
+                      {salesWeekOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}{" "}
+                          {option.rangeText ? `(${option.rangeText})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {productSalesLoading && (
+                <div className="h-64 flex items-center justify-center text-sm text-gray-500">
+                  Loading sales movement...
+                </div>
+              )}
+
+              {productSalesError && (
+                <div className="text-sm text-red-500">{productSalesError}</div>
+              )}
+
+              {!productSalesLoading &&
+                !productSalesError &&
+                salesSeries.length === 0 && (
+                  <div className="h-64 flex items-center justify-center text-sm text-gray-500">
+                    No products found for this selection.
+                  </div>
+                )}
+
+              {!productSalesLoading &&
+                !productSalesError &&
+                salesSeries.length > 0 &&
+                salesChartData.length === 0 && (
+                  <div className="h-64 flex items-center justify-center text-sm text-gray-500">
+                    No sales movement recorded for this selection.
+                  </div>
+                )}
+
+              {!productSalesLoading &&
+                !productSalesError &&
+                salesSeries.length > 0 &&
+                salesChartData.length > 0 && (
+                  <>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={salesChartData}
+                          margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis
+                            dataKey="label"
+                            tick={{ fontSize: 10 }}
+                            interval={0}
+                          />
+                          <YAxis tick={{ fontSize: 10 }} />
+                          <Tooltip
+                            content={({ active, label }) => {
+                              if (!active) return null;
+                              const meta = salesChartMeta[label];
+                              return (
+                                <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[220px] -translate-y-2">
+                                  <p className="text-xs font-semibold text-gray-700">
+                                    {meta?.title || label}
+                                  </p>
+                                  {meta?.subtitle && (
+                                    <p className="text-xs text-gray-500 mb-2">
+                                      {meta.subtitle}
+                                    </p>
+                                  )}
+                                  <p className="text-[11px] text-gray-500 italic">
+                                    Click any bar to view the full product list.
+                                  </p>
+                                </div>
+                              );
+                            }}
+                          />
+                          {salesSeries.map((series, idx) => (
+                            <Bar
+                              key={series.productId}
+                              dataKey={series.productId}
+                              stackId="sales"
+                              fill={SUPPLY_COLORS[idx % SUPPLY_COLORS.length]}
+                              name={series.label}
+                              maxBarSize={60}
+                              className="cursor-pointer"
+                              onClick={handleSalesBarClick}
+                            />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Product Sales Movement Interpretation */}
+                    {salesMovementInterpretation.length > 0 && (
+                      <div className="mt-5 rounded-xl border border-dashed border-orange-200 bg-orange-50/70 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-orange-600 mb-3">
+                          Automatic Interpretation
+                        </p>
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          {salesMovementInterpretation.map((line, idx) => (
+                            <li key={idx} className="leading-relaxed">
+                              • {line}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                )}
+            </div>
           </div>
 
           {/* RIGHT (1/3) */}
@@ -397,6 +1402,123 @@ function Dashboard() {
         </div>
       </div>
     </div>
+
+    {selectedSupplyBar && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div
+          className="absolute inset-0 bg-black/40"
+          onClick={closeSupplyBarDetails}
+        ></div>
+        <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+          <div className="flex items-start justify-between p-4 border-b border-gray-100">
+            <div>
+              <p className="text-base font-semibold text-gray-900">
+                {selectedSupplyBar.label}
+              </p>
+              {selectedSupplyBar.subtitle && (
+                <p className="text-xs text-gray-500">
+                  {selectedSupplyBar.subtitle}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={closeSupplyBarDetails}
+              className="text-xl leading-none text-gray-400 hover:text-gray-700 transition"
+              aria-label="Close product breakdown"
+            >
+              ×
+            </button>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3 max-h-[60vh] overflow-y-auto pr-1">
+              {selectedSupplyBar.products.map((product) => {
+                const color = getSupplyProductColor(product.productId);
+                return (
+                  <div
+                    key={product.productId}
+                    className="flex items-center justify-between gap-2 rounded border border-gray-100 bg-gray-50 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: color }}
+                      ></div>
+                      <span className="text-gray-600 font-medium text-[11px] truncate">
+                        {product.label}
+                      </span>
+                    </div>
+                    <span className="font-semibold text-blue-600 text-[11px] flex-shrink-0">
+                      {product.value.toLocaleString()} units
+                    </span>
+    </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    {selectedSalesBar && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div
+          className="absolute inset-0 bg-black/40"
+          onClick={closeSalesBarDetails}
+        ></div>
+        <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+          <div className="flex items-start justify-between p-4 border-b border-gray-100">
+            <div>
+              <p className="text-base font-semibold text-gray-900">
+                {selectedSalesBar.label}
+              </p>
+              {selectedSalesBar.subtitle && (
+                <p className="text-xs text-gray-500">
+                  {selectedSalesBar.subtitle}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={closeSalesBarDetails}
+              className="text-xl leading-none text-gray-400 hover:text-gray-700 transition"
+              aria-label="Close product breakdown"
+            >
+              ×
+            </button>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3 max-h-[60vh] overflow-y-auto pr-1">
+              {selectedSalesBar.products.map((product) => {
+                const color = getSalesProductColor(product.productId);
+                return (
+                  <div
+                    key={product.productId}
+                    className="flex items-center justify-between gap-2 rounded border border-gray-100 bg-gray-50 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: color }}
+                      ></div>
+                      <span className="text-gray-600 font-medium text-[11px] truncate">
+                        {product.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="font-semibold text-green-600 text-[11px]">
+                        ₱{product.salesAmount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                      </span>
+                      <span className="font-semibold text-blue-600 text-[11px]">
+                        {product.value.toLocaleString()} units
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

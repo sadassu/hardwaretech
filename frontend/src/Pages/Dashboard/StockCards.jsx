@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AlertTriangle, XCircle, Package, TrendingUp, Info } from "lucide-react";
+import { XCircle, Package, Info } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch";
 import Modal from "../../components/Modal";
 import { StockList } from "./StockList";
@@ -29,34 +29,22 @@ function StockCards() {
       label: "All Stocks",
       count: data?.total || 0,
       type: "all",
-      icon: Package,
       gradient: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-50",
-      iconBg: "bg-blue-100",
       textColor: "text-blue-600",
-      hoverGradient: "hover:from-blue-600 hover:to-blue-700",
     },
     {
       label: "Low Stock",
       count: lowData?.total || 0,
       type: "low",
-      icon: AlertTriangle,
       gradient: "from-amber-500 to-orange-500",
-      bgColor: "bg-amber-50",
-      iconBg: "bg-amber-100",
       textColor: "text-amber-600",
-      hoverGradient: "hover:from-amber-600 hover:to-orange-600",
     },
     {
       label: "Out of Stock",
       count: outData?.total || 0,
       type: "out",
-      icon: XCircle,
       gradient: "from-red-500 to-rose-600",
-      bgColor: "bg-red-50",
-      iconBg: "bg-red-100",
       textColor: "text-red-600",
-      hoverGradient: "hover:from-red-600 hover:to-rose-700",
     },
   ];
 
@@ -118,53 +106,39 @@ function StockCards() {
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <div className="space-y-3">
         {stats.map((stat) => {
-          const Icon = stat.icon;
           return (
             <div
               key={stat.type}
               onClick={() => setSelectedType(stat.type)}
-              className="cursor-pointer bg-white rounded-lg hover:shadow-md transition-shadow border border-gray-200 overflow-hidden flex flex-col"
+              className="cursor-pointer bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-lg transition-all"
             >
-              {/* Simple header bar */}
-              <div className={`h-1 bg-gradient-to-r ${stat.gradient}`}></div>
-
-              <div className="p-4 flex flex-col flex-1 min-h-[140px]">
-                {/* Label at top */}
-                <div className="mb-3">
-                  <p className="text-gray-700 text-xs font-semibold flex items-center justify-center gap-1.5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                     {stat.label}
-                    {stat.count > 0 && stat.type !== 'all' && (
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                        stat.type === 'out' ? 'bg-red-500' : 
-                        stat.type === 'low' ? 'bg-amber-500' : 'bg-green-500'
-                      }`}></span>
-                    )}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {stat.type === "all"
+                      ? "Total variants tracked"
+                      : stat.type === "low"
+                      ? "Needs restock attention"
+                      : "Currently unavailable"}
                   </p>
                 </div>
 
-                {/* Large number centered */}
-                <div className="text-center mb-2">
-                  <p className={`text-3xl font-bold ${stat.textColor}`}>
+                <div className="text-right">
+                  <p className={`text-3xl sm:text-4xl font-bold ${stat.textColor}`}>
                     {stat.count.toLocaleString()}
                   </p>
-                </div>
-
-                {/* Description text */}
-                <div className="text-center mb-3">
-                  <p className="text-xs text-gray-500">
-                    {stat.type === 'all' ? 'Total variants' : 
-                     stat.type === 'low' ? 'Need restock' : 
-                     'Unavailable'}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {stat.type === "all"
+                      ? "Active Products"
+                      : stat.type === "low"
+                      ? "Low quantity items"
+                      : "Out of stock items"}
                   </p>
-                </div>
-
-                {/* Icon at bottom - fixed position */}
-                <div className="flex justify-start mt-auto">
-                  <div className={`${stat.iconBg} p-2 rounded-lg`}>
-                    <Icon className={`w-4 h-4 ${stat.textColor}`} />
-                  </div>
                 </div>
               </div>
             </div>

@@ -114,7 +114,7 @@ export function useCart() {
 
   // Derived values - these are computed during render and don't cause side effects
   const cartItems = cart;
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartCount = cart.length; // Count of unique products, not total quantity
   const totalPrice = cart.reduce((sum, item) => sum + item.total, 0);
 
   return {

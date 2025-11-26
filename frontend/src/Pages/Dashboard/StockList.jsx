@@ -1,6 +1,7 @@
 import { useFetch } from "../../hooks/useFetch";
 import { Package, AlertTriangle, XCircle, Search, ImageOff } from "lucide-react";
 import { useState } from "react";
+import { formatVariantLabel } from "../../utils/formatVariantLabel";
 
 /**
  * Sub-component to show stock details in Modal
@@ -114,9 +115,9 @@ export function StockList({ type }) {
                     <div className="space-y-1.5">
                       {/* Variant Details */}
                       <div className="flex flex-wrap gap-1.5">
-                        {variant.size && (
+                        {(variant.size || variant.dimension || variant.unit) && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                            {variant.size} {variant.unit}
+                            {formatVariantLabel(variant) || `${variant.size || ""} ${variant.unit || ""}`.trim()}
                           </span>
                         )}
                         {variant.color && (

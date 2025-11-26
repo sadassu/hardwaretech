@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import Modal from "./Modal";
+import React, { useState, useEffect } from "react";
 import { useCart } from "../hooks/useCart";
 import { useCheckout } from "../hooks/useCheckout";
 import { useAuthContext } from "../hooks/useAuthContext";
@@ -15,7 +14,6 @@ import {
   ChevronLeft,
   Loader2,
   PackageX,
-  ClipboardList,
   AlertTriangle,
   X,
 } from "lucide-react";
@@ -52,6 +50,18 @@ function CartContent() {
   const isRestricted = user?.roles?.some((role) =>
     restrictedRoles.includes(role)
   );
+
+  // Lock body scroll when cart is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   const handleCheckout = async () => {
     try {
@@ -147,176 +157,110 @@ function CartContent() {
         </button>
       </div>
 
-      {/* Modal */}
-      <Modal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        className="w-full max-w-2xl"
-        hideCloseButton={true}
-      >
-        <div className="bg-[#222831] rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
-          {/* Header */}
-          <div className="bg-[#30475E] text-white p-4 sm:p-6 rounded-t-2xl flex-shrink-0 relative">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="bg-white/20 p-2 rounded-full">
-                  <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6" />
+      {/* Right Side Slide-In Cart Panel */}
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] transition-opacity duration-300"
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Cart Panel */}
+          <div
+            className={`fixed top-0 right-0 h-full w-full sm:w-[420px] lg:w-[480px] bg-white shadow-2xl z-[9999] flex flex-col transform transition-transform duration-300 ease-out ${
+              isOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+            style={{ margin: 0, padding: 0 }}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5 flex-shrink-0 border-b border-blue-800/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                    <ShoppingCart className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Shopping Cart</h2>
+                    <p className="text-blue-100 text-sm font-medium">
+                      {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold">
-                    Shopping Cart
-                  </h2>
-                  <p className="text-white/80 text-xs sm:text-sm">
-                    {cartItems.length}{" "}
-                    {cartItems.length === 1 ? "item" : "items"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {cartItems.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {cartItems.length > 0 && (
+                    <button
+                      className="flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-200"
+                      onClick={clearCart}
+                      title="Clear cart"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Clear All
+                    </button>
+                  )}
                   <button
-                    className="btn btn-ghost btn-sm text-white/80 hover:text-white hover:bg-white/20 border-white/30"
-                    onClick={clearCart}
-                    title="Clear cart"
+                    className="bg-white/20 hover:bg-white/30 rounded-full p-2 transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+                    onClick={() => setIsOpen(false)}
+                    title="Close"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    <span className="hidden sm:inline">Clear All</span>
+                    <X className="w-5 h-5" />
                   </button>
-                )}
-                <button
-                  className="btn btn-ghost btn-sm text-white/80 hover:text-white hover:bg-white/20 border-white/30 w-8 h-8 p-0"
-                  onClick={() => setIsOpen(false)}
-                  title="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Cart Body - Scrollable */}
-          <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-            <div className="space-y-4">
-              {cartItems.length === 0 ? (
-                <div className="text-center py-8 sm:py-16">
-                  <div className="relative mb-4 sm:mb-6">
-                    <div className="w-16 h-16 sm:w-24 sm:h-24 mx-auto bg-[#30475E]/20 rounded-full flex items-center justify-center">
-                      <PackageX className="w-8 h-8 sm:w-12 sm:h-12 text-[#30475E]/60" />
+            {/* Cart Body - Scrollable */}
+            <div className="flex-1 overflow-y-auto bg-gray-50">
+              <div className="p-5 space-y-4">
+                {cartItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 px-4">
+                    <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-6">
+                      <PackageX className="w-12 h-12 text-gray-400" />
                     </div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">
+                      Your cart is empty
+                    </h3>
+                    <p className="text-gray-500 text-center">
+                      Add some items to get started!
+                    </p>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-[#DDDDDD] mb-2">
-                    Your cart is empty
-                  </h3>
-                  <p className="text-sm sm:text-base text-[#DDDDDD]/60">
-                    Add some delicious items to get started!
-                  </p>
-                </div>
-              ) : (
-                cartItems.map((item) => (
-                  <div
-                    key={`${item.productId}-${item.variantId}`}
-                    className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#30475E]/30 hover:border-[#30475E] overflow-hidden"
-                  >
-                    <div className="p-3 sm:p-5">
-                      <div className="flex justify-between items-start mb-3 sm:mb-4">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base sm:text-lg text-[#222831] truncate group-hover:text-[#30475E] transition-colors">
-                            {item.name}
-                          </h3>
-                          {item.size && (
-                            <div className="inline-flex items-center gap-1 mt-1">
-                              <span className="text-xs font-medium text-[#30475E] bg-[#30475E]/10 px-2 py-1 rounded-full">
-                                ₱{item.price.toFixed(2)} / {item.size}{" "}
-                                {item.unit}
-                              </span>
-                            </div>
-                          )}
+                ) : (
+                  cartItems.map((item) => (
+                    <div
+                      key={`${item.productId}-${item.variantId}`}
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
+                    >
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1 min-w-0 pr-3">
+                            <h3 className="font-bold text-lg text-gray-900 mb-1.5 line-clamp-2">
+                              {item.name}
+                            </h3>
+                            {item.size && (
+                              <p className="text-sm text-gray-600 font-medium">
+                                ₱{item.price.toFixed(2)} / {item.size} {item.unit}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            className="flex-shrink-0 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg p-1.5 transition-all duration-200"
+                            onClick={() =>
+                              removeItem(item.productId, item.variantId)
+                            }
+                            title="Remove item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                        <button
-                          className="btn btn-ghost btn-sm text-[#F05454]/60 hover:text-[#F05454] hover:bg-[#F05454]/10 rounded-full w-8 h-8 p-0"
-                          onClick={() =>
-                            removeItem(item.productId, item.variantId)
-                          }
-                          title="Remove item"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
 
-                      <div className="flex items-center justify-between">
-                        {/* Quantity Controls */}
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2 sm:gap-3 bg-[#222831]/10 rounded-full p-1">
-                            <button
-                              className="btn btn-ghost btn-sm rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 hover:bg-[#30475E] hover:text-white"
-                              onClick={() => {
-                                const newQty = item.quantity - 1;
-                                updateQuantity(
-                                  item.productId,
-                                  item.variantId,
-                                  newQty
-                                );
-                                // Clear message when decreasing
-                                setMaxStockMessages(prev => {
-                                  const updated = { ...prev };
-                                  delete updated[`${item.productId}-${item.variantId}`];
-                                  return updated;
-                                });
-                              }}
-                              disabled={item.quantity <= 1}
-                            >
-                              <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </button>
-
-                            <input
-                              type="number"
-                              className="input input-ghost input-sm w-12 sm:w-16 text-center font-semibold bg-transparent border-none focus:bg-white rounded-lg text-[#222831]"
-                              value={item.quantity}
-                              min={1}
-                              max={item.quantityAvailable ?? Infinity}
-                              onChange={(e) => {
-                                let value = parseInt(e.target.value, 10) || 1;
-                                const maxAvailable = item.quantityAvailable ?? Infinity;
-                                
-                                if (value > maxAvailable) {
-                                  value = maxAvailable;
-                                  setMaxStockMessages(prev => ({
-                                    ...prev,
-                                    [`${item.productId}-${item.variantId}`]: `Maximum available stock: ${maxAvailable}`
-                                  }));
-                                } else {
-                                  setMaxStockMessages(prev => {
-                                    const updated = { ...prev };
-                                    delete updated[`${item.productId}-${item.variantId}`];
-                                    return updated;
-                                  });
-                                }
-                                if (value < 1) value = 1;
-                                updateQuantity(
-                                  item.productId,
-                                  item.variantId,
-                                  value
-                                );
-                              }}
-                            />
-
-                            <button
-                              className="btn btn-ghost btn-sm rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 hover:bg-[#30475E] hover:text-white"
-                              onClick={() => {
-                                const maxAvailable = item.quantityAvailable ?? Infinity;
-                                const newQty = item.quantity + 1;
-                                
-                                if (newQty > maxAvailable) {
-                                  setMaxStockMessages(prev => ({
-                                    ...prev,
-                                    [`${item.productId}-${item.variantId}`]: `Maximum available stock: ${maxAvailable}`
-                                  }));
-                                  updateQuantity(
-                                    item.productId,
-                                    item.variantId,
-                                    maxAvailable
-                                  );
-                                } else {
+                        <div className="flex items-center justify-between">
+                          {/* Quantity Controls */}
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                              <button
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => {
+                                  const newQty = item.quantity - 1;
                                   updateQuantity(
                                     item.productId,
                                     item.variantId,
@@ -327,136 +271,203 @@ function CartContent() {
                                     delete updated[`${item.productId}-${item.variantId}`];
                                     return updated;
                                   });
-                                }
-                              }}
-                              disabled={item.quantity >= (item.quantityAvailable ?? Infinity)}
-                            >
-                              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </button>
-                          </div>
-                          {maxStockMessages[`${item.productId}-${item.variantId}`] && (
-                            <div className="bg-amber-500/20 border border-amber-500/40 rounded-lg p-2 flex items-start gap-2">
-                              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                              <p className="text-xs text-amber-200">
-                                {maxStockMessages[`${item.productId}-${item.variantId}`]}
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                                }}
+                                disabled={item.quantity <= 1}
+                              >
+                                <Minus className="w-4 h-4 text-gray-700" />
+                              </button>
 
-                        <div className="text-right">
-                          <p className="text-xl sm:text-2xl font-bold text-[#F05454]">
-                            ₱{item.total.toFixed(2)}
-                          </p>
+                              <input
+                                type="number"
+                                className="w-12 text-center font-bold text-gray-900 bg-transparent border-none focus:outline-none"
+                                value={item.quantity}
+                                min={1}
+                                max={item.quantityAvailable ?? Infinity}
+                                onChange={(e) => {
+                                  let value = parseInt(e.target.value, 10) || 1;
+                                  const maxAvailable = item.quantityAvailable ?? Infinity;
+                                  
+                                  if (value > maxAvailable) {
+                                    value = maxAvailable;
+                                    setMaxStockMessages(prev => ({
+                                      ...prev,
+                                      [`${item.productId}-${item.variantId}`]: `Maximum available stock: ${maxAvailable}`
+                                    }));
+                                  } else {
+                                    setMaxStockMessages(prev => {
+                                      const updated = { ...prev };
+                                      delete updated[`${item.productId}-${item.variantId}`];
+                                      return updated;
+                                    });
+                                  }
+                                  if (value < 1) value = 1;
+                                  updateQuantity(
+                                    item.productId,
+                                    item.variantId,
+                                    value
+                                  );
+                                }}
+                              />
+
+                              <button
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => {
+                                  const maxAvailable = item.quantityAvailable ?? Infinity;
+                                  const newQty = item.quantity + 1;
+                                  
+                                  if (newQty > maxAvailable) {
+                                    setMaxStockMessages(prev => ({
+                                      ...prev,
+                                      [`${item.productId}-${item.variantId}`]: `Maximum available stock: ${maxAvailable}`
+                                    }));
+                                    updateQuantity(
+                                      item.productId,
+                                      item.variantId,
+                                      maxAvailable
+                                    );
+                                  } else {
+                                    updateQuantity(
+                                      item.productId,
+                                      item.variantId,
+                                      newQty
+                                    );
+                                    setMaxStockMessages(prev => {
+                                      const updated = { ...prev };
+                                      delete updated[`${item.productId}-${item.variantId}`];
+                                      return updated;
+                                    });
+                                  }
+                                }}
+                                disabled={item.quantity >= (item.quantityAvailable ?? Infinity)}
+                              >
+                                <Plus className="w-4 h-4 text-gray-700" />
+                              </button>
+                            </div>
+                            {maxStockMessages[`${item.productId}-${item.variantId}`] && (
+                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                                <p className="text-xs text-amber-800">
+                                  {maxStockMessages[`${item.productId}-${item.variantId}`]}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-blue-600">
+                              ₱{item.total.toFixed(2)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
 
-            {/* Notes Section (inside scrollable area) - Only for non-restricted users */}
-            {cartItems.length > 0 && !isRestricted && (
-              <>
-                <div className="divider my-4 sm:my-6"></div>
-
-                <div className="form-control mb-4 sm:mb-6">
-                  <label className="label">
-                    <span className="label-text font-semibold text-[#DDDDDD] flex items-center gap-2 text-sm sm:text-base">
-                      <StickyNote className="w-4 h-4" />
-                      Special Notes
-                    </span>
+              {/* Notes Section - Only for non-restricted users */}
+              {cartItems.length > 0 && !isRestricted && (
+                <div className="pt-4 border-t border-gray-200">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <StickyNote className="w-4 h-4 text-gray-600" />
+                    Special Notes
                   </label>
                   <textarea
-                    className="textarea textarea-bordered textarea-lg w-full bg-white text-[#222831] focus:border-[#30475E] focus:outline-[#30475E] rounded-xl text-sm sm:text-base"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-sm"
                     placeholder="Any special requests? (Optional)"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
                   />
                 </div>
-              </>
-            )}
-          </div>
-
-          {/* Fixed Footer (outside scrollable area) */}
-          {cartItems.length > 0 && (
-            <div className="p-4 sm:p-6 pt-0 flex-shrink-0 bg-[#222831] rounded-b-2xl">
-              {/* Amount Paid Input - Fixed at bottom for restricted users */}
-              {isRestricted && (
-                <>
-                  <div className="divider my-4 sm:my-6"></div>
-                  <div className="form-control mb-4 sm:mb-6">
-                    <label className="label">
-                      <span className="label-text font-semibold text-[#DDDDDD] flex items-center gap-2 text-sm sm:text-base">
-                        <Banknote className="w-4 h-4 text-[#F05454]" />
-                        Amount Paid
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      className="input input-bordered input-lg w-full bg-white text-[#222831] focus:border-[#30475E] focus:outline-[#30475E] rounded-xl text-sm sm:text-base"
-                      placeholder="Enter amount paid by customer"
-                      value={amountPaid}
-                      min={0}
-                      step="0.01"
-                      onChange={(e) => setAmountPaid(e.target.value)}
-                    />
-                  </div>
-
-                  {/* Change Display */}
-                  {amountPaid && parseFloat(amountPaid) >= totalPrice && (
-                    <div className="bg-green-500/20 border border-green-500/40 p-4 rounded-xl mb-4 sm:mb-6">
-                      <div className="flex justify-between items-center">
-                        <span className="text-base font-semibold text-green-100">
-                          Change:
-                        </span>
-                        <span className="text-xl font-bold text-green-300">
-                          ₱{(parseFloat(amountPaid) - totalPrice).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Insufficient Payment Warning */}
-                  {amountPaid && parseFloat(amountPaid) < totalPrice && (
-                    <div className="bg-red-500/20 border border-red-500/40 p-4 rounded-xl mb-4 sm:mb-6">
-                      <div className="flex justify-between items-center">
-                        <span className="text-base font-semibold text-red-100">
-                          Insufficient:
-                        </span>
-                        <span className="text-xl font-bold text-red-300">
-                          ₱{(totalPrice - parseFloat(amountPaid)).toFixed(2)}{" "}
-                          short
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </>
               )}
-              <div className="space-y-4">
-                <div className="bg-white p-4 rounded-2xl border border-[#30475E]/40">
-                  <div className="flex justify-between items-center">
-                    <span className="text-base font-semibold">
-                      Total Amount:
-                    </span>
-                    <span className="text-xl font-bold text-[#F05454]">
-                      ₱{totalPrice.toFixed(2)}
-                    </span>
+            </div>
+
+            {/* Fixed Footer */}
+            {cartItems.length > 0 && (
+              <div className="flex-shrink-0 bg-white border-t border-gray-200 p-5 space-y-4">
+                {/* Amount Paid Input and Total Amount - Horizontally Aligned */}
+                <div className="flex gap-3">
+                  {/* Amount Paid Input - For restricted users */}
+                  {isRestricted && (
+                    <div className="flex-1 flex flex-col">
+                      <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                        <Banknote className="w-4 h-4 text-blue-600" />
+                        Amount Paid
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full h-11 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-medium"
+                        placeholder="Enter amount paid"
+                        value={amountPaid}
+                        min={0}
+                        step="0.01"
+                        onChange={(e) => setAmountPaid(e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  {/* Total Amount */}
+                  <div className={`${isRestricted ? "flex-1" : "w-full"} flex flex-col`}>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Total Amount
+                    </label>
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 h-11 p-2.5 rounded-lg border border-blue-200 flex items-center">
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-sm font-bold text-gray-700">
+                          Total:
+                        </span>
+                        <span className="text-lg font-bold text-blue-600">
+                          ₱{totalPrice.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                {/* Change Display - For restricted users */}
+                {isRestricted && (
+                  <>
+                    {amountPaid && parseFloat(amountPaid) >= totalPrice && (
+                      <div className="bg-green-50 border border-green-200 p-2.5 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-semibold text-green-700">
+                            Change:
+                          </span>
+                          <span className="text-base font-bold text-green-600">
+                            ₱{(parseFloat(amountPaid) - totalPrice).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Insufficient Payment Warning */}
+                    {amountPaid && parseFloat(amountPaid) < totalPrice && (
+                      <div className="bg-red-50 border border-red-200 p-2.5 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-semibold text-red-700">
+                            Insufficient:
+                          </span>
+                          <span className="text-base font-bold text-red-600">
+                            ₱{(totalPrice - parseFloat(amountPaid)).toFixed(2)} short
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
                   <button
-                    className="btn btn-outline btn-md sm:btn-lg flex-1 rounded-xl hover:scale-105 transition-all duration-200 border-[#DDDDDD] text-[#DDDDDD] hover:bg-white hover:text-[#222831]"
+                    className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
                     onClick={() => setIsOpen(false)}
                   >
-                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <ChevronLeft className="w-5 h-5" />
                     Continue Shopping
                   </button>
                   <button
-                    className="btn cursor-pointer btn-md sm:btn-lg flex-1 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl hover:scale-105 bg-[#F05454] hover:bg-[#F05454]/90 text-white border-none"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleCheckout}
                     disabled={
                       loading ||
@@ -466,7 +477,7 @@ function CartContent() {
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                        <Loader2 className="w-5 h-5 animate-spin" />
                         Processing...
                       </>
                     ) : (
@@ -475,10 +486,10 @@ function CartContent() {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </Modal>
+            )}
+          </div>
+        </>
+      )}
     </>
   );
 }

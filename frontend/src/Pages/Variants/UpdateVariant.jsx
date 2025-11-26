@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
 import { Edit } from "lucide-react";
+import { formatVariantLabel } from "../../utils/formatVariantLabel.js";
 
 const UNIT_OPTIONS = [
   "pcs",
@@ -30,6 +31,8 @@ const UpdateVariant = ({ variant, product }) => {
   const [formData, setFormData] = useState({
     unit: "",
     size: "",
+    dimension: "",
+    dimensionType: "",
     color: "",
     supplier_price: "",
     price: "",
@@ -38,6 +41,7 @@ const UpdateVariant = ({ variant, product }) => {
     conversionQuantity: 1,
     autoConvert: false,
     conversionNotes: "",
+    includePerText: false,
   });
 
   useEffect(() => {
@@ -45,6 +49,8 @@ const UpdateVariant = ({ variant, product }) => {
       setFormData({
         unit: variant.unit || "",
         size: variant.size || "",
+        dimension: variant.dimension || "",
+        dimensionType: variant.dimensionType || "",
         color: variant.color || "",
         price: variant.price || "",
         supplier_price: variant.supplier_price || "",
@@ -56,6 +62,7 @@ const UpdateVariant = ({ variant, product }) => {
         conversionQuantity: variant.conversionQuantity || 1,
         autoConvert: Boolean(variant.autoConvert),
         conversionNotes: variant.conversionNotes || "",
+        includePerText: Boolean(variant.includePerText),
       });
     }
   }, [isOpen, variant]);
@@ -131,14 +138,73 @@ const UpdateVariant = ({ variant, product }) => {
                 </select>
               </div>
 
-              <TextInput
-                label="Size"
+              <div>
+                <label htmlFor="size" className="block text-sm font-medium mb-1">
+                  Size <span className="text-gray-400 text-xs font-normal">(optional)</span>
+                </label>
+                <input
+                  id="size"
                 type="text"
                 name="size"
                 placeholder="Size (e.g., Small, Medium)"
                 value={formData.size}
                 onChange={handleChange}
+                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="dimension" className="block text-sm font-medium mb-1">
+                  Dimension <span className="text-gray-400 text-xs font-normal">(optional)</span>
+                </label>
+                <input
+                  id="dimension"
+                  type="text"
+                  name="dimension"
+                  placeholder="e.g., 1 inch, 2.5 cm"
+                  value={formData.dimension}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
+                />
+                <p className="text-xs text-gray-400 mt-1">e.g., diameter, thickness</p>
+              </div>
+
+              <div>
+                <label htmlFor="dimensionType" className="block text-sm font-medium mb-1">
+                  Dimension Type <span className="text-gray-400 text-xs font-normal">(optional)</span>
+                </label>
+                <select
+                  id="dimensionType"
+                  name="dimensionType"
+                  value={formData.dimensionType}
+                  onChange={handleChange}
+                  className="select select-bordered w-full bg-[#30475E] text-white"
+                >
+                  <option value="">None</option>
+                  <option value="diameter">Diameter</option>
+                  <option value="thickness">Thickness</option>
+                  <option value="length">Length</option>
+                  <option value="width">Width</option>
+                  <option value="height">Height</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-2xl border border-gray-600/40 px-4 py-3">
+              <input
+                type="checkbox"
+                id="includePerText"
+                name="includePerText"
+                checked={formData.includePerText}
+                onChange={handleChange}
+                className="checkbox checkbox-primary mt-1"
               />
+              <label htmlFor="includePerText" className="text-sm font-medium leading-relaxed">
+                Insert the word <span className="font-semibold text-blue-200">"per"</span> between size and unit
+                (e.g., <span className="font-semibold">1 set per 30 m</span>)
+              </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -172,6 +238,7 @@ const UpdateVariant = ({ variant, product }) => {
                 value={formData.quantity}
                 onChange={handleChange}
                 required
+                min="0"
               />
 
               <TextInput
@@ -214,7 +281,7 @@ const UpdateVariant = ({ variant, product }) => {
                         ?.filter((v) => v._id !== variant?._id)
                         .map((v) => (
                           <option key={v._id} value={v._id}>
-                            {v.size ? `${v.size} ${v.unit}` : v.unit} • Stock:{" "}
+                            {formatVariantLabel(v) || v.unit || "variant"} • Stock:{" "}
                             {v.quantity ?? 0}
                           </option>
                         ))}
