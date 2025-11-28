@@ -3,8 +3,15 @@ import { useAuthContext } from "../../hooks/useAuthContext";
 import Pagination from "../../components/Pagination";
 import SearchBar from "../../components/SearchBar";
 import { useSupplyHistoryStore } from "../../store/supplyHistoryStore";
-import RedoModal from "./RedoModal";
-import { Clock, Package, TrendingUp, Calendar, X } from "lucide-react";
+import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
+import {
+  Clock,
+  TrendingUp,
+  Calendar,
+  X,
+  AlertCircle,
+  Boxes,
+} from "lucide-react";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 const SupplyHistories = () => {
@@ -14,15 +21,16 @@ const SupplyHistories = () => {
     pages,
     loading,
     fetchSupplyHistories,
-    redoSupplyHistory,
     fetchMoneySpentSevenDays,
-    fetchItemsStockedSevenDays,
     fetchTotalMoneySpent,
+    fetchLostMoneyStats,
+    fetchTotalStock,
   } = useSupplyHistoryStore();
 
   const [last7DaysSpending, setLast7DaysSpending] = useState(0);
-  const [last7DaysItems, setLast7DaysItems] = useState(0);
+  const [totalStock, setTotalStock] = useState(0);
   const [totalMoneySpent, setTotalMoneySpent] = useState(0);
+  const [lostMoney, setLostMoney] = useState({ total: 0, last7: 0 });
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -32,29 +40,35 @@ const SupplyHistories = () => {
   const limit = 10;
 
   const isMobile = useIsMobile(768);
+  const supplyLiveKey = useLiveResourceRefresh(["supply", "inventory"]);
 
   useEffect(() => {
     const loadAnalytics = async () => {
       if (!user?.token) return;
       try {
-        const [spending, items, total] = await Promise.all([
+        const [spending, stock, total, lost] = await Promise.all([
           fetchMoneySpentSevenDays(user.token),
-          fetchItemsStockedSevenDays(user.token),
+          fetchTotalStock(user.token),
           fetchTotalMoneySpent(user.token),
+          fetchLostMoneyStats(user.token),
         ]);
 
         setLast7DaysSpending(
           spending.reduce((sum, day) => sum + day.totalSpent, 0)
         );
-        setLast7DaysItems(items.reduce((sum, day) => sum + day.totalItems, 0));
+        setTotalStock(stock || 0);
         setTotalMoneySpent(total);
+        setLostMoney({
+          total: lost?.totalLostMoney || 0,
+          last7: lost?.last7DaysLostMoney || 0,
+        });
       } catch (err) {
         console.error("Failed to load analytics:", err);
       }
     };
 
     loadAnalytics();
-  }, [user?.token]);
+  }, [user?.token, fetchMoneySpentSevenDays, fetchTotalStock, fetchTotalMoneySpent, fetchLostMoneyStats, supplyLiveKey]);
 
   // Debounce search input
   useEffect(() => {
@@ -79,7 +93,7 @@ const SupplyHistories = () => {
         endDate,
       });
     }
-  }, [page, query, startDate, endDate, user?.token]);
+  }, [page, query, startDate, endDate, user?.token, supplyLiveKey, fetchSupplyHistories]);
 
   const handleStartDateChange = (e) => {
     setStartDate(e.target.value);
@@ -131,6 +145,7 @@ const SupplyHistories = () => {
     }
     return "";
   };
+
 
   return (
     <div className="container mx-auto p-6">
@@ -199,7 +214,7 @@ const SupplyHistories = () => {
       </div>
 
       {/* ===== ANALYTICS CARDS ===== */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         <div className="shadow-lg rounded-xl overflow-hidden bg-[#30475E] p-6 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium mb-1 text-white">
@@ -217,17 +232,21 @@ const SupplyHistories = () => {
           </div>
         </div>
 
-        <div className="shadow-lg rounded-xl overflow-hidden bg-[#222831] p-6 flex items-center justify-between">
+        <div className="shadow-lg rounded-xl overflow-hidden bg-[#1F2937] p-6 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium mb-1 text-white">
-              Items Stocked (Last 7 Days)
+              Total Stock On Hand
             </p>
             <h3 className="text-3xl font-bold text-white">
-              {Number(last7DaysItems || 0).toLocaleString()}
+              {Number(totalStock || 0).toLocaleString()}
+              <span className="text-base ml-1 font-medium">pcs</span>
             </h3>
+            <p className="text-xs text-white/70 mt-1">
+              Includes all active product variants
+            </p>
           </div>
           <div className="p-3 rounded-lg bg-white/10">
-            <Package className="h-8 w-8 text-white" />
+            <Boxes className="h-8 w-8 text-white" />
           </div>
         </div>
 
@@ -245,6 +264,29 @@ const SupplyHistories = () => {
           </div>
           <div className="p-3 rounded-lg bg-white/10">
             <TrendingUp className="h-8 w-8 text-white" />
+          </div>
+        </div>
+
+        <div className="shadow-lg rounded-xl overflow-hidden bg-[#7A1B1D] p-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium mb-1 text-white">
+              Lost Money (All Time)
+            </p>
+            <h3 className="text-3xl font-bold text-white">
+              ₱
+              {Number(lostMoney.total || 0).toLocaleString("en-PH", {
+                minimumFractionDigits: 2,
+              })}
+            </h3>
+            <p className="text-xs text-white/80 mt-1">
+              Last 7 days: ₱
+              {Number(lostMoney.last7 || 0).toLocaleString("en-PH", {
+                minimumFractionDigits: 2,
+              })}
+            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-white/10">
+            <AlertCircle className="h-8 w-8 text-white" />
           </div>
         </div>
       </div>
@@ -313,14 +355,6 @@ const SupplyHistories = () => {
                     )}
                   </p>
                 </div>
-
-                <div className="mt-3 flex justify-end">
-                  <RedoModal
-                    user={user}
-                    history={h}
-                    redoSupplyHistory={redoSupplyHistory}
-                  />
-                </div>
               </div>
             ))
           ) : (
@@ -345,13 +379,12 @@ const SupplyHistories = () => {
                   <th>Date Supplied</th>
                   <th>Created At</th>
                   <th>Notes</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="text-center py-12">
+                    <td colSpan="7" className="text-center py-12">
                       <span className="loading loading-spinner loading-lg"></span>
                     </td>
                   </tr>
@@ -418,18 +451,11 @@ const SupplyHistories = () => {
                           </span>
                         )}
                       </td>
-                      <td>
-                        <RedoModal
-                          user={user}
-                          history={h}
-                          redoSupplyHistory={redoSupplyHistory}
-                        />
-                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="text-center py-12">
+                    <td colSpan="7" className="text-center py-12">
                       <p className="text-base-content/60">
                         {hasDateFilter
                           ? "No supply histories found for the selected date range"

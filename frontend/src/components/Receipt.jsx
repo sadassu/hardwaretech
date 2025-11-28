@@ -312,10 +312,15 @@ function Receipt({ sale, onClose }) {
                       <div className="font-bold text-sm">
                         {product?.name || "Unnamed Product"}
                       </div>
-                      <div className="text-xs text-gray-600 my-1">
-                        {variant?.size ? `${variant.size} ` : ""}
-                        {variant?.color ? `${variant.color} ` : ""}
-                        {variant?.unit ? `(${variant.unit})` : ""}
+                      <div className="text-xs text-gray-600 my-1 space-x-2">
+                        {variant?.size && <span>Size: {variant.size}</span>}
+                        {variant?.unit && <span>Unit: {variant.unit}</span>}
+                        {variant?.dimension && (
+                          <span>Dimension: {variant.dimension}</span>
+                        )}
+                        {variant?.dimensionType && (
+                          <span>Dimension Type: {variant.dimensionType}</span>
+                        )}
                       </div>
                       <div className="text-xs text-gray-600 my-1">
                         {item.quantity} × ₱{item.price?.toLocaleString()}

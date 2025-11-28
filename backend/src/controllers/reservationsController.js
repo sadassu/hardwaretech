@@ -9,7 +9,6 @@ export const createReservation = asyncHandler(async (req, res) => {
   const { notes, totalPrice, reservationDetails, reservationDate } = req.body;
 
   let emptyFields = [];
-  if (!totalPrice) emptyFields.push("totalPrice");
   if (!reservationDate) emptyFields.push("reservationDate");
 
   if (emptyFields.length > 0) {
@@ -26,7 +25,7 @@ export const createReservation = asyncHandler(async (req, res) => {
       userId: req.user._id,
       reservationDate: reservationDate || Date.now(),
       status: "pending",
-      totalPrice,
+      totalPrice: 0,
     };
 
     // ✅ only add notes if provided
@@ -38,15 +37,49 @@ export const createReservation = asyncHandler(async (req, res) => {
       session,
     });
 
+    let computedTotal = 0;
     if (Array.isArray(reservationDetails) && reservationDetails.length > 0) {
-      const detailsWithReservationId = reservationDetails.map((d) => ({
-        ...d,
-        reservationId: reservation._id,
-        productVariantId: d.productVariantId || d.variantId || d._id,
-      }));
+      const variantIds = [
+        ...new Set(
+          reservationDetails
+            .map((d) => d.productVariantId || d.variantId || d._id)
+            .filter(Boolean)
+        ),
+      ];
+
+      const variants = await ProductVariant.find({ _id: { $in: variantIds } })
+        .select("price size unit")
+        .lean();
+      const variantMap = new Map(
+        variants.map((variant) => [String(variant._id), variant])
+      );
+
+      const detailsWithReservationId = reservationDetails.map((d) => {
+        const variantId = d.productVariantId || d.variantId || d._id;
+        const variant = variantMap.get(String(variantId));
+        const quantity = Number(d.quantity) || 0;
+        const unitPrice =
+          typeof d.price === "number" ? d.price : variant?.price || 0;
+        const subtotal = unitPrice * quantity;
+        computedTotal += subtotal;
+
+        return {
+          reservationId: reservation._id,
+          productVariantId: variantId,
+          quantity,
+          size: d.size || variant?.size,
+          unit: d.unit || variant?.unit,
+          price: unitPrice,
+          subtotal,
+        };
+      });
 
       await ReservationDetail.insertMany(detailsWithReservationId, { session });
     }
+
+    reservation.totalPrice =
+      computedTotal > 0 ? computedTotal : Number(totalPrice) || 0;
+    await reservation.save({ session });
 
     await session.commitTransaction();
 
@@ -68,7 +101,7 @@ export const createReservation = asyncHandler(async (req, res) => {
           size: detail.productVariantId?.size || detail.size || "",
           unit: detail.productVariantId?.unit || detail.unit || "",
           quantity: detail.quantity || 1,
-          price: detail.productVariantId?.price || 0
+          price: detail.price ?? detail.productVariantId?.price ?? 0
         }));
 
         const { sendReservationCreatedEmail } = await import("../services/emailService.js");
@@ -150,7 +183,7 @@ export const cancelReservation = asyncHandler(async (req, res) => {
         size: detail.productVariantId?.size || detail.size || "",
         unit: detail.productVariantId?.unit || detail.unit || "",
         quantity: detail.quantity || 1,
-        price: detail.productVariantId?.price || 0
+        price: detail.price ?? detail.productVariantId?.price ?? 0
       }));
 
       const { sendReservationStatusEmail } = await import("../services/emailService.js");
@@ -205,14 +238,37 @@ export const updateReservation = asyncHandler(async (req, res) => {
   const deletedDetails = [];
   const newDetails = [];
 
+  const existingVariantIds = existingDetails.map((d) => d.productVariantId);
+  const incomingVariantIds = reservationDetails
+    .map((d) => d.productVariantId || d.variantId || d._id)
+    .filter(Boolean);
+  const variantIds = [
+    ...new Set(
+      [...existingVariantIds, ...incomingVariantIds].map((id) => String(id))
+    ),
+  ];
+
+  const variantDocs = variantIds.length
+    ? await ProductVariant.find({ _id: { $in: variantIds } })
+        .select("price size unit")
+        .lean()
+    : [];
+  const variantMap = new Map(
+    variantDocs.map((variant) => [String(variant._id), variant])
+  );
+
   // 🗺️ Map incoming by variant ID
   const incomingMap = new Map(
-    reservationDetails.map((d) => [String(d.productVariantId), d])
+    reservationDetails.map((d) => [
+      String(d.productVariantId || d.variantId || d._id),
+      d,
+    ])
   );
 
   // 🔁 Compare existing with incoming
   for (const detail of existingDetails) {
-    const incoming = incomingMap.get(String(detail.productVariantId));
+    const key = String(detail.productVariantId);
+    const incoming = incomingMap.get(key);
 
     if (!incoming) {
       // ❌ removed
@@ -235,6 +291,28 @@ export const updateReservation = asyncHandler(async (req, res) => {
       detail.unit = incoming.unit;
       hasChanges = true;
     }
+    if (
+      Object.prototype.hasOwnProperty.call(incoming, "price") &&
+      incoming.price !== detail.price
+    ) {
+      detail.price = incoming.price;
+      hasChanges = true;
+    }
+
+    const variant = variantMap.get(key);
+    let lockedPrice =
+      detail.price !== undefined && detail.price !== null
+        ? detail.price
+        : incoming.price ?? variant?.price ?? 0;
+    if (detail.price === undefined || detail.price === null) {
+      detail.price = lockedPrice;
+      hasChanges = true;
+    }
+    const newSubtotal = lockedPrice * detail.quantity;
+    if (detail.subtotal !== newSubtotal) {
+      detail.subtotal = newSubtotal;
+      hasChanges = true;
+    }
 
     if (hasChanges) {
       await detail.save();
@@ -242,39 +320,57 @@ export const updateReservation = asyncHandler(async (req, res) => {
     }
 
     // Remove from map
-    incomingMap.delete(String(detail.productVariantId));
+    incomingMap.delete(key);
   }
 
   // ➕ Add new ones
   for (const incoming of incomingMap.values()) {
+    const variantId = incoming.productVariantId || incoming.variantId || incoming._id;
+    const variant = variantMap.get(String(variantId));
+    const quantity = Number(incoming.quantity) || 0;
+    const size = incoming.size || variant?.size;
+    const unit = incoming.unit || variant?.unit;
+    const unitPrice =
+      typeof incoming.price === "number" ? incoming.price : variant?.price || 0;
+
     const newDetail = new ReservationDetail({
       reservationId,
-      productVariantId: incoming.productVariantId,
-      quantity: incoming.quantity,
-      size: incoming.size,
-      unit: incoming.unit,
+      productVariantId: variantId,
+      quantity,
+      size,
+      unit,
+      price: unitPrice,
+      subtotal: unitPrice * quantity,
     });
     await newDetail.save();
     newDetails.push(newDetail.productVariantId);
   }
 
-  // 🧮 Recalculate total price
+  // 🧮 Recalculate total price using locked prices
   const allDetails = await ReservationDetail.find({ reservationId });
-  const variantIds = allDetails.map((d) => d.productVariantId);
-
-  const variants = await ProductVariant.find({ _id: { $in: variantIds } });
-  const variantMap = new Map(variants.map((v) => [String(v._id), v]));
 
   let newTotalPrice = 0;
-  for (const d of allDetails) {
-    const variant = variantMap.get(String(d.productVariantId));
-    if (variant) {
-      newTotalPrice += variant.price * d.quantity;
+  for (const detail of allDetails) {
+    const variant = variantMap.get(String(detail.productVariantId));
+    let lockedPrice =
+      detail.price !== undefined && detail.price !== null
+        ? detail.price
+        : variant?.price ?? 0;
+    if (detail.price === undefined || detail.price === null) {
+      detail.price = lockedPrice;
+      detail.subtotal = lockedPrice * detail.quantity;
+      await detail.save();
+    } else if (detail.subtotal !== lockedPrice * detail.quantity) {
+      detail.subtotal = lockedPrice * detail.quantity;
+      await detail.save();
     }
+    newTotalPrice += lockedPrice * detail.quantity;
   }
 
   reservation.totalPrice = newTotalPrice;
-  if (remarks) reservation.remarks = remarks;
+  if (typeof remarks === "string") {
+    reservation.remarks = remarks;
+  }
   await reservation.save();
 
   // 📦 Populate for frontend
@@ -414,7 +510,7 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
         size: detail.productVariantId?.size || detail.size || "",
         unit: detail.productVariantId?.unit || detail.unit || "",
         quantity: detail.quantity || 1,
-        price: detail.productVariantId?.price || 0
+        price: detail.price ?? detail.productVariantId?.price ?? 0
       }));
 
       const { sendReservationStatusEmail } = await import("../services/emailService.js");

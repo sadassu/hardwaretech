@@ -1,5 +1,9 @@
+import mongoose from "mongoose";
 import Category from "../models/Category.js";
 import Product from "../models/Product.js";
+import ProductVariant from "../models/ProductVariant.js";
+import SupplyHistory from "../models/SupplyHistory.js";
+import InventoryLoss from "../models/InventoryLoss.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET /api/products
@@ -208,11 +212,81 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
 //  Delete product
 export const deleteProduct = asyncHandler(async (req, res) => {
-  const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (!deletedProduct) {
-    return res.status(404).json({ message: "Product not found" });
+  try {
+    // Find product and all its variants before deleting
+    const product = await Product.findById(req.params.id).session(session);
+
+    if (!product) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Find all variants for this product
+    const variants = await ProductVariant.find({ product: product._id }).session(session);
+
+    // Calculate lost money for each variant with stock using weighted average
+    for (const variant of variants) {
+      if (variant.quantity > 0) {
+        const supplyHistories = await SupplyHistory.find({
+          product_variant: variant._id,
+        }).session(session);
+
+        let totalCost = 0;
+        let totalAvailableQuantity = 0;
+
+        // Calculate weighted average: Sum of (available quantity * supplier_price) / Total available quantity
+        for (const history of supplyHistories) {
+          const pulledOut = history.pulledOutQuantity || 0;
+          const available = history.quantity - pulledOut;
+
+          if (available > 0) {
+            totalCost += available * history.supplier_price;
+            totalAvailableQuantity += available;
+          }
+        }
+
+        // Calculate average price per unit
+        const averagePrice =
+          totalAvailableQuantity > 0
+            ? totalCost / totalAvailableQuantity
+            : variant.supplier_price || 0; // Fallback to variant supplier price
+
+        // Calculate lost amount using weighted average
+        const lossAmount = variant.quantity * averagePrice;
+
+        // Round to 2 decimal places
+        const roundedLossAmount = Math.round(lossAmount * 100) / 100;
+
+        // Create InventoryLoss entry
+        await InventoryLoss.create(
+          [
+            {
+              product_variant: variant._id,
+              quantity: variant.quantity,
+              amount: roundedLossAmount,
+              reason: "manual_adjustment",
+              notes: `Product deleted - ${product.name}`,
+            },
+          ],
+          { session }
+        );
+      }
+    }
+
+    // Delete the product (cascade delete will handle variants)
+    await Product.findByIdAndDelete(req.params.id).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
-
-  res.status(200).json({ message: "Product deleted successfully" });
 });

@@ -104,6 +104,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                 },
               },
               unit: matchingVariant.unit,
+                price: matchingVariant.price,
             };
             
             // Reset quantity to 1 if it exceeds new variant's stock
@@ -179,6 +180,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
           name: product.name,
         },
       },
+      price: variant.price,
       quantity: 1,
       size: variant.size || "",
       unit: variant.unit || "",
@@ -259,6 +261,10 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
             quantity: d.quantity,
             size: d.size,
             unit: unit,
+            price:
+              typeof d.price === "number"
+                ? d.price
+                : variant?.price ?? 0,
           };
         }),
       };
@@ -664,16 +670,19 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                       </div>
 
                           {/* Price Display */}
-                      {matchedProduct?.price && (
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-gray-600">Subtotal:</span>
-                                <span className="text-lg font-bold text-purple-600">
-                                  ₱{(matchedProduct.price * (detail.quantity || 1)).toLocaleString()}
-                                </span>
-                          </div>
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Subtotal:</span>
+                          <span className="text-lg font-bold text-purple-600">
+                            ₱
+                            {(
+                              (typeof detail.price === "number"
+                                ? detail.price
+                                : variant?.price ?? 0) * (detail.quantity || 1)
+                            ).toLocaleString()}
+                          </span>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 );

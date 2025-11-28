@@ -4,7 +4,8 @@ import api from "../../utils/api.js";
 import { useAuthContext } from "../../hooks/useAuthContext.js";
 import { useCategoriesStore } from "../../store/categoriesStore.js";
 import { useProductStore } from "../../store/productStore.js";
-import StatusToast from "../../components/StatusToast.jsx";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 const CreateProduct = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,8 +20,9 @@ const CreateProduct = () => {
 
   const { user } = useAuthContext();
   const { categories, fetchCategories, loading } = useCategoriesStore();
-  const { products, setProducts, setSuccess, successMessage, clearMessages } =
-    useProductStore();
+  const { products, setProducts } = useProductStore();
+  const quickToast = useQuickToast();
+  const confirm = useConfirm();
 
   useEffect(() => {
     if (isOpen) {
@@ -43,6 +45,14 @@ const CreateProduct = () => {
       return;
     }
 
+    const result = await confirm({
+      title: "Create new product?",
+      text: `Add "${formData.name || "this product"}" to inventory?`,
+      confirmButtonText: "Yes, create product",
+      icon: "question",
+    });
+    if (!result.isConfirmed) return;
+
     try {
       const res = await api.post("/products", formData, {
         headers: {
@@ -62,7 +72,10 @@ const CreateProduct = () => {
       });
 
       // ✅ Show backend message via toast
-      setSuccess(message);
+      quickToast({
+        title: message || "Product created successfully",
+        icon: "success",
+      });
 
       // Reset form + close modal
       setFormData({ name: "", description: "", category: "", image: "" });
@@ -199,13 +212,6 @@ const CreateProduct = () => {
       </Modal>
 
       {/* ✅ Show only success toast */}
-      <StatusToast
-        color="border-green-500 bg-green-100 text-green-700"
-        header="Success"
-        message={successMessage}
-        show={!!successMessage}
-        onClose={clearMessages}
-      />
     </>
   );
 };

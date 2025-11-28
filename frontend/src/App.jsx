@@ -7,6 +7,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { useAuthContext } from "./hooks/useAuthContext";
+import { useLiveUpdates } from "./hooks/useLiveUpdates";
 
 import HomePage from "./Pages/HomePage";
 import PublicLayout from "./layouts/PublicLayout";
@@ -43,6 +44,7 @@ const App = () => {
   const { user } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
+  useLiveUpdates();
 
   useEffect(() => {
     // Only redirect regular users (not admin/cashier) who are not verified

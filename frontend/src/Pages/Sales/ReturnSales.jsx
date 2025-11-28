@@ -5,6 +5,7 @@ import { useToast } from "../../context/ToastContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import api from "../../utils/api";
 import { useSalesContext } from "../../hooks/useSaleContext";
+import { useConfirm } from "../../hooks/useConfirm";
 
 const ReturnSales = ({ sale }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,9 +13,18 @@ const ReturnSales = ({ sale }) => {
   const setToast = useToast();
   const { user } = useAuthContext();
   const { dispatch } = useSalesContext();
+  const confirm = useConfirm();
 
   const handleReturn = async () => {
     if (!user) return;
+
+    const result = await confirm({
+      title: "Return this sale?",
+      text: "Items will be sent back to inventory and the sale will be marked as returned.",
+      confirmButtonText: "Yes, return sale",
+      icon: "warning",
+    });
+    if (!result.isConfirmed) return;
 
     setIsReturning(true);
     try {

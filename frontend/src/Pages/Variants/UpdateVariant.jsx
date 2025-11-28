@@ -5,6 +5,7 @@ import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
 import { Edit } from "lucide-react";
 import { formatVariantLabel } from "../../utils/formatVariantLabel.js";
+import { useConfirm } from "../../hooks/useConfirm";
 
 const UNIT_OPTIONS = [
   "pcs",
@@ -28,6 +29,7 @@ const UNIT_OPTIONS = [
 const UpdateVariant = ({ variant, product }) => {
   const { updateVariant } = useVariant();
   const [isOpen, setIsOpen] = useState(false);
+  const confirm = useConfirm();
   const [formData, setFormData] = useState({
     unit: "",
     size: "",
@@ -91,6 +93,13 @@ const UpdateVariant = ({ variant, product }) => {
     const payload = { ...formData };
     if (!payload.unit) delete payload.unit;
     if (!payload.color) delete payload.color;
+
+    const result = await confirm({
+      title: "Update this variant?",
+      text: "Changes will be applied immediately.",
+      confirmButtonText: "Yes, save variant",
+    });
+    if (!result.isConfirmed) return;
 
     await updateVariant(variant._id, payload);
     setIsOpen(false);

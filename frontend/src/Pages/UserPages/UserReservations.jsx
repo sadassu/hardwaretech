@@ -9,6 +9,7 @@ import CancelReservation from "./CancelReservation";
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatPrice } from "../../utils/formatPrice";
 import { useReservationStore } from "../../store/reservationStore";
+import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 
 const UserReservations = () => {
   const { reservations, pages, page, setPage, fetchUserReservations, loading } =
@@ -16,6 +17,7 @@ const UserReservations = () => {
 
   const { user } = useAuthContext();
   const { userId } = useParams();
+  const reservationsLiveKey = useLiveResourceRefresh(["reservations", "sales"]);
 
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,7 +32,7 @@ const UserReservations = () => {
         status: "all",
       });
     }
-  }, [user?.token, userId, page, fetchUserReservations]);
+  }, [user?.token, userId, page, fetchUserReservations, reservationsLiveKey]);
 
   // 🏷️ Badge style helper
   const getStatusBadge = (status) => {

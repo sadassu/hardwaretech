@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import Modal from "../../components/Modal";
 import { useReservation } from "../../hooks/useReservation";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function CompleteReservation({ reservation, onCompleteSuccess }) {
   const { completeReservation } = useReservation();
@@ -11,6 +13,8 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
   const [amountPaid, setAmountPaid] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const change =
     Number(amountPaid) > 0 ? Number(amountPaid) - reservation.totalPrice : 0;
@@ -27,9 +31,23 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
         setLoading(false);
         return;
       }
+      const result = await confirm({
+        title: "Complete this reservation?",
+        text: "This will convert the reservation into a sale.",
+        confirmButtonText: "Yes, process payment",
+      });
+      if (!result.isConfirmed) {
+        setLoading(false);
+        return;
+      }
+
       const updated = await completeReservation(reservation._id, paid);
 
       setIsOpen(false);
+      quickToast({
+        title: "Reservation completed",
+        icon: "success",
+      });
       if (onCompleteSuccess) onCompleteSuccess(updated);
       
       // Redirect to sales page to verify the sale was added

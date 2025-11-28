@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useCart } from "../hooks/useCart";
 import { useCheckout } from "../hooks/useCheckout";
 import { useAuthContext } from "../hooks/useAuthContext";
-import StatusToast from "./StatusToast";
+import { useConfirm } from "../hooks/useConfirm";
+import { useQuickToast } from "../hooks/useQuickToast";
 
 import {
   ShoppingCart,
@@ -30,12 +31,8 @@ function CartContent() {
   // ✅ Zustand store functions
   const { products, setProducts } = useProductStore();
 
-  const [toast, setToast] = useState({
-    show: false,
-    color: "",
-    header: "",
-    message: "",
-  });
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const {
     cartItems,
@@ -64,6 +61,15 @@ function CartContent() {
   }, [isOpen]);
 
   const handleCheckout = async () => {
+    const result = await confirm({
+      title: isRestricted ? "Process this sale?" : "Submit reservation?",
+      text: isRestricted
+        ? "This will finalize the POS transaction."
+        : "Selected items will be reserved immediately.",
+      confirmButtonText: isRestricted ? "Yes, process sale" : "Yes, reserve items",
+    });
+    if (!result.isConfirmed) return;
+
     try {
       let data;
       if (isRestricted) {
@@ -81,6 +87,8 @@ function CartContent() {
       }
 
       setIsOpen(false);
+      setAmountPaid("");
+      setNotes("");
 
       // ✅ Update product variants in Zustand
       if (Array.isArray(data?.updatedVariants)) {
@@ -111,34 +119,21 @@ function CartContent() {
 
       clearCart();
 
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Success 🎉",
-        message: isRestricted
-          ? "Checkout successful!"
-          : "Added to reservation successful!",
+      quickToast({
+        title: isRestricted ? "Sale processed!" : "Reservation submitted!",
+        icon: "success",
       });
     } catch (error) {
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Failed 🥲",
-        message: `Failed to reserve ${error.message || error}`,
+      quickToast({
+        title: "Checkout failed",
+        text: error.response?.data?.message || error.message,
+        icon: "error",
       });
     }
   };
 
   return (
     <>
-      <StatusToast
-        show={toast.show}
-        color={toast.color}
-        header={toast.header}
-        message={toast.message}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
-
       {/* Cart Button */}
       <div className="relative">
         <button
@@ -373,7 +368,7 @@ function CartContent() {
                     Special Notes
                   </label>
                   <textarea
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-sm"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-sm text-black placeholder-gray-400"
                     placeholder="Any special requests? (Optional)"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}

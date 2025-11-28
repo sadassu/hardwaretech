@@ -11,6 +11,8 @@ import {
   Trash,
 } from "lucide-react";
 import { formatDatePHT } from "../../utils/formatDate";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function EditUserData() {
   const [email, setEmail] = useState("");
@@ -21,6 +23,8 @@ function EditUserData() {
   const navigate = useNavigate();
 
   const { data, loading, error } = useFetch(fetchUrl, {}, [fetchUrl]);
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleFetch = () => {
     if (!email) return;
@@ -51,35 +55,61 @@ function EditUserData() {
 
   const handleUpdateRoles = async () => {
     if (!data?.user?._id) return;
+
+    const result = await confirm({
+      title: "Update roles?",
+      text: `Apply the selected roles to ${data.user.email}?`,
+      confirmButtonText: "Yes, update roles",
+    });
+    if (!result.isConfirmed) return;
+
     try {
       await api.put(`/user/updateRoles/${data.user._id}`, {
         roles: selectedRoles,
       });
-      alert("Roles updated successfully!");
+      quickToast({
+        title: "Roles updated",
+        icon: "success",
+      });
     } catch (err) {
       console.error(err);
-      alert("Failed to update roles.");
+      quickToast({
+        title: "Failed to update roles",
+        text: err.response?.data?.message || err.message,
+        icon: "error",
+      });
     }
   };
 
   // DELETE ACCOUNT HANDLER
   const handleDeleteAccount = async () => {
     if (!data?.user?._id) return;
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this account? This action cannot be undone."
-    );
-    if (!confirmDelete) return;
+
+    const result = await confirm({
+      title: "Delete this account?",
+      text: "This user and all related data will be removed permanently.",
+      confirmButtonText: "Yes, delete account",
+      icon: "error",
+    });
+    if (!result.isConfirmed) return;
 
     setDeleting(true);
     try {
       await api.delete(`/auth/${data.user._id}`);
-      alert("Account deleted successfully!");
+      quickToast({
+        title: "Account deleted",
+        icon: "success",
+      });
 
       // Reload the page
       window.location.reload();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete account.");
+      quickToast({
+        title: "Failed to delete account",
+        text: err.response?.data?.message || err.message,
+        icon: "error",
+      });
     } finally {
       setDeleting(false);
     }

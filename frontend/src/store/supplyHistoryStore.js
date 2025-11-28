@@ -56,30 +56,6 @@ export const useSupplyHistoryStore = create((set, get) => ({
     }
   },
 
-  redoSupplyHistory: async ({ id, token, additionalNotes = "" }) => {
-    set({ loading: true, error: null });
-    try {
-      const res = await api.post(
-        `/supply-histories/${id}/redo`,
-        { additionalNotes },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      await get().fetchSupplyHistories({ token });
-      set({ loading: false });
-      return res.data;
-    } catch (err) {
-      console.error("Redo supply history failed:", err);
-      set({
-        error:
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to redo supply history",
-        loading: false,
-      });
-      throw err;
-    }
-  },
 
   fetchMoneySpentSevenDays: async (token) => {
     set({ loading: true, error: null });
@@ -104,18 +80,6 @@ export const useSupplyHistoryStore = create((set, get) => ({
     }
   },
 
-  fetchItemsStockedSevenDays: async (token) => {
-    try {
-      const res = await api.get("/supply-histories/items-stocked-seven-days", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data.data; // array of last 7 days [{ date, totalItems }]
-    } catch (err) {
-      console.error("Fetch items stocked 7 days failed:", err);
-      throw err;
-    }
-  },
-
   fetchTotalMoneySpent: async (token) => {
     try {
       const res = await api.get("/supply-histories/total-money-spent", {
@@ -124,6 +88,30 @@ export const useSupplyHistoryStore = create((set, get) => ({
       return res.data.total; // number
     } catch (err) {
       console.error("Fetch total money spent failed:", err);
+      throw err;
+    }
+  },
+
+  fetchLostMoneyStats: async (token) => {
+    try {
+      const res = await api.get("/supply-histories/lost-money", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    } catch (err) {
+      console.error("Fetch lost money stats failed:", err);
+      throw err;
+    }
+  },
+
+  fetchTotalStock: async (token) => {
+    try {
+      const res = await api.get("/supply-histories/total-stock", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.totalStock;
+    } catch (err) {
+      console.error("Fetch total stock failed:", err);
       throw err;
     }
   },

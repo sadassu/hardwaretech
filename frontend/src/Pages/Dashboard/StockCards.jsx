@@ -3,25 +3,27 @@ import { XCircle, Package, Info } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch";
 import Modal from "../../components/Modal";
 import { StockList } from "./StockList";
+import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 
 function StockCards() {
   const [selectedType, setSelectedType] = useState(null);
+  const inventoryLiveKey = useLiveResourceRefresh(["inventory", "supply"]);
 
   // Fetch only the counts (limit=0, optimized)
   const { data, loading, error } = useFetch(
     `dashboard/stocks?type=all&page=1&limit=0`,
     {},
-    []
+    [inventoryLiveKey]
   );
   const { data: lowData } = useFetch(
     `dashboard/stocks?type=low&page=1&limit=0`,
     {},
-    []
+    [inventoryLiveKey]
   );
   const { data: outData } = useFetch(
     `dashboard/stocks?type=out&page=1&limit=0`,
     {},
-    []
+    [inventoryLiveKey]
   );
 
   const stats = [

@@ -2,16 +2,38 @@ import React, { useState } from "react";
 import { Trash2, AlertTriangle } from "lucide-react";
 import Modal from "../../components/Modal";
 import { useVariant } from "../../hooks/useVariant";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function DeleteVariant({ variant }) {
   const { deleteVariant } = useVariant();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleDelete = async () => {
+    const result = await confirm({
+      title: "Delete this variant?",
+      text: "Variant stock and history will be removed.",
+      confirmButtonText: "Yes, delete variant",
+      icon: "error",
+    });
+    if (!result.isConfirmed) return;
+
     setIsDeleting(true);
     try {
       await deleteVariant(variant._id);
+      quickToast({
+        title: "Variant deleted",
+        icon: "success",
+      });
+    } catch (error) {
+      quickToast({
+        title: "Failed to delete variant",
+        text: error.response?.data?.message || error.message,
+        icon: "error",
+      });
     } finally {
       setIsDeleting(false);
     }

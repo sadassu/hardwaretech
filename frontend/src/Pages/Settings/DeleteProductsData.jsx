@@ -3,7 +3,8 @@ import Modal from "../../components/Modal";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useProductStore } from "../../store/productStore"; // ✅ import store
 import api from "../../utils/api";
-import StatusToast from "../../components/StatusToast";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function DeleteProductsData() {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,14 +12,18 @@ function DeleteProductsData() {
   const { setProducts } = useProductStore(); // ✅ get setter from store
 
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({
-    show: false,
-    color: "",
-    header: "",
-    message: "",
-  });
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleDelete = async () => {
+    const result = await confirm({
+      title: "Delete all products?",
+      text: "This will permanently remove every product record. This action cannot be undone.",
+      confirmButtonText: "Yes, delete all products",
+      icon: "error",
+    });
+    if (!result.isConfirmed) return;
+
     setLoading(true);
     try {
       await api.delete("/delete/products", {
@@ -38,20 +43,15 @@ function DeleteProductsData() {
       // ✅ Close modal after success
       setIsOpen(false);
 
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Success 🎉",
-        message: "All product data has been deleted successfully.",
+      quickToast({
+        title: "Products cleared",
+        icon: "success",
       });
     } catch (error) {
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Failed 🥲",
-        message: `Failed to delete product data: ${
-          error.response?.data?.message || error.message
-        }`,
+      quickToast({
+        title: "Failed to delete product data",
+        text: error.response?.data?.message || error.message,
+        icon: "error",
       });
     } finally {
       setLoading(false);
@@ -60,14 +60,6 @@ function DeleteProductsData() {
 
   return (
     <>
-      <StatusToast
-        show={toast.show}
-        color={toast.color}
-        header={toast.header}
-        message={toast.message}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
-
       <button onClick={() => setIsOpen(true)} className="btn btn-warning">
         Delete Product Data
       </button>

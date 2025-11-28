@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useCategoriesStore } from "../../store/categoriesStore";
 import Modal from "../../components/Modal";
 import { useNavigate } from "react-router";
+import { useConfirm } from "../../hooks/useConfirm";
 
 function CategoryList() {
   const {
@@ -14,6 +15,7 @@ function CategoryList() {
   } = useCategoriesStore();
 
   const navigate = useNavigate();
+  const confirm = useConfirm();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null); // "add" or "delete"
@@ -33,7 +35,16 @@ function CategoryList() {
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedCategory) await deleteCategory(selectedCategory._id);
+    if (!selectedCategory) return;
+    const result = await confirm({
+      title: `Delete category "${selectedCategory.name}"?`,
+      text: "Products using this category will no longer reference it.",
+      confirmButtonText: "Yes, delete category",
+      icon: "error",
+    });
+    if (!result.isConfirmed) return;
+
+    await deleteCategory(selectedCategory._id);
     setIsModalOpen(false);
     setSelectedCategory(null);
   };
@@ -48,6 +59,13 @@ function CategoryList() {
   const handleAddCategory = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return alert("Category name is required.");
+    const result = await confirm({
+      title: "Add this category?",
+      text: `Create category "${formData.name.trim()}"?`,
+      confirmButtonText: "Yes, add category",
+      icon: "question",
+    });
+    if (!result.isConfirmed) return;
     await addCategory(formData);
     setIsModalOpen(false);
     setFormData({ name: "" });

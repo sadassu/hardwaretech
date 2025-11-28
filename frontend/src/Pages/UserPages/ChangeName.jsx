@@ -4,12 +4,15 @@ import Modal from "../../components/Modal";
 import api from "../../utils/api";
 import { SquarePen } from "lucide-react";
 import TextInput from "../../components/TextInput.jsx";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
   const { user, dispatch } = useAuthContext();
   const [name, setName] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const quickToast = useQuickToast();
+  const confirm = useConfirm();
 
   useEffect(() => {
     if (isOpen && user) {
@@ -20,6 +23,13 @@ function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
+
+    const result = await confirm({
+      title: "Update profile name?",
+      text: "Your display name will be updated immediately.",
+      confirmButtonText: "Yes, update name",
+    });
+    if (!result.isConfirmed) return;
 
     try {
       const res = await api.put(
@@ -46,12 +56,12 @@ function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
       dispatch({ type: "UPDATED_USER", payload: updatedUser });
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      setSuccess(true);
-      setTimeout(() => {
-        setIsOpen(false);
-        setSuccess(false);
-        if (onUpdateSuccess) onUpdateSuccess(res.data.user);
-      }, 1500);
+      quickToast({
+        title: "Name updated!",
+        icon: "success",
+      });
+      setIsOpen(false);
+      if (onUpdateSuccess) onUpdateSuccess(res.data.user);
     } catch (error) {
       console.error("Failed to update name:", error);
     }
@@ -87,16 +97,9 @@ function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
               className="w-full"
             />
 
-            {success && (
-              <p className="text-green-400 text-xs sm:text-sm text-center">
-                Name updated successfully!
-              </p>
-            )}
-
             <button
               type="submit"
               className="btn btn-primary w-full text-sm sm:text-base py-2 sm:py-3"
-              disabled={success}
             >
               Update
             </button>

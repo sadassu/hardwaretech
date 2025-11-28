@@ -124,22 +124,39 @@ export const getOverallSalesStats = asyncHandler(async (req, res) => {
   const result = await Sale.aggregate([
     {
       $group: {
+        _id: {
+          $dateToString: {
+            format: "%Y-%m-%d",
+            date: "$saleDate",
+          },
+        },
+        dailyTotal: { $sum: "$totalPrice" },
+      },
+    },
+    {
+      $match: {
+        dailyTotal: { $gt: 0 },
+      },
+    },
+    {
+      $group: {
         _id: null,
-        totalSales: { $sum: "$totalPrice" },
-        totalCount: { $sum: 1 },
+        totalSales: { $sum: "$dailyTotal" },
+        totalDaysWithSales: { $sum: 1 },
       },
     },
   ]);
 
-  const stats = result.length > 0 
-    ? { 
-        totalSales: result[0].totalSales || 0, 
-        totalCount: result[0].totalCount || 0 
-      }
-    : { 
-        totalSales: 0, 
-        totalCount: 0 
-      };
+  const stats =
+    result.length > 0
+      ? {
+          totalSales: result[0].totalSales || 0,
+          totalCount: result[0].totalDaysWithSales || 0,
+        }
+      : {
+          totalSales: 0,
+          totalCount: 0,
+        };
 
   res.json(stats);
 });
@@ -350,20 +367,51 @@ export const getFastMovingProducts = asyncHandler(async (req, res) => {
     dailyMap.get(key).push(entry);
   });
 
+  // Calculate top 5 products across all weeks
+  const productTotals = new Map();
+  weeklyResults.forEach((entry) => {
+    entry.products.forEach((product) => {
+      const key = product.productId.toString();
+      const current = productTotals.get(key) || 0;
+      productTotals.set(key, current + product.totalQuantity);
+    });
+  });
+
+  // Get top 5 products sorted by total quantity
+  const top5Products = Array.from(productTotals.entries())
+    .map(([productId, total]) => {
+      const product = productSeries.find((p) => p.productId === productId);
+      return {
+        productId,
+        label: product?.label || "Unknown",
+        total,
+      };
+    })
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+
+  const top5ProductIds = new Set(top5Products.map((p) => p.productId));
+  const top5ProductSeries = top5Products.map((p) => ({
+    productId: p.productId,
+    label: p.label,
+  }));
+
   const formatted = weeklyResults.map((entry) => {
     const { start, end } = getWeekRange(entry.year, entry.week);
     const weekLabel = `Week ${String(entry.week).padStart(2, "0")}`;
-    const totals = productSeries.reduce((acc, product) => {
+    const totals = top5ProductSeries.reduce((acc, product) => {
       acc[product.productId] = 0;
       return acc;
     }, {});
 
-    entry.products.forEach((product) => {
-      const key = product.productId.toString();
-      if (key in totals) {
-        totals[key] = product.totalQuantity;
-      }
-    });
+    entry.products
+      .filter((product) => top5ProductIds.has(product.productId.toString()))
+      .forEach((product) => {
+        const key = product.productId.toString();
+        if (key in totals) {
+          totals[key] = product.totalQuantity;
+        }
+      });
 
     const weekKey = `${entry.year}-${entry.week}`;
     const weekDailyEntries = dailyMap.get(weekKey) || [];
@@ -371,13 +419,17 @@ export const getFastMovingProducts = asyncHandler(async (req, res) => {
       const dayDate = new Date(start);
       dayDate.setDate(start.getDate() + index);
 
-      const dayTotals = productSeries.reduce((acc, product) => {
+      const dayTotals = top5ProductSeries.reduce((acc, product) => {
         acc[product.productId] = 0;
         return acc;
       }, {});
 
       weekDailyEntries
-        .filter((day) => day.dayIndex === index)
+        .filter(
+          (day) =>
+            day.dayIndex === index &&
+            top5ProductIds.has(day.productId.toString())
+        )
         .forEach((day) => {
           const key = day.productId.toString();
           if (key in dayTotals) {
@@ -403,9 +455,9 @@ export const getFastMovingProducts = asyncHandler(async (req, res) => {
       rangeText: formatWeekRange(start, end),
       weekStart: start,
       weekEnd: end,
-      products: entry.products.sort(
-        (a, b) => b.totalQuantity - a.totalQuantity
-      ),
+      products: entry.products
+        .filter((product) => top5ProductIds.has(product.productId.toString()))
+        .sort((a, b) => b.totalQuantity - a.totalQuantity),
       totals,
       dailyTotals,
     };
@@ -420,7 +472,7 @@ export const getFastMovingProducts = asyncHandler(async (req, res) => {
         month,
         category: category || "all",
       },
-      series: productSeries,
+      series: top5ProductSeries,
       generatedAt: new Date(),
     },
   });
@@ -615,25 +667,56 @@ export const getProductSalesMovement = asyncHandler(async (req, res) => {
     dailyMap.get(key).push(entry);
   });
 
+  // Calculate top 5 products across all weeks (based on total sales)
+  const productTotals = new Map();
+  weeklyResults.forEach((entry) => {
+    entry.products.forEach((product) => {
+      const key = product.productId.toString();
+      const current = productTotals.get(key) || 0;
+      productTotals.set(key, current + (product.totalSales || 0));
+    });
+  });
+
+  // Get top 5 products sorted by total sales
+  const top5Products = Array.from(productTotals.entries())
+    .map(([productId, total]) => {
+      const product = productSeries.find((p) => p.productId === productId);
+      return {
+        productId,
+        label: product?.label || "Unknown",
+        total,
+      };
+    })
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+
+  const top5ProductIds = new Set(top5Products.map((p) => p.productId));
+  const top5ProductSeries = top5Products.map((p) => ({
+    productId: p.productId,
+    label: p.label,
+  }));
+
   const formatted = weeklyResults.map((entry) => {
     const { start, end } = getWeekRange(entry.year, entry.week);
     const weekLabel = `Week ${String(entry.week).padStart(2, "0")}`;
-    const totals = productSeries.reduce((acc, product) => {
+    const totals = top5ProductSeries.reduce((acc, product) => {
       acc[product.productId] = 0;
       return acc;
     }, {});
-    const salesTotals = productSeries.reduce((acc, product) => {
+    const salesTotals = top5ProductSeries.reduce((acc, product) => {
       acc[product.productId] = 0;
       return acc;
     }, {});
 
-    entry.products.forEach((product) => {
-      const key = product.productId.toString();
-      if (key in totals) {
-        totals[key] = product.totalQuantity;
-        salesTotals[key] = product.totalSales || 0;
-      }
-    });
+    entry.products
+      .filter((product) => top5ProductIds.has(product.productId.toString()))
+      .forEach((product) => {
+        const key = product.productId.toString();
+        if (key in totals) {
+          totals[key] = product.totalQuantity;
+          salesTotals[key] = product.totalSales || 0;
+        }
+      });
 
     const weekKey = `${entry.year}-${entry.week}`;
     const weekDailyEntries = dailyMap.get(weekKey) || [];
@@ -641,17 +724,21 @@ export const getProductSalesMovement = asyncHandler(async (req, res) => {
       const dayDate = new Date(start);
       dayDate.setDate(start.getDate() + index);
 
-      const dayTotals = productSeries.reduce((acc, product) => {
+      const dayTotals = top5ProductSeries.reduce((acc, product) => {
         acc[product.productId] = 0;
         return acc;
       }, {});
-      const daySalesTotals = productSeries.reduce((acc, product) => {
+      const daySalesTotals = top5ProductSeries.reduce((acc, product) => {
         acc[product.productId] = 0;
         return acc;
       }, {});
 
       weekDailyEntries
-        .filter((day) => day.dayIndex === index)
+        .filter(
+          (day) =>
+            day.dayIndex === index &&
+            top5ProductIds.has(day.productId.toString())
+        )
         .forEach((day) => {
           const key = day.productId.toString();
           if (key in dayTotals) {
@@ -679,9 +766,9 @@ export const getProductSalesMovement = asyncHandler(async (req, res) => {
       rangeText: formatWeekRange(start, end),
       weekStart: start,
       weekEnd: end,
-      products: entry.products.sort(
-        (a, b) => (b.totalSales || 0) - (a.totalSales || 0)
-      ),
+      products: entry.products
+        .filter((product) => top5ProductIds.has(product.productId.toString()))
+        .sort((a, b) => (b.totalSales || 0) - (a.totalSales || 0)),
       totals,
       salesTotals,
       dailyTotals,
@@ -697,7 +784,7 @@ export const getProductSalesMovement = asyncHandler(async (req, res) => {
         month,
         category: category || "all",
       },
-      series: productSeries,
+      series: top5ProductSeries,
       generatedAt: new Date(),
     },
   });

@@ -1,14 +1,25 @@
 import React, { useState } from "react";
 import Modal from "../../components/Modal";
 import { useReservation } from "../../hooks/useReservation";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function CancelReservation({ reservationId }) {
   const { cancelReservation } = useReservation();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const result = await confirm({
+      title: "Cancel this reservation?",
+      text: "Any reserved stock will be released.",
+      confirmButtonText: "Yes, cancel reservation",
+    });
+    if (!result.isConfirmed) return;
+
     setLoading(true);
 
     try {
@@ -16,6 +27,10 @@ function CancelReservation({ reservationId }) {
       // Only close modal if cancellation was successful (result is not null)
       if (result !== null) {
         setIsOpen(false);
+        quickToast({
+          title: "Reservation cancelled",
+          icon: "success",
+        });
       }
       // If result is null, it means there was an auth error that was handled gracefully
       // User stays on the page and sees the error toast

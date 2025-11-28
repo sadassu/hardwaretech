@@ -13,6 +13,7 @@ import {
 
 import { useReservationStore } from "../../store/reservationStore";
 import { useAuthContext } from "../../hooks/useAuthContext";
+import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 
 import UpdateReservationStatus from "./UpdateReservationStatus";
 import CompleteReservation from "./CompleteReservation";
@@ -32,14 +33,20 @@ const ReservationTable = () => {
   } = useReservationStore();
 
   const { user } = useAuthContext();
+  const reservationsLiveKey = useLiveResourceRefresh(["reservations", "sales"]);
 
   const limit = 20;
 
   useEffect(() => {
     if (user?.token) {
-      fetchReservations(user.token, { page, limit, status: statusFilter, search: searchQuery });
+      fetchReservations(user.token, {
+        page,
+        limit,
+        status: statusFilter,
+        search: searchQuery,
+      });
     }
-  }, [page, statusFilter, searchQuery, user?.token, fetchReservations]);
+  }, [page, statusFilter, searchQuery, user?.token, fetchReservations, reservationsLiveKey]);
 
   const getStatusConfig = (status) => {
     const configs = {
@@ -296,6 +303,12 @@ const ReservationTable = () => {
                         {res.reservationDetails.map((detail, index) => {
                                       const variant = detail.productVariantId;
                                       const product = variant?.product;
+                                      const lockedPrice =
+                                        typeof detail.price === "number"
+                                          ? detail.price
+                                          : variant?.price ?? 0;
+                                      const subtotal =
+                                        lockedPrice * (detail.quantity || 0);
 
                                       return (
                                         <div
@@ -328,16 +341,14 @@ const ReservationTable = () => {
                                               </div>
                                             </div>
 
-                                            {variant?.price && (
                                   <div className="text-right flex-shrink-0">
                                     <div className="text-xs text-gray-500 mb-0.5">
                                       Subtotal
                                                 </div>
                                     <div className="font-mono text-sm font-bold text-green-600">
-                                      ₱{(variant.price * detail.quantity).toLocaleString()}
+                                      ₱{subtotal.toLocaleString()}
                                                 </div>
                                               </div>
-                                            )}
                                           </div>
                                         </div>
                                       );

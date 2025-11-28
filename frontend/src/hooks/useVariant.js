@@ -1,6 +1,5 @@
 import { useAuthContext } from "./useAuthContext";
 import api from "../utils/api";
-import { useToast } from "../context/ToastContext";
 import { useProductStore } from "../store/productStore";
 
 const mapVariantsWithAvailability = (variants = []) => {
@@ -32,7 +31,6 @@ const mapVariantsWithAvailability = (variants = []) => {
 export const useVariant = () => {
   const { user } = useAuthContext();
   const { products, setProducts } = useProductStore();
-  const setToast = useToast();
 
   // ✅ Helper to update a product's variants inside the store
     const updateProductVariants = (productId, updatedVariant, action) => {
@@ -101,23 +99,8 @@ export const useVariant = () => {
       });
 
       updateProductVariants(productId, res.data.variant, "add");
-
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Success",
-        message: res.data.message || "Variant created successfully!",
-      });
-
       return res.data;
     } catch (error) {
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Error",
-        message:
-          error.response?.data?.message || "Failed to create product variant",
-      });
       throw error;
     }
   };
@@ -143,23 +126,8 @@ export const useVariant = () => {
     });
 
       updateProductVariants(res.data.productId, res.data.variant, "update");
-
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Updated",
-        message: res.data.message || "Variant updated successfully!",
-      });
-
       return res.data;
     } catch (error) {
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Error",
-        message:
-          error.response?.data?.message || "Failed to update product variant",
-      });
       throw error;
     }
   };
@@ -177,22 +145,8 @@ export const useVariant = () => {
         "delete"
       );
 
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Deleted",
-        message: res.data.message || "Variant deleted successfully!",
-      });
-
       return res.data;
     } catch (error) {
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Error",
-        message:
-          error.response?.data?.message || "Failed to delete product variant",
-      });
       throw error;
     }
   };
@@ -209,23 +163,8 @@ export const useVariant = () => {
       );
 
       updateProductVariants(res.data.productId, res.data.variant, "update");
-
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Restocked",
-        message: res.data.message || "Variant restocked successfully!",
-      });
-
       return res.data;
     } catch (error) {
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Error",
-        message:
-          error.response?.data?.message || "Failed to restock product variant",
-      });
       throw error;
     }
   };

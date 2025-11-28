@@ -24,22 +24,25 @@ export function useCheckout() {
       const noteValue =
         notes && notes.trim() !== "" ? notes.trim() : "no note provided";
 
-      const form = new FormData();
-      form.append("notes", noteValue);
-      form.append("totalPrice", totalPrice);
-      form.append("reservationDate", reservationDate);
+      const reservationDetails = cartItems.map((item) => ({
+        productId: item.productId,
+        productVariantId: item.variantId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        size: item.size,
+        unit: item.unit,
+        price: item.price,
+        total: item.total,
+      }));
 
-      cartItems.forEach((item, idx) => {
-        form.append(`reservationDetails[${idx}][productId]`, item.productId);
-        form.append(`reservationDetails[${idx}][variantId]`, item.variantId);
-        form.append(`reservationDetails[${idx}][quantity]`, item.quantity);
-        form.append(`reservationDetails[${idx}][size]`, item.size);
-        form.append(`reservationDetails[${idx}][unit]`, item.unit);
-        form.append(`reservationDetails[${idx}][price]`, item.price);
-        form.append(`reservationDetails[${idx}][total]`, item.total);
-      });
+      const payload = {
+        notes: noteValue,
+        totalPrice: Number(totalPrice),
+        reservationDate,
+        reservationDetails,
+      };
 
-      const { data } = await api.post("/reservations", form, {
+      const { data } = await api.post("/reservations", payload, {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
@@ -69,21 +72,23 @@ export function useCheckout() {
     setError(null);
 
     try {
-      const form = new FormData();
-      form.append("amountPaid", amountPaid);
-      form.append("cashier", user.userId);
+      const saleItems = cartItems.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        size: item.size,
+        unit: item.unit,
+        price: item.price,
+        total: item.total,
+      }));
 
-      cartItems.forEach((item, idx) => {
-        form.append(`items[${idx}][productId]`, item.productId);
-        form.append(`items[${idx}][variantId]`, item.variantId);
-        form.append(`items[${idx}][quantity]`, item.quantity);
-        form.append(`items[${idx}][size]`, item.size);
-        form.append(`items[${idx}][unit]`, item.unit);
-        form.append(`items[${idx}][price]`, item.price);
-        form.append(`items[${idx}][total]`, item.total);
-      });
+      const payload = {
+        amountPaid: Number(amountPaid),
+        cashier: user.userId,
+        items: saleItems,
+      };
 
-      const { data } = await api.post("/sales", form, {
+      const { data } = await api.post("/sales", payload, {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
