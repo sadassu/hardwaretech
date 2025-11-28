@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Edit3 } from "lucide-react";
 import Modal from "../../components/Modal";
 import { useReservation } from "../../hooks/useReservation";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function UpdateReservationStatus({ reservation }) {
   const { updateReservationStatus } = useReservation();
@@ -21,15 +23,29 @@ function UpdateReservationStatus({ reservation }) {
     });
   };
 
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    const result = await confirm({
+      title: "Update reservation status?",
+      text: `Set reservation to "${formData.status}"?`,
+      confirmButtonText: "Yes, update status",
+    });
+    if (!result.isConfirmed) return;
+
     try {
       await updateReservationStatus(reservation._id, formData);
 
       setIsOpen(false);
+      quickToast({
+        title: "Reservation updated",
+        icon: "success",
+      });
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {

@@ -32,6 +32,8 @@ const ReservationDetailSchema = new mongoose.Schema({
     ],
     required: true,
   },
+  price: { type: Number, default: 0, min: 0 },
+  subtotal: { type: Number, default: 0, min: 0 },
 });
 
 export default mongoose.model("ReservationDetail", ReservationDetailSchema);

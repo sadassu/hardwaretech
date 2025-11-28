@@ -18,6 +18,7 @@ import {
 import ChangePassword from "../Pages/UserPages/ChangePassword";
 import ChangeName from "../Pages/UserPages/ChangeName";
 import api from "../utils/api";
+import { useLiveResourceRefresh } from "../hooks/useLiveResourceRefresh";
 
 const SideBar = () => {
   const { user } = useAuthContext();
@@ -27,6 +28,7 @@ const SideBar = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [pendingReservations, setPendingReservations] = useState(0);
   const userMenuRef = useRef(null);
+  const reservationsLiveKey = useLiveResourceRefresh(["reservations"]);
 
   // ✅ Close dropdown on outside click
   useEffect(() => {
@@ -79,7 +81,6 @@ const SideBar = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let intervalId;
 
     const fetchPendingReservations = async () => {
       if (!canSeeReservationBadge) return;
@@ -95,14 +96,12 @@ const SideBar = () => {
 
     if (canSeeReservationBadge) {
       fetchPendingReservations();
-      intervalId = setInterval(fetchPendingReservations, 60000);
     }
 
     return () => {
       isMounted = false;
-      if (intervalId) clearInterval(intervalId);
     };
-  }, [canSeeReservationBadge]);
+  }, [canSeeReservationBadge, reservationsLiveKey]);
 
   const menuItems = [
     {

@@ -68,25 +68,42 @@ export const completeReservation = asyncHandler(async (req, res) => {
       await variant.save({ session });
     }
 
-    // 4️⃣ Build sale items
-    const items = details.map((d) => ({
-      productVariantId: d.productVariantId._id,
-      productId: d.productVariantId.product._id,
-      name: d.productVariantId.product.name,
-      size: d.productVariantId.size,
-      unit: d.productVariantId.unit,
-      quantity: d.quantity,
-      price: d.productVariantId.price,
-      subtotal: d.productVariantId.price * d.quantity,
-    }));
+    const totalDue = reservation.totalPrice;
+    const finalAmountPaid =
+      typeof amountPaid === "number" ? Number(amountPaid) : totalDue;
+
+    if (finalAmountPaid < totalDue) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        error: "Amount paid must cover the total reservation amount.",
+      });
+    }
+
+    // 4️⃣ Build sale items using locked reservation prices
+    const items = details.map((d) => {
+      const lockedPrice =
+        d.price !== undefined && d.price !== null
+          ? d.price
+          : d.productVariantId.price || 0;
+      return {
+        productVariantId: d.productVariantId._id,
+        productId: d.productVariantId.product._id,
+        name: d.productVariantId.product.name,
+        size: d.productVariantId.size,
+        unit: d.productVariantId.unit,
+        quantity: d.quantity,
+        price: lockedPrice,
+        subtotal: lockedPrice * d.quantity,
+      };
+    });
 
     // 5️⃣ Create Sale document
     const sale = new Sale({
       items,
-      amountPaid,
+      amountPaid: finalAmountPaid,
       cashier: cashierId,
       type: "reservation",
-      totalAmount: items.reduce((sum, item) => sum + item.subtotal, 0),
     });
 
     await sale.save({ session });
@@ -110,7 +127,7 @@ export const completeReservation = asyncHandler(async (req, res) => {
           size: detail.productVariantId?.size || detail.size || "",
           unit: detail.productVariantId?.unit || detail.unit || "",
           quantity: detail.quantity || 1,
-          price: detail.productVariantId?.price || 0
+          price: detail.price ?? detail.productVariantId?.price ?? 0
         }));
 
         const { sendReservationCompletedEmail } = await import("../services/emailService.js");

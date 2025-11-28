@@ -1,23 +1,27 @@
 import React, { useState } from "react";
 import api from "../../utils/api";
-import StatusToast from "../../components/StatusToast";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import Modal from "../../components/Modal";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function DeleteSupplyHistoryData() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuthContext();
 
   const [loading, setLoading] = useState(false);
-
-  const [toast, setToast] = useState({
-    show: false,
-    color: "",
-    header: "",
-    message: "",
-  });
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleDelete = async () => {
+    const result = await confirm({
+      title: "Delete all supply history?",
+      text: "Supply records will be wiped permanently.",
+      confirmButtonText: "Yes, delete supply history",
+      icon: "error",
+    });
+    if (!result.isConfirmed) return;
+
     setLoading(true); // start loading
     try {
       await api.delete("delete/supply-histories", {
@@ -27,20 +31,15 @@ function DeleteSupplyHistoryData() {
       });
       setIsOpen(false);
 
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Success 🎉",
-        message: "All supply histories data has been deleted successfully.",
+      quickToast({
+        title: "Supply history deleted",
+        icon: "success",
       });
     } catch (error) {
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Failed 🥲",
-        message: `Failed to delete supply histories data: ${
-          error.response?.data?.message || error.message
-        }`,
+      quickToast({
+        title: "Failed to delete supply histories data",
+        text: error.response?.data?.message || error.message,
+        icon: "error",
       });
     } finally {
       setLoading(false); // stop loading
@@ -49,14 +48,6 @@ function DeleteSupplyHistoryData() {
 
   return (
     <>
-      <StatusToast
-        show={toast.show}
-        color={toast.color}
-        header={toast.header}
-        message={toast.message}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
-
       <button onClick={() => setIsOpen(true)} className="btn btn-warning">
         Delete Supply History Data
       </button>

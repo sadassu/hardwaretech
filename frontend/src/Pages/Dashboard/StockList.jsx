@@ -2,17 +2,19 @@ import { useFetch } from "../../hooks/useFetch";
 import { Package, AlertTriangle, XCircle, Search, ImageOff } from "lucide-react";
 import { useState } from "react";
 import { formatVariantLabel } from "../../utils/formatVariantLabel";
+import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 
 /**
  * Sub-component to show stock details in Modal
  */
 export function StockList({ type }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const inventoryLiveKey = useLiveResourceRefresh(["inventory", "supply"]);
   
   const { data, loading, error } = useFetch(
     `dashboard/stocks?type=${type}&page=1&limit=999`,
     {},
-    [type]
+    [type, inventoryLiveKey]
   );
 
   // Filter items based on search

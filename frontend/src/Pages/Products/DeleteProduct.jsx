@@ -3,7 +3,8 @@ import { Trash2, AlertTriangle } from "lucide-react";
 import Modal from "../../components/Modal";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useProductStore } from "../../store/productStore";
-import StatusToast from "../../components/StatusToast"; // ✅ import your toast
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 const DeleteProduct = ({ product }) => {
   const { user } = useAuthContext();
@@ -11,13 +12,8 @@ const DeleteProduct = ({ product }) => {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const [toast, setToast] = useState({
-    show: false,
-    color: "",
-    header: "",
-    message: "",
-  });
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleDelete = async () => {
     if (!product?._id) {
@@ -25,25 +21,30 @@ const DeleteProduct = ({ product }) => {
       return;
     }
 
+    const result = await confirm({
+      title: `Delete ${product?.name || "this product"}?`,
+      text: "This product and its variants will be removed permanently.",
+      confirmButtonText: "Yes, delete product",
+      icon: "error",
+    });
+    if (!result.isConfirmed) return;
+
     setIsDeleting(true);
     try {
       await deleteProduct(user.token, product._id);
       setIsOpen(false);
 
-      setToast({
-        show: true,
-        color: "border-green-500 bg-green-100 text-green-700",
-        header: "Success",
-        message: "Product deleted successfully!",
+      quickToast({
+        title: "Product deleted",
+        icon: "success",
       });
     } catch (error) {
       console.error("Error deleting product:", error);
 
-      setToast({
-        show: true,
-        color: "border-red-500 bg-red-100 text-red-700",
-        header: "Error",
-        message: "Failed to delete product. Please try again.",
+      quickToast({
+        title: "Failed to delete product",
+        text: error.response?.data?.message || "Please try again.",
+        icon: "error",
       });
     } finally {
       setIsDeleting(false);
@@ -112,14 +113,6 @@ const DeleteProduct = ({ product }) => {
         </div>
       </Modal>
 
-      {/* ✅ Toast */}
-      <StatusToast
-        color={toast.color}
-        header={toast.header}
-        message={toast.message}
-        show={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
     </>
   );
 };

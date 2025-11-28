@@ -3,6 +3,8 @@ import { useVariant } from "../../hooks/useVariant";
 import Modal from "../../components/Modal";
 import { RotateCcw } from "lucide-react";
 import TextInput from "../../components/TextInput";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function RestockVariant({ variantId }) {
   const { restockVariant } = useVariant();
@@ -18,10 +20,33 @@ function RestockVariant({ variantId }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    await restockVariant(variantId, formData);
+    const result = await confirm({
+      title: "Restock this variant?",
+      text: "Quantity and supplier cost will be updated.",
+      confirmButtonText: "Yes, restock",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await restockVariant(variantId, formData);
+      quickToast({
+        title: "Variant restocked",
+        icon: "success",
+      });
+    } catch (error) {
+      quickToast({
+        title: "Failed to restock",
+        text: error.response?.data?.message || error.message,
+        icon: "error",
+      });
+      return;
+    }
     setIsOpen(false);
   };
 

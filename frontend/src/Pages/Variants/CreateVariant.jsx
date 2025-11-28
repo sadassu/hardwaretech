@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import Modal from "../../components/Modal";
-import { toast } from "react-hot-toast";
 import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
 import { Plus } from "lucide-react";
 import { formatVariantLabel } from "../../utils/formatVariantLabel.js";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 const UNIT_OPTIONS = [
   "pcs",
@@ -28,6 +29,8 @@ const UNIT_OPTIONS = [
 const CreateVariant = ({ product }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { createVariant } = useVariant();
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
   const [formData, setFormData] = useState({
     unit: "",
     size: "",
@@ -72,7 +75,27 @@ const CreateVariant = ({ product }) => {
     if (!payload.unit) delete payload.unit;
     if (!payload.color) delete payload.color;
 
-    await createVariant(product._id, payload);
+    const result = await confirm({
+      title: "Add this variant?",
+      text: "The variant will be created and stock will be added.",
+      confirmButtonText: "Yes, add variant",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await createVariant(product._id, payload);
+      quickToast({
+        title: "Variant added",
+        icon: "success",
+      });
+    } catch (error) {
+      quickToast({
+        title: "Failed to add variant",
+        text: error.response?.data?.message || error.message,
+        icon: "error",
+      });
+      return;
+    }
 
     // reset
     setFormData({

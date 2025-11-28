@@ -1,24 +1,28 @@
 import React, { useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import api from "../../utils/api";
-import StatusToast from "../../components/StatusToast";
 import Modal from "../../components/Modal";
 import { useReservationStore } from "../../store/reservationStore";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function DeleteReservationsData() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuthContext();
   const { reset } = useReservationStore();
   const [loading, setLoading] = useState(false);
-
-  const [toast, setToast] = useState({
-    show: false,
-    color: "",
-    header: "",
-    message: "",
-  });
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleDelete = async () => {
+    const result = await confirm({
+      title: "Delete all reservations?",
+      text: "All reservation records will be permanently removed.",
+      confirmButtonText: "Yes, delete reservations",
+      icon: "error",
+    });
+    if (!result.isConfirmed) return;
+
     setLoading(true);
     try {
       await api.delete("delete/reservations", {
@@ -31,20 +35,15 @@ function DeleteReservationsData() {
       reset();
       setIsOpen(false);
 
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Success 🎉",
-        message: "All reservation data has been deleted successfully.",
+      quickToast({
+        title: "Reservations deleted",
+        icon: "success",
       });
     } catch (error) {
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Failed 🥲",
-        message: `Failed to delete reservation data: ${
-          error.response?.data?.message || error.message
-        }`,
+      quickToast({
+        title: "Failed to delete reservation data",
+        text: error.response?.data?.message || error.message,
+        icon: "error",
       });
     } finally {
       setLoading(false);
@@ -53,14 +52,6 @@ function DeleteReservationsData() {
 
   return (
     <>
-      <StatusToast
-        show={toast.show}
-        color={toast.color}
-        header={toast.header}
-        message={toast.message}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
-
       <button onClick={() => setIsOpen(true)} className="btn btn-warning">
         Delete Reservation Data
       </button>

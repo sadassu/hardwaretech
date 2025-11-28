@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import http from "http";
 
 import productsRoutes from "./routes/productsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -13,6 +14,11 @@ import deleteRoutes from "./routes/deleteRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import supplyHistoryRoute from "./routes/supplyHistoriesRoute.js";
 import categoryRoutes from "./routes/categoriesRoute.js";
+import {
+  initRealtime,
+  emitGlobalUpdate,
+  deriveTopicsFromPath,
+} from "./services/realtime.js";
 
 import { connectDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
@@ -24,17 +30,55 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Configure allowed origins - include localhost for development
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "https://hardware-tech.shop",
+  // Development origins
+  ...(process.env.NODE_ENV !== "production"
+    ? [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5174",
+      ]
+    : []),
+].filter(Boolean);
+
+const server = http.createServer(app);
+
 // Middleware
 app.use(express.json());
 app.use(rateLimiter);
 app.use(
   cors({
-    origin: [process.env.CLIENT_URL, "https://hardware-tech.shop"],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
 
 app.use(passport.initialize());
+
+// Emit live reload events automatically for write operations
+app.use((req, res, next) => {
+  res.on("finish", () => {
+    const method = req.method?.toUpperCase();
+    if (
+      ["POST", "PUT", "PATCH", "DELETE"].includes(method) &&
+      res.statusCode < 400
+    ) {
+      emitGlobalUpdate({
+        method,
+        path: req.originalUrl,
+        statusCode: res.statusCode,
+        topics: deriveTopicsFromPath(req.originalUrl),
+      });
+    }
+  });
+  next();
+});
 
 // ✅ Serve uploads folder as static (important for images)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
@@ -64,7 +108,8 @@ app.use((err, req, res, next) => {
 
 // Connect DB and start server
 connectDB().then(async () => {
-  app.listen(PORT, async () => {
+  initRealtime(server, allowedOrigins);
+  server.listen(PORT, async () => {
     console.log(`Server listening on port: ${PORT}`);
     
     // Check email configuration on startup

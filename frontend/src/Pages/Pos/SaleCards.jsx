@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Sun, TrendingUp, Calendar } from "lucide-react";
 import { useSaleStore } from "../../store/saleStore";
 import { formatPrice } from "../../utils/formatPrice";
+import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 
 function SaleCards() {
   const {
@@ -14,13 +15,14 @@ function SaleCards() {
     loading,
     error,
   } = useSaleStore();
+  const salesLiveKey = useLiveResourceRefresh(["sales"]);
 
   useEffect(() => {
-    // Fetch all 4 when component mounts
+    // Fetch all 4 when component mounts or when sales change
     fetchDailySales();
     fetchAnnualSales();
     fetchMonthlySales();
-  }, [fetchDailySales, fetchAnnualSales, fetchMonthlySales]);
+  }, [fetchDailySales, fetchAnnualSales, fetchMonthlySales, salesLiveKey]);
 
   if (loading) return null;
   if (error) return <p className="text-red-500">{error}</p>;

@@ -5,12 +5,15 @@ import { useAuthContext } from "../../hooks/useAuthContext.js";
 import { useCategoriesStore } from "../../store/categoriesStore.js";
 import { useProductStore } from "../../store/productStore.js";
 import { Edit } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 const UpdateProduct = ({ product, onUpdateSuccess }) => {
   const { user } = useAuthContext();
   const { categories, fetchCategories, loading } = useCategoriesStore();
   const { updateProduct } = useProductStore();
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
@@ -52,6 +55,13 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
       return;
     }
 
+    const result = await confirm({
+      title: "Update product details?",
+      text: `Changes to "${formData.name}" will be applied immediately.`,
+      confirmButtonText: "Yes, save changes",
+    });
+    if (!result.isConfirmed) return;
+
     try {
       const payload = {
         name: formData.name,
@@ -60,19 +70,19 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
         image: formData.image, // plain string URL
       };
 
-      const updatedProduct = await updateProduct(
-        user.token,
-        product._id,
-        payload
-      );
-      toast.success("Product updated successfully!");
+      const updatedProduct = await updateProduct(user.token, product._id, payload);
+      quickToast({ title: "Product updated", icon: "success" });
       setFormData({ name: "", description: "", category: "", image: "" });
       setIsOpen(false);
       if (onUpdateSuccess) onUpdateSuccess(updatedProduct);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to update product");
-      toast.error("Failed to update product");
+      quickToast({
+        title: "Failed to update product",
+        text: err.response?.data?.message || "Please try again.",
+        icon: "error",
+      });
     }
   };
 

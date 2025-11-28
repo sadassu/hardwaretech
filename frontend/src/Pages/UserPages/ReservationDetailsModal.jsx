@@ -91,8 +91,11 @@ function ReservationDetailsModal({
               const variant = detail?.productVariantId;
               const product = variant?.product;
 
-              // Safely compute price and subtotal
-              const price = variant?.price || 0;
+              // Safely compute price and subtotal (locked at reservation time)
+              const price =
+                typeof detail?.price === "number"
+                  ? detail.price
+                  : variant?.price || 0;
               const subtotal = price * (detail?.quantity || 0);
 
               return (

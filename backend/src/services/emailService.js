@@ -3,19 +3,8 @@
  * Specialized email functions for different purposes with optimized delivery
  */
 
-import { sendEmail } from "../utils/sendEmail.js";
-
-/**
- * Email Types Enum - Ensures distinct purposes
- */
-export const EMAIL_TYPES = {
-  VERIFICATION_CODE: "VERIFICATION_CODE",
-  VERIFICATION_LINK: "VERIFICATION_LINK",
-  PASSWORD_RESET: "PASSWORD_RESET",
-  RESERVATION_STATUS: "RESERVATION_STATUS",
-  RESERVATION_COMPLETED: "RESERVATION_COMPLETED",
-  RESERVATION_CREATED: "RESERVATION_CREATED",
-};
+import { dispatchEmail } from "./emailDispatcher.js";
+import { EMAIL_TYPES } from "../constants/emailTypes.js";
 
 /**
  * Send email verification code (6-digit code)
@@ -80,7 +69,13 @@ export const sendVerificationCodeEmail = async (email, userName, code) => {
 </html>
   `;
 
-  return sendEmail(email, subject, html, 1); // 1 retry for verification codes (fast delivery)
+  return dispatchEmail({
+    type: EMAIL_TYPES.VERIFICATION_CODE,
+    to: email,
+    subject,
+    html,
+    retries: 1,
+  });
 };
 
 /**
@@ -145,7 +140,13 @@ export const sendVerificationLinkEmail = async (email, userName, verificationLin
 </html>
   `;
 
-  return sendEmail(email, subject, html, 1);
+  return dispatchEmail({
+    type: EMAIL_TYPES.VERIFICATION_LINK,
+    to: email,
+    subject,
+    html,
+    retries: 1,
+  });
 };
 
 /**
@@ -215,7 +216,13 @@ export const sendPasswordResetEmail = async (email, userName, resetLink) => {
 </html>
   `;
 
-  return sendEmail(email, subject, html, 2); // 2 retries for password reset (security critical)
+  return dispatchEmail({
+    type: EMAIL_TYPES.PASSWORD_RESET,
+    to: email,
+    subject,
+    html,
+    retries: 2,
+  });
 };
 
 /**
@@ -245,12 +252,14 @@ export const sendReservationStatusEmail = async (email, userName, reservationDat
     reservationData.products || []
   );
 
-  // Non-blocking: Fire and forget for status updates
-  sendEmail(email, subject, html, 1).catch((error) => {
-    console.error(`❌ Failed to send reservation status email to ${email}:`, error.message);
+  return dispatchEmail({
+    type: EMAIL_TYPES.RESERVATION_STATUS,
+    to: email,
+    subject,
+    html,
+    retries: 1,
+    fireAndForget: true,
   });
-  
-  return Promise.resolve(); // Return immediately
 };
 
 /**
@@ -272,12 +281,14 @@ export const sendReservationCompletedEmail = async (email, userName, reservation
     reservationData.products || []
   );
 
-  // Non-blocking: Fire and forget for completion emails
-  sendEmail(email, subject, html, 1).catch((error) => {
-    console.error(`❌ Failed to send reservation completion email to ${email}:`, error.message);
+  return dispatchEmail({
+    type: EMAIL_TYPES.RESERVATION_COMPLETED,
+    to: email,
+    subject,
+    html,
+    retries: 1,
+    fireAndForget: true,
   });
-  
-  return Promise.resolve(); // Return immediately
 };
 
 /**
@@ -299,11 +310,15 @@ export const sendReservationCreatedEmail = async (email, userName, reservationDa
     reservationData.products || []
   );
 
-  // Non-blocking: Fire and forget for creation emails
-  sendEmail(email, subject, html, 1).catch((error) => {
-    console.error(`❌ Failed to send reservation created email to ${email}:`, error.message);
+  return dispatchEmail({
+    type: EMAIL_TYPES.RESERVATION_CREATED,
+    to: email,
+    subject,
+    html,
+    retries: 1,
+    fireAndForget: true,
   });
-  
-  return Promise.resolve(); // Return immediately
 };
+
+export { EMAIL_TYPES };
 

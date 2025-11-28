@@ -4,18 +4,21 @@ import Modal from "../../components/Modal";
 import api from "../../utils/api";
 import { LockKeyhole } from "lucide-react";
 import TextInput from "../../components/TextInput";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function ChangePassword({ className = "", icon: Icon }) {
   const { user, dispatch } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
   });
+
+  const quickToast = useQuickToast();
 
   const handleChange = (e) => {
     setFormData({
@@ -25,10 +28,11 @@ function ChangePassword({ className = "", icon: Icon }) {
     setError(null);
   };
 
+  const confirm = useConfirm();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    setSuccess(null);
 
     if (!formData.password || !formData.confirmPassword) {
       setError("All fields are required.");
@@ -42,6 +46,13 @@ function ChangePassword({ className = "", icon: Icon }) {
       setError("Passwords do not match.");
       return;
     }
+
+    const result = await confirm({
+      title: "Update password?",
+      text: "You will need to use the new password the next time you log in.",
+      confirmButtonText: "Yes, change password",
+    });
+    if (!result.isConfirmed) return;
 
     try {
       const res = await api.put(
@@ -69,19 +80,21 @@ function ChangePassword({ className = "", icon: Icon }) {
           token: res.data.token || user.token
         };
         
-        dispatch({ 
-          type: "UPDATED_USER", 
+        dispatch({
+          type: "UPDATED_USER",
           payload: updatedUser
         });
         localStorage.setItem("user", JSON.stringify(updatedUser));
       }
 
-      setSuccess(res.data.message || "Password updated successfully! Please verify your email.");
+      quickToast({
+        title:
+          res.data.message ||
+          "Password updated successfully! Please verify your email.",
+        icon: "success",
+      });
       setFormData({ password: "", confirmPassword: "" });
-      setTimeout(() => {
-        setIsOpen(false);
-        setSuccess(null);
-      }, 3000);
+      setIsOpen(false);
     } catch (error) {
       console.error("Failed to update password", error);
       setError(error.response?.data?.message);
@@ -91,11 +104,10 @@ function ChangePassword({ className = "", icon: Icon }) {
   return (
     <>
       <button
-        onClick={() => {
-          setIsOpen(true);
-          setError(null);
-          setSuccess(null);
-        }}
+            onClick={() => {
+              setIsOpen(true);
+              setError(null);
+            }}
         className={`cursor-pointer rounded-xl flex items-center gap-2 px-4 py-2 text-sm sm:text-base w-full sm:w-auto ${className}`}
       >
         {Icon && <Icon className="w-5 h-5" />}
@@ -147,10 +159,6 @@ function ChangePassword({ className = "", icon: Icon }) {
           </div>
 
           {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
-          {success && (
-            <p className="text-green-400 text-xs sm:text-sm">{success}</p>
-          )}
-
           <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 pt-2">
             <button
               type="button"

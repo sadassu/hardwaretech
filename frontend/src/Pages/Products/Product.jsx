@@ -241,6 +241,10 @@ const Product = () => {
                                 (v) => v._id === variant.conversionSource
                               )
                             : null;
+                          const colorBubble =
+                            variant.color && variant.color !== ""
+                              ? variant.color
+                              : null;
 
                           return (
                           <div
@@ -262,6 +266,18 @@ const Product = () => {
                                       ₱{variant.price}
                                     </span>
                                   </div>
+                                  {colorBubble && (
+                                    <span
+                                      className="inline-flex items-center gap-2 text-xs font-semibold"
+                                      style={{ color: colorBubble }}
+                                    >
+                                      <span
+                                        className="inline-block w-3.5 h-3.5 rounded-full border border-gray-300"
+                                        style={{ backgroundColor: colorBubble }}
+                                      ></span>
+                                      {colorBubble}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
 

@@ -102,9 +102,12 @@ export const useReservation = () => {
           limit: 20,
           status: "all", // User reservations page typically shows all
         });
-        
-        // Update status counts
-        await updateStatusCounts(user.token);
+
+        const isStaff =
+          user.roles?.includes("admin") || user.roles?.includes("cashier");
+        if (isStaff) {
+          await updateStatusCounts(user.token);
+        }
       } catch (refreshError) {
         // If refresh fails, don't fail the cancellation - it's already successful
         console.warn("Failed to refresh reservations after cancellation:", refreshError);

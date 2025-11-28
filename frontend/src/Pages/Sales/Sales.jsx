@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSalesContext } from "../../hooks/useSaleContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useFetch } from "../../hooks/useFetch";
+import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 import Receipt from "../../components/Receipt";
 import Pagination from "../../components/Pagination";
 import { formatDatePHT } from "../../utils/formatDate";
@@ -29,6 +30,7 @@ const Sales = () => {
   const [dateTo, setDateTo] = useState("");
 
   const limit = 20;
+  const salesLiveKey = useLiveResourceRefresh(["sales", "reservations", "inventory"]);
 
   const { data, loading, error } = useFetch(
     "/sales",
@@ -58,6 +60,7 @@ const Sales = () => {
       statusFilter,
       dateFrom,
       dateTo,
+      salesLiveKey,
     ]
   );
 
@@ -396,6 +399,16 @@ const Sales = () => {
                                                   {item.size && (
                                                     <span>
                                                       Size: {item.size}
+                                                    </span>
+                                                  )}
+                                                  {variant?.dimension && (
+                                                    <span>
+                                                      Dimension: {variant.dimension}
+                                                    </span>
+                                                  )}
+                                                  {variant?.dimensionType && (
+                                                    <span>
+                                                      Dimension Type: {variant.dimensionType}
                                                     </span>
                                                   )}
                                                   <span>

@@ -9,7 +9,7 @@ function StatusToast({ color, header, message, show, onClose }) {
       const timer = setTimeout(() => {
         setVisible(false);
         setTimeout(() => onClose(), 300);
-      }, 5000);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [show, onClose]);

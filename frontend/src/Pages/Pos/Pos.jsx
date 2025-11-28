@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 
 import Loading from "../../components/Loading";
 import SearchBar from "../../components/SearchBar";
@@ -17,6 +18,8 @@ import StockCards from "../Dashboard/StockCards";
 function Pos() {
   const { user } = useAuthContext();
   const { isMobile } = useIsMobile();
+  const inventoryLiveKey = useLiveResourceRefresh(["inventory", "supply", "sales"]);
+  const catalogLiveKey = useLiveResourceRefresh(["categories", "inventory"]);
 
   // ✅ Zustand stores
   const {
@@ -43,7 +46,7 @@ function Pos() {
   // ✅ Fetch categories once
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+  }, [fetchCategories, catalogLiveKey]);
 
   // ✅ Fetch products when filters/search/page change
   useEffect(() => {
@@ -55,7 +58,7 @@ function Pos() {
         category: selectedCategory,
       });
     }
-  }, [user, currentPage, searchQuery, selectedCategory, fetchProducts]);
+  }, [user, currentPage, searchQuery, selectedCategory, fetchProducts, inventoryLiveKey]);
 
   // ✅ Handlers
   const handleSearchChange = (e) => setSearchInput(e.target.value);

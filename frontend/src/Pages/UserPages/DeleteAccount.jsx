@@ -3,6 +3,8 @@ import { useAuthContext } from "../../hooks/useAuthContext";
 import Modal from "../../components/Modal";
 import api from "../../utils/api";
 import { Trash } from "lucide-react";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function DeleteAccount({ className = "", icon: Icon }) {
   const { user, deleteAccount } = useAuthContext();
@@ -10,6 +12,9 @@ function DeleteAccount({ className = "", icon: Icon }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [confirmText, setConfirmText] = useState("");
+
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleDelete = async () => {
     setError(null);
@@ -20,6 +25,14 @@ function DeleteAccount({ className = "", icon: Icon }) {
       return;
     }
 
+    const result = await confirm({
+      title: "Delete account?",
+      text: "This will permanently remove your account and data.",
+      confirmButtonText: "Yes, delete account",
+      icon: "error",
+    });
+    if (!result.isConfirmed) return;
+
     try {
       await api.delete("/auth/me", {
         headers: {
@@ -27,7 +40,10 @@ function DeleteAccount({ className = "", icon: Icon }) {
         },
       });
 
-      setSuccess("Account deleted successfully!");
+      quickToast({
+        title: "Account deleted",
+        icon: "success",
+      });
       deleteAccount();
       setTimeout(() => {
         setIsOpen(false);
@@ -74,10 +90,6 @@ function DeleteAccount({ className = "", icon: Icon }) {
           />
 
           {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
-          {success && (
-            <p className="text-green-400 text-xs sm:text-sm">{success}</p>
-          )}
-
           <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 pt-2">
             <button
               type="button"

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useSalesContext } from "../../hooks/useSaleContext";
 import api from "../../utils/api";
-import StatusToast from "../../components/StatusToast";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import Modal from "../../components/Modal";
+import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 function DeleteSalesData() {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,15 +12,18 @@ function DeleteSalesData() {
   const { dispatch } = useSalesContext();
 
   const [loading, setLoading] = useState(false); // <-- loading state
-
-  const [toast, setToast] = useState({
-    show: false,
-    color: "",
-    header: "",
-    message: "",
-  });
+  const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleDelete = async () => {
+    const result = await confirm({
+      title: "Delete all sales data?",
+      text: "This will permanently remove every sales record.",
+      confirmButtonText: "Yes, delete sales",
+      icon: "error",
+    });
+    if (!result.isConfirmed) return;
+
     setLoading(true); // start loading
     try {
       await api.delete("delete/sales", {
@@ -31,20 +35,15 @@ function DeleteSalesData() {
 
       dispatch({ type: "CLEAR_SALES" });
 
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Success 🎉",
-        message: "All sales data has been deleted successfully.",
+      quickToast({
+        title: "Sales data deleted",
+        icon: "success",
       });
     } catch (error) {
-      setToast({
-        show: true,
-        color: "error-toast",
-        header: "Failed 🥲",
-        message: `Failed to delete sales data: ${
-          error.response?.data?.message || error.message
-        }`,
+      quickToast({
+        title: "Failed to delete sales data",
+        text: error.response?.data?.message || error.message,
+        icon: "error",
       });
     } finally {
       setLoading(false); // stop loading
@@ -53,14 +52,6 @@ function DeleteSalesData() {
 
   return (
     <>
-      <StatusToast
-        show={toast.show}
-        color={toast.color}
-        header={toast.header}
-        message={toast.message}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
-
       <button onClick={() => setIsOpen(true)} className="btn btn-warning">
         Delete Sales Data
       </button>

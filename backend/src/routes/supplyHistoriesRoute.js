@@ -4,7 +4,8 @@ import {
   getMoneySpentSevenDays,
   getSupplyHistory,
   getTotalMoneySpent,
-  redoSupplyHistory,
+  getLostMoneyStats,
+  getTotalStock,
 } from "../controllers/supplyHistoriesController.js";
 import requireAuth from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -16,12 +17,6 @@ router.get(
   requireAuth,
   requireRole(["admin", "cashier"]),
   getSupplyHistory
-);
-router.post(
-  "/:id/redo",
-  requireAuth,
-  requireRole(["admin", "cashier"]),
-  redoSupplyHistory
 );
 router.get(
   "/money-spent-seven-days",
@@ -42,6 +37,20 @@ router.get(
   requireAuth,
   requireRole(["admin", "cashier"]),
   getTotalMoneySpent
+);
+
+router.get(
+  "/lost-money",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  getLostMoneyStats
+);
+
+router.get(
+  "/total-stock",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  getTotalStock
 );
 
 export default router;

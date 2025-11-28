@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useFetch } from "../../hooks/useFetch";
 import { useAuthContext } from "../../hooks/useAuthContext";
+import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 import {
   BarChart,
   Bar,
@@ -10,6 +11,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
 import { BarChart3, AlertCircle } from "lucide-react";
@@ -49,6 +51,23 @@ const SUPPLY_COLORS = [
   "#14b8a6",
 ];
 
+const reorderForColumns = (items = [], columns = 3) => {
+  if (!Array.isArray(items) || items.length === 0) return [];
+  const perColumn = Math.ceil(items.length / columns);
+  const columnsData = Array.from({ length: columns }, (_, col) =>
+    items.slice(col * perColumn, (col + 1) * perColumn)
+  );
+  const reordered = [];
+
+  for (let row = 0; row < perColumn; row++) {
+    for (let col = 0; col < columns; col++) {
+      const value = columnsData[col][row];
+      if (value) reordered.push(value);
+    }
+  }
+  return reordered;
+};
+
 function Dashboard() {
   const [option, setOption] = useState("daily");
   const currentDate = new Date();
@@ -62,6 +81,14 @@ function Dashboard() {
   const [salesCategory, setSalesCategory] = useState("all");
   const [salesWeek, setSalesWeek] = useState("all");
   const [selectedSalesBar, setSelectedSalesBar] = useState(null);
+  const supplyModalProducts = useMemo(
+    () => reorderForColumns(selectedSupplyBar?.products || [], 3),
+    [selectedSupplyBar]
+  );
+  const salesModalProducts = useMemo(
+    () => reorderForColumns(selectedSalesBar?.products || [], 3),
+    [selectedSalesBar]
+  );
   const yearOptions = useMemo(() => {
     const latest = new Date().getFullYear();
     return Array.from({ length: 6 }, (_, idx) => latest - idx);
@@ -83,6 +110,13 @@ function Dashboard() {
     }
   }, [categories.length, fetchCategories]);
 
+  const salesLiveKey = useLiveResourceRefresh([
+    "dashboard",
+    "sales",
+    "reservations",
+  ]);
+  const supplyLiveKey = useLiveResourceRefresh(["supply", "inventory"]);
+
   const {
     data: salesData,
     loading,
@@ -93,7 +127,7 @@ function Dashboard() {
       params: { option },
       headers: { Authorization: `Bearer ${user.token}` },
     },
-    [option]
+    [option, salesLiveKey]
   );
 
   // Fetch overall sales since business start
@@ -109,7 +143,7 @@ function Dashboard() {
   } = useFetch(
     user?.token ? "dashboard/sales/overall" : null,
     commonHeaders || {},
-    [user?.token]
+    [user?.token, salesLiveKey]
   );
 
   const supplyParams = {
@@ -130,7 +164,7 @@ function Dashboard() {
       ...(commonHeaders || {}),
       params: supplyParams,
     },
-    [user?.token, supplyYear, supplyMonth, supplyCategory]
+    [user?.token, supplyYear, supplyMonth, supplyCategory, supplyLiveKey]
   );
 
   const salesMovementParams = {
@@ -151,7 +185,7 @@ function Dashboard() {
       ...(commonHeaders || {}),
       params: salesMovementParams,
     },
-    [user?.token, salesYear, salesMonth, salesCategory]
+    [user?.token, salesYear, salesMonth, salesCategory, salesLiveKey]
   );
 
   const handleOptionChange = (e) => setOption(e.target.value);
@@ -345,7 +379,7 @@ function Dashboard() {
 
         salesSeries.forEach((series) => {
           base[series.productId] =
-            week.totals?.[series.productId] ?? 0;
+            week.salesTotals?.[series.productId] ?? 0;
         });
 
         return {
@@ -378,7 +412,7 @@ function Dashboard() {
       };
 
       salesSeries.forEach((series) => {
-        base[series.productId] = day.totals?.[series.productId] ?? 0;
+        base[series.productId] = day.salesTotals?.[series.productId] ?? 0;
       });
 
       return {
@@ -534,52 +568,48 @@ function Dashboard() {
     }
 
     const lines = [];
-    const allProducts = salesSeries.map(s => s.productId);
-    
-    // Calculate total sales and revenue for the period
-    let totalUnits = 0;
-    let totalRevenue = 0;
-    const productStats = allProducts.map(productId => {
+    const allProducts = salesSeries.map((s) => s.productId);
+    const useDailyBreakdown = salesWeek !== "all";
+
+    const productStats = allProducts
+      .map((productId) => {
       let units = 0;
       let revenue = 0;
       
-      salesChartData.forEach(week => {
-        units += Number(week[productId] || 0);
-      });
-
-      // Get revenue from salesFilteredWeeks
-      salesFilteredWeeks.forEach(week => {
-        if (week.salesTotals && week.salesTotals[productId]) {
-          revenue += Number(week.salesTotals[productId] || 0);
-        }
-        // Also check daily totals if viewing a specific week
-        if (week.dailyTotals) {
-          week.dailyTotals.forEach(day => {
-            if (day.salesTotals && day.salesTotals[productId]) {
-              revenue += Number(day.salesTotals[productId] || 0);
+        salesFilteredWeeks.forEach((week) => {
+          if (useDailyBreakdown && Array.isArray(week.dailyTotals)) {
+            week.dailyTotals.forEach((day) => {
+              units += Number(day.totals?.[productId] || 0);
+              revenue += Number(day.salesTotals?.[productId] || 0);
+            });
+          } else {
+            units += Number(week.totals?.[productId] || 0);
+            revenue += Number(week.salesTotals?.[productId] || 0);
             }
           });
-        }
-      });
 
-      totalUnits += units;
-      totalRevenue += revenue;
-
-      const product = salesSeries.find(s => s.productId === productId);
+        const product = salesSeries.find((s) => s.productId === productId);
       return {
         productId,
         label: product?.label || "Unknown",
         units,
-        revenue
+          revenue,
       };
-    }).sort((a, b) => b.revenue - a.revenue);
+      })
+      .sort((a, b) => b.revenue - a.revenue);
+
+    const totalUnits = productStats.reduce((sum, item) => sum + item.units, 0);
+    const totalRevenue = productStats.reduce(
+      (sum, item) => sum + item.revenue,
+      0
+    );
 
     const topProduct = productStats[0];
     const periodLabel = salesWeek === "all" 
       ? `${salesChartData.length} week${salesChartData.length > 1 ? "s" : ""}`
       : "selected week";
 
-    if (topProduct && topProduct.units > 0) {
+    if (topProduct && topProduct.revenue > 0) {
       lines.push(
         `Total sales reached ${totalUnits.toLocaleString()} units generating ₱${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in revenue across ${periodLabel} for ${salesSeries.length} product${salesSeries.length > 1 ? "s" : ""}.`
       );
@@ -589,7 +619,7 @@ function Dashboard() {
       
       if (productStats.length > 1) {
         const secondProduct = productStats[1];
-        if (secondProduct.units > 0) {
+        if (secondProduct.revenue > 0) {
           lines.push(
             `${secondProduct.label} followed with ${secondProduct.units.toLocaleString()} units sold (₱${secondProduct.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).`
           );
@@ -637,9 +667,8 @@ function Dashboard() {
     );
   };
 
-  const handleSupplyBarClick = useCallback(
-    (barProps) => {
-      const payload = barProps?.payload;
+  const openSupplyDetailsFromPayload = useCallback(
+    (payload) => {
       if (!payload?.label) return;
 
       const products = supplySeries
@@ -657,6 +686,21 @@ function Dashboard() {
       });
     },
     [supplyChartMeta, supplySeries]
+  );
+
+  const handleSupplyBarClick = useCallback(
+    (barProps) => {
+      if (!barProps?.payload) return;
+      openSupplyDetailsFromPayload(barProps.payload);
+    },
+    [openSupplyDetailsFromPayload]
+  );
+
+  const handleSupplyQuickView = useCallback(
+    (row) => {
+      openSupplyDetailsFromPayload(row);
+    },
+    [openSupplyDetailsFromPayload]
   );
 
   const closeSupplyBarDetails = useCallback(() => {
@@ -689,38 +733,38 @@ function Dashboard() {
     [salesSeries]
   );
 
-  const handleSalesBarClick = useCallback(
-    (barProps) => {
-      const payload = barProps?.payload;
+  const openSalesDetailsFromPayload = useCallback(
+    (payload) => {
       if (!payload?.label) return;
 
-      // Find the week/day data to get sales totals
-      const weekData = salesFilteredWeeks.find(
-        (week) => week.weekLabel === payload.label || week.rangeText === payload.rangeText
-      );
+      const weekData =
+        salesFilteredWeeks.find(
+          (week) =>
+            week.weekLabel === payload.label ||
+            week.rangeText === payload.rangeText
+        ) || salesFilteredWeeks[0];
       const dayData = weekData?.dailyTotals?.find(
         (day) => day.label === payload.label
       );
 
       const products = salesSeries
         .map((series) => {
-          const quantity = Number(payload[series.productId] || 0);
-          // Get sales amount from week salesTotals or day salesTotals
-          let salesAmount = 0;
-          if (dayData?.salesTotals) {
-            salesAmount = Number(dayData.salesTotals[series.productId] || 0);
-          } else if (weekData?.salesTotals) {
-            salesAmount = Number(weekData.salesTotals[series.productId] || 0);
+          const salesAmount = Number(payload[series.productId] || 0);
+          let quantity = 0;
+          if (dayData?.totals) {
+            quantity = Number(dayData.totals[series.productId] || 0);
+          } else if (weekData?.totals) {
+            quantity = Number(weekData.totals[series.productId] || 0);
           }
           
           return {
             productId: series.productId,
             label: series.label,
-            value: quantity,
-            salesAmount: salesAmount,
+            units: quantity,
+            salesAmount,
           };
         })
-        .sort((a, b) => b.salesAmount - a.salesAmount); // Sort by sales amount (revenue)
+        .sort((a, b) => b.salesAmount - a.salesAmount);
 
       setSelectedSalesBar({
         label: salesChartMeta[payload.label]?.title || payload.label,
@@ -729,6 +773,21 @@ function Dashboard() {
       });
     },
     [salesChartMeta, salesSeries, salesFilteredWeeks]
+  );
+
+  const handleSalesBarClick = useCallback(
+    (barProps) => {
+      if (!barProps?.payload) return;
+      openSalesDetailsFromPayload(barProps.payload);
+    },
+    [openSalesDetailsFromPayload]
+  );
+
+  const handleSalesQuickView = useCallback(
+    (row) => {
+      openSalesDetailsFromPayload(row);
+    },
+    [openSalesDetailsFromPayload]
   );
 
   const closeSalesBarDetails = useCallback(() => {
@@ -741,17 +800,22 @@ function Dashboard() {
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
         {/* Header */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <div className="p-1.5 sm:p-2 bg-blue-600 rounded-lg flex-shrink-0">
-              <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-blue-600 rounded-xl shadow-md flex-shrink-0">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+                  Dashboard
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Live overview of sales, stock, and reservations
+                </p>
+              </div>
             </div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-              Sales Dashboard
-            </h1>
+
           </div>
-          <p className="text-sm sm:text-base text-gray-600 ml-9 sm:ml-11">
-            Track your sales performance over time
-          </p>
         </div>
 
         {/* Two-Column Layout */}
@@ -1145,13 +1209,23 @@ function Dashboard() {
                             tick={{ fontSize: 10 }}
                             interval={0}
                           />
-                          <YAxis tick={{ fontSize: 10 }} />
+                          <YAxis
+                            tick={{ fontSize: 10 }}
+                            tickFormatter={(value) =>
+                              value >= 1000
+                                ? `₱${(value / 1000).toFixed(0)}k`
+                                : `₱${value.toLocaleString()}`
+                            }
+                          />
                           <Tooltip content={<SupplyHistoryTooltip />} />
+                          <Legend
+                            wrapperStyle={{ paddingTop: "20px", fontSize: "11px" }}
+                            iconType="rect"
+                          />
                           {supplySeries.map((series, idx) => (
                             <Bar
                               key={series.productId}
                               dataKey={series.productId}
-                              stackId="week"
                               fill={SUPPLY_COLORS[idx % SUPPLY_COLORS.length]}
                               name={series.label}
                               maxBarSize={60}
@@ -1312,6 +1386,10 @@ function Dashboard() {
                             interval={0}
                           />
                           <YAxis tick={{ fontSize: 10 }} />
+                          <Legend
+                            wrapperStyle={{ paddingTop: "20px", fontSize: "11px" }}
+                            iconType="rect"
+                          />
                           <Tooltip
                             content={({ active, label }) => {
                               if (!active) return null;
@@ -1337,7 +1415,6 @@ function Dashboard() {
                             <Bar
                               key={series.productId}
                               dataKey={series.productId}
-                              stackId="sales"
                               fill={SUPPLY_COLORS[idx % SUPPLY_COLORS.length]}
                               name={series.label}
                               maxBarSize={60}
@@ -1431,7 +1508,7 @@ function Dashboard() {
           </div>
           <div className="p-4">
             <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3 max-h-[60vh] overflow-y-auto pr-1">
-              {selectedSupplyBar.products.map((product) => {
+              {supplyModalProducts.map((product) => {
                 const color = getSupplyProductColor(product.productId);
                 return (
                   <div
@@ -1486,7 +1563,7 @@ function Dashboard() {
           </div>
           <div className="p-4">
             <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3 max-h-[60vh] overflow-y-auto pr-1">
-              {selectedSalesBar.products.map((product) => {
+              {salesModalProducts.map((product) => {
                 const color = getSalesProductColor(product.productId);
                 return (
                   <div
@@ -1507,7 +1584,7 @@ function Dashboard() {
                         ₱{product.salesAmount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                       </span>
                       <span className="font-semibold text-blue-600 text-[11px]">
-                        {product.value.toLocaleString()} units
+                        {product.units?.toLocaleString() || 0} units
                       </span>
                     </div>
                   </div>
