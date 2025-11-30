@@ -7,6 +7,9 @@ const ReservationSchema = new mongoose.Schema({
     ref: "User",
     default: null,
   },
+  // Store user name and email for persistence (even if user account is deleted)
+  userName: { type: String },
+  userEmail: { type: String },
   reservationDate: { type: Date, default: Date.now },
   status: {
     type: String,

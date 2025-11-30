@@ -71,6 +71,10 @@ function EditUserData() {
         title: "Roles updated",
         icon: "success",
       });
+      // Refresh user data after successful update
+      if (email) {
+        setFetchUrl(`/user/fetchUser?email=${encodeURIComponent(email)}`);
+      }
     } catch (err) {
       console.error(err);
       quickToast({
@@ -101,8 +105,10 @@ function EditUserData() {
         icon: "success",
       });
 
-      // Reload the page
-      window.location.reload();
+      // Wait for toast to be visible before reloading
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (err) {
       console.error(err);
       quickToast({
@@ -110,7 +116,6 @@ function EditUserData() {
         text: err.response?.data?.message || err.message,
         icon: "error",
       });
-    } finally {
       setDeleting(false);
     }
   };

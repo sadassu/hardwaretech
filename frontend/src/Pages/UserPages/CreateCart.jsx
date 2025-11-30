@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Modal from "../../components/Modal";
 import { useCart } from "../../hooks/useCart";
 import { ShoppingCart, X, Plus, Minus, PlusCircle, AlertTriangle } from "lucide-react";
@@ -9,6 +9,7 @@ function CreateCart({ product, variant }) {
   const { user } = useAuthContext();
   const { addToCart, cartItems } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [maxStockMessage, setMaxStockMessage] = useState("");
@@ -87,8 +88,11 @@ function CreateCart({ product, variant }) {
     setQuantity(1);
     setMaxStockMessage("");
     
-    // Navigate to product list after adding to cart
-    navigate("/user/product-list");
+    // Navigate based on current page: stay on POS if already on POS, otherwise go to product list
+    if (location.pathname !== "/pos") {
+      navigate("/user/product-list");
+    }
+    // If on POS page, stay on the same page (no navigation needed)
   };
 
   return (

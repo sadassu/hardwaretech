@@ -53,22 +53,50 @@ export const initRealtime = (httpServer, allowedOrigins = []) => {
 
   ioInstance = new Server(httpServer, {
     cors: corsConfig,
-    transports: ["websocket", "polling"],
+    transports: ["websocket", "polling"], // WebSocket first for better performance
+    // Performance optimizations
+    pingTimeout: 20000, // 20 seconds (default is 5000ms, increased for stability)
+    pingInterval: 25000, // 25 seconds (default is 25000ms, keep same)
+    upgradeTimeout: 10000, // 10 seconds for transport upgrade
+    maxHttpBufferSize: 1e6, // 1MB max message size
+    allowEIO3: true, // Allow Engine.IO v3 clients for compatibility
+    // Compression for faster data transfer
+    perMessageDeflate: {
+      threshold: 1024, // Only compress messages larger than 1KB
+      zlibDeflateOptions: {
+        level: 6, // Compression level (1-9, 6 is balanced)
+      },
+    },
+    // Connection optimization
+    allowRequest: (req, callback) => {
+      // Allow all requests by default (CORS handles security)
+      callback(null, true);
+    },
   });
 
   ioInstance.on("connection", (socket) => {
-    console.log(`🔌 Client connected: ${socket.id}`);
+    // Only log in development
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`🔌 Client connected: ${socket.id}`);
+    }
 
     socket.on("disconnect", (reason) => {
-      console.log(`🔌 Client disconnected: ${socket.id} (${reason})`);
+      // Only log significant disconnects, not routine transport changes
+      if (reason !== "transport close" && process.env.NODE_ENV !== "production") {
+        console.log(`🔌 Client disconnected: ${socket.id} (${reason})`);
+      }
     });
 
     socket.on("error", (error) => {
+      // Always log errors as they're important
       console.error(`❌ Socket error for ${socket.id}:`, error);
     });
   });
 
-  console.log("✅ Socket.IO server initialized");
+  // Only log initialization in development
+  if (process.env.NODE_ENV !== "production") {
+    console.log("✅ Socket.IO server initialized");
+  }
   return ioInstance;
 };
 

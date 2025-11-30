@@ -106,6 +106,7 @@ const UserReservations = () => {
                         {reservation.reservationDetails.map((detail, index) => (
                           <span key={index} className="text-primary text-2xl">
                             {detail.productVariantId?.product?.name ||
+                              detail.productName ||
                               "Unnamed Product"}
                           </span>
                         ))}

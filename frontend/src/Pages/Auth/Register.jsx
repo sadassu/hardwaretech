@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSignup } from "../../hooks/useSignup";
 import ReCAPTCHA from "react-google-recaptcha";
+import api from "../../utils/api";
+import { useAuthContext } from "../../hooks/useAuthContext";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -14,8 +16,18 @@ function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signup, error, isLoading } = useSignup();
   const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaError, setCaptchaError] = useState(false);
   const navigate = useNavigate();
   const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  const { dispatch } = useAuthContext();
+  
+  // Verification state
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState("");
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -30,7 +42,8 @@ function Register() {
 
     if (formData.password !== formData.confirmPassword) return;
 
-    if (recaptchaSiteKey && !captchaToken) {
+    // Only require reCAPTCHA if it's configured and hasn't errored
+    if (recaptchaSiteKey && !captchaError && !captchaToken) {
       alert("Please complete the reCAPTCHA.");
       return;
     }
@@ -44,13 +57,177 @@ function Register() {
     );
 
     if (result && !error) {
-      navigate("/login", {
-        state: {
-          message: "User registered successfully! Verification email sent.",
-        },
-      });
+      // Show verification code input instead of navigating to login
+      setRegisteredEmail(formData.email);
+      setShowVerification(true);
+      setVerificationMessage("Verification code sent to your email. Please check your inbox.");
     }
   };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    
+    if (!verificationCode || verificationCode.length !== 6) {
+      setVerificationError("Please enter a valid 6-digit code.");
+      return;
+    }
+
+    setVerificationError("");
+    setVerificationMessage("");
+    setVerifying(true);
+
+    try {
+      const response = await api.post("/auth/confirm-verification-code", {
+        email: registeredEmail,
+        code: verificationCode,
+      });
+
+      const { token, userId, roles, name, email, avatar, isVerified } = response.data;
+
+      // Save user to localStorage
+      localStorage.setItem("user", JSON.stringify({
+        userId,
+        roles,
+        name,
+        email,
+        avatar,
+        isVerified,
+        token,
+      }));
+
+      // Update auth context
+      dispatch({ type: "LOGIN", payload: {
+        userId,
+        roles,
+        name,
+        email,
+        avatar,
+        isVerified,
+        token,
+      }});
+
+      setVerificationMessage("Email verified successfully! Redirecting...");
+      
+      // Navigate to home page after successful verification
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
+    } catch (err) {
+      setVerificationError(
+        err.response?.data?.error || "Failed to verify code. Please try again."
+      );
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // Show verification code input if registration was successful
+  if (showVerification) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{
+          backgroundImage: "url('assets/bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div
+          className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-8 w-full max-w-sm"
+          style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
+        >
+          {/* Logo + Title */}
+          <div className="flex flex-col items-center mb-6">
+            <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2" />
+            <h2 className="text-white text-2xl font-bold text-center">
+              Verify Your Email
+            </h2>
+          </div>
+
+          {/* Verification Message */}
+          {verificationMessage && (
+            <div className="bg-green-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center">
+              {verificationMessage}
+            </div>
+          )}
+
+          {/* Verification Error */}
+          {verificationError && (
+            <div className="bg-red-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center animate-pulse">
+              {verificationError}
+            </div>
+          )}
+
+          <p className="text-white text-sm mb-2 text-center">
+            We've sent a verification code to:
+          </p>
+          <div className="text-center font-semibold text-yellow-400 mb-6 break-words">
+            {registeredEmail}
+          </div>
+
+          {/* Verification Code Form */}
+          <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
+            <div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                    setVerificationCode(value);
+                  }}
+                  placeholder="Enter 6-digit code"
+                  className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none text-center text-2xl tracking-widest"
+                  maxLength={6}
+                  disabled={verifying}
+                  required
+                />
+                <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
+                  Verification Code
+                </span>
+              </div>
+              <p className="text-sm text-white mx-2 mt-2">
+                Enter the 6-digit code sent to your email
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={verifying || verificationCode.length !== 6}
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition-transform duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {verifying ? "Verifying..." : "Verify Email"}
+            </button>
+          </form>
+
+          {/* Resend Code Link */}
+          <div className="text-center mt-4">
+            <p className="text-gray-300 text-sm">
+              Didn't receive the code?{" "}
+              <button
+                onClick={async () => {
+                  try {
+                    await api.post("/auth/send-verification-code", {
+                      email: registeredEmail,
+                    });
+                    setVerificationMessage("Verification code resent to your email.");
+                    setVerificationError("");
+                  } catch (err) {
+                    setVerificationError(
+                      err.response?.data?.error || "Failed to resend code."
+                    );
+                  }
+                }}
+                className="text-yellow-400 hover:text-yellow-500 font-semibold transition"
+              >
+                Resend Code
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -188,11 +365,27 @@ function Register() {
             )}
 
           {/* ✅ reCAPTCHA - Only render if site key is configured */}
-          {recaptchaSiteKey && (
+          {recaptchaSiteKey && !captchaError && (
             <ReCAPTCHA
               sitekey={recaptchaSiteKey}
-              onChange={(token) => setCaptchaToken(token)}
+              onChange={(token) => {
+                setCaptchaToken(token);
+                setCaptchaError(false);
+              }}
+              onError={() => {
+                // Silently handle reCAPTCHA errors - they're expected if key is invalid/not configured
+                setCaptchaError(true);
+                setCaptchaToken(""); // Clear token since reCAPTCHA failed
+              }}
+              onExpired={() => {
+                setCaptchaToken("");
+              }}
             />
+          )}
+          {captchaError && recaptchaSiteKey && (
+            <div className="bg-yellow-600/90 text-white text-xs px-4 py-2 rounded text-center">
+              reCAPTCHA is unavailable. You can still proceed with registration.
+            </div>
           )}
 
           {/* Submit */}

@@ -6,6 +6,7 @@ import { useVariant } from "../../hooks/useVariant.js";
 import { Edit } from "lucide-react";
 import { formatVariantLabel } from "../../utils/formatVariantLabel.js";
 import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 const UNIT_OPTIONS = [
   "pcs",
@@ -30,6 +31,7 @@ const UpdateVariant = ({ variant, product }) => {
   const { updateVariant } = useVariant();
   const [isOpen, setIsOpen] = useState(false);
   const confirm = useConfirm();
+  const quickToast = useQuickToast();
   const [formData, setFormData] = useState({
     unit: "",
     size: "",
@@ -103,6 +105,10 @@ const UpdateVariant = ({ variant, product }) => {
 
     await updateVariant(variant._id, payload);
     setIsOpen(false);
+    quickToast({
+      title: "Variant updated",
+      icon: "success",
+    });
   };
 
   return (

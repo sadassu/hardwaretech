@@ -799,7 +799,7 @@ export const getPendingReservationCount = asyncHandler(async (req, res) => {
  *
  * Features:
  * - Supports:
- *   - "low"  → quantity < 20 but > 0
+ *   - "low"  → quantity <= 50 but > 0
  *   - "out"  → quantity = 0
  *   - "all"  → no filter (all items)
  * - Pagination support.
@@ -822,7 +822,7 @@ export const getStockStatus = async (req, res) => {
 
     // Build query depending on stock type
     let query = {};
-    if (type === "low") query = { quantity: { $gt: 0, $lt: 15 } };
+    if (type === "low") query = { quantity: { $gt: 0, $lte: 50 } };
     if (type === "out") query = { quantity: 0 };
     if (type === "all") query = {}; // no filter
 

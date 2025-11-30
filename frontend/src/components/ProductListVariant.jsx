@@ -142,10 +142,15 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
                             </div>
                           )}
                           {variant.color && (
-                              <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize ${
-                                colorMap[variant.color.toLowerCase()] || "bg-gray-200 text-gray-700"
-                              }`}>
-                              {variant.color}
+                              <span
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold capitalize border border-gray-300"
+                                style={{ color: variant.color }}
+                              >
+                                <span
+                                  className="inline-block w-3 h-3 rounded-full border border-gray-300"
+                                  style={{ backgroundColor: variant.color }}
+                                ></span>
+                                {variant.color}
                               </span>
                             )}
                           </div>
@@ -229,9 +234,14 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
                             </div>
                           )}
                           {variant.color && (
-                            <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold capitalize ${
-                              colorMap[variant.color.toLowerCase()] || "bg-gray-200 text-gray-700"
-                            }`}>
+                            <span
+                              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-semibold capitalize border border-gray-300"
+                              style={{ color: variant.color }}
+                            >
+                              <span
+                                className="inline-block w-3 h-3 rounded-full border border-gray-300"
+                                style={{ backgroundColor: variant.color }}
+                              ></span>
                               {variant.color}
                             </span>
                           )}

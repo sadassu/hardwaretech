@@ -26,7 +26,10 @@ export const completeReservation = asyncHandler(async (req, res) => {
     const details = await ReservationDetail.find({ reservationId: id })
       .populate({
         path: "productVariantId",
-        populate: { path: "product" },
+        populate: {
+          path: "product",
+          populate: { path: "category" }
+        },
       })
       .session(session);
 
@@ -89,6 +92,7 @@ export const completeReservation = asyncHandler(async (req, res) => {
       return {
         productVariantId: d.productVariantId._id,
         productName: d.productVariantId.product?.name || "Unknown Product", // Store product name directly
+        categoryName: d.productVariantId.product?.category?.name || "", // Store category name for persistence
         size: d.productVariantId.size || "",
         unit: d.productVariantId.unit || "",
         color: d.productVariantId.color || "",

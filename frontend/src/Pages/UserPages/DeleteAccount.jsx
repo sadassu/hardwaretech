@@ -48,9 +48,14 @@ function DeleteAccount({ className = "", icon: Icon }) {
       setTimeout(() => {
         setIsOpen(false);
         window.location.href = "/";
-      }, 1500);
+      }, 2000);
     } catch (error) {
       console.error("Failed to delete account", error);
+      quickToast({
+        title: "Failed to delete account",
+        text: error.response?.data?.message || "Failed to delete account.",
+        icon: "error",
+      });
       setError(error.response?.data?.message || "Failed to delete account.");
     }
   };

@@ -41,9 +41,9 @@ const createTransporter = () => {
       pass: process.env.SMTP_PASS,
     },
     // Optimized timeout settings for faster delivery
-    connectionTimeout: 5000, // 5 seconds (reduced from 10)
-    greetingTimeout: 5000, // 5 seconds (reduced from 10)
-    socketTimeout: 8000, // 8 seconds (reduced from 10)
+    connectionTimeout: 3000, // 3 seconds (reduced for faster connection)
+    greetingTimeout: 3000, // 3 seconds (reduced for faster greeting)
+    socketTimeout: 5000, // 5 seconds (reduced for faster socket operations)
     // TLS/SSL configuration
     tls: {
       rejectUnauthorized: false, // Accept self-signed certificates
@@ -55,11 +55,11 @@ const createTransporter = () => {
     }),
     // Connection pooling for better performance and faster delivery
     pool: true,
-    maxConnections: 5,
-    maxMessages: 100,
+    maxConnections: 10, // Increased from 5 for better concurrency
+    maxMessages: 200, // Increased from 100 for better throughput
     // Optimized rate limiting for faster throughput
     rateDelta: 1000, // 1 second
-    rateLimit: 10, // 10 messages per second (increased from 5)
+    rateLimit: 20, // 20 messages per second (increased from 10 for faster delivery)
   });
 
   return cachedTransporter;
@@ -126,12 +126,13 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
       const transporter = createTransporter();
 
       // Skip verification in production for faster delivery (only verify if explicitly enabled)
+      // Verification is skipped by default for maximum speed - only verify on first attempt if explicitly requested
       if (process.env.VERIFY_SMTP === "true" && attempt === 0) {
         try {
           await Promise.race([
             transporter.verify(),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("SMTP verification timeout")), 3000)
+              setTimeout(() => reject(new Error("SMTP verification timeout")), 2000) // Reduced from 3s to 2s
             )
           ]);
           console.log("✅ SMTP connection verified successfully");
@@ -154,11 +155,11 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
         },
       });
 
-      // Optimized timeout for faster delivery (reduced from 15s to 10s)
+      // Optimized timeout for faster delivery (reduced to 8s for quicker feedback)
       const info = await Promise.race([
         sendPromise,
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Email sending timeout after 10 seconds")), 10000)
+          setTimeout(() => reject(new Error("Email sending timeout after 8 seconds")), 8000)
         )
       ]);
 
@@ -218,7 +219,7 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
 
       // Optimized backoff for faster retries
       if (attempt < retries) {
-        const waitTime = Math.min((attempt + 1) * 500, 2000); // Faster backoff: 500ms, 1000ms, max 2000ms
+        const waitTime = Math.min((attempt + 1) * 300, 1500); // Faster backoff: 300ms, 600ms, max 1500ms
         console.log(`⏳ Retrying in ${waitTime}ms...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }

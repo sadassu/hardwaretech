@@ -47,13 +47,6 @@ export const useReservation = () => {
       // Update status counts to reflect the change
       await updateStatusCounts(user.token);
 
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Success",
-        message: res.data.message || "Reservation status updated!",
-      });
-
       return updatedReservation;
     } catch (error) {
       console.error("Failed to update reservation status:", error);
@@ -113,12 +106,7 @@ export const useReservation = () => {
         console.warn("Failed to refresh reservations after cancellation:", refreshError);
       }
 
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Success",
-        message: res.data.message || "Reservation cancelled successfully!",
-      });
+      // Success alert removed as requested
 
       return updatedReservation;
     } catch (error) {
@@ -189,13 +177,6 @@ export const useReservation = () => {
 
       // ✅ Update status counts
       await updateStatusCounts(user.token);
-
-      setToast({
-        show: true,
-        color: "success-toast",
-        header: "Success",
-        message: res.data.message || "Reservation completed successfully!",
-      });
 
       return updatedReservation;
     } catch (error) {

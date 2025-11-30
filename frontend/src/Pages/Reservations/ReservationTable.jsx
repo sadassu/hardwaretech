@@ -127,7 +127,7 @@ const ReservationTable = () => {
                   {/* Avatar */}
                   <div className="flex-shrink-0">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                      {res.userId?.name?.charAt(0)?.toUpperCase() || "U"}
+                      {(res.userId?.name || res.userName || "U").charAt(0).toUpperCase()}
                     </div>
                   </div>
 
@@ -135,12 +135,19 @@ const ReservationTable = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                      {res.userId?.name || "Unknown User"}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                            {res.userId?.name || res.userName || "Unknown User"}
+                          </h3>
+                          {!res.userId && (res.userName || res.userEmail) && (
+                            <span className="text-xs text-gray-500 italic whitespace-nowrap">
+                              (Account Deleted)
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 mt-0.5">
                           <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span className="truncate">{res.userId?.email || "N/A"}</span>
+                          <span className="truncate">{res.userId?.email || res.userEmail || "N/A"}</span>
                         </div>
                       </div>
                       
@@ -303,6 +310,11 @@ const ReservationTable = () => {
                         {res.reservationDetails.map((detail, index) => {
                                       const variant = detail.productVariantId;
                                       const product = variant?.product;
+                                      // Use stored names if product/variant is deleted
+                                      const productName = product?.name || detail.productName || "Unnamed Product";
+                                      const variantSize = variant?.size || detail.variantSize || detail.size;
+                                      const variantUnit = variant?.unit || detail.variantUnit || detail.unit || "pcs";
+                                      const variantColor = variant?.color || detail.variantColor;
                                       const lockedPrice =
                                         typeof detail.price === "number"
                                           ? detail.price
@@ -318,7 +330,7 @@ const ReservationTable = () => {
                               <div className="flex justify-between items-start gap-3">
                                 <div className="flex-1 min-w-0">
                                   <h5 className="font-semibold text-sm text-gray-900 mb-2 truncate">
-                                    {product?.name || "Unnamed Product"}
+                                    {productName}
                                               </h5>
                                   
                                   <div className="flex flex-wrap gap-2">
@@ -326,16 +338,16 @@ const ReservationTable = () => {
                                       Qty: {detail.quantity}
                                                     </span>
                                     <span className="inline-flex items-center px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">
-                                                      {variant?.unit || "pcs"}
+                                                      {variantUnit}
                                                   </span>
-                                                  {variant?.size && (
+                                                  {variantSize && (
                                       <span className="inline-flex items-center px-2 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium">
-                                                        {variant.size}
+                                                        {variantSize}
                                                     </span>
                                                   )}
-                                                  {variant?.color && (
+                                                  {variantColor && (
                                       <span className="inline-flex items-center px-2 py-1 rounded-lg bg-pink-50 text-pink-700 text-xs font-medium capitalize">
-                                                        {variant.color}
+                                                        {variantColor}
                                                     </span>
                                                   )}
                                               </div>

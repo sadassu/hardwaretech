@@ -212,13 +212,19 @@ function Dashboard() {
     const highestSale = sortedData[0];
     const lowestSale = sortedData[sortedData.length - 1];
 
-    // Total sales for the selected filter period (replaces trend)
+    // Total sales for the selected filter period
     const periodTotal = periodTotalSales;
+    
+    // Average sales for the selected filter period (based on data points)
+    const periodAverage = salesData.length > 0 
+      ? periodTotal / salesData.length 
+      : 0;
 
     return {
       highest: highestSale,
       lowest: lowestSale,
       periodTotal: periodTotal,
+      periodAverage: periodAverage,
     };
   };
 
@@ -440,10 +446,7 @@ function Dashboard() {
     const chronological = [...salesData];
     const firstPoint = chronological[0];
     const lastPoint = chronological[chronological.length - 1];
-    const avgSale =
-      statsSummary.periodTotal && salesData.length
-        ? statsSummary.periodTotal / salesData.length
-        : 0;
+    const avgSale = statsSummary.periodAverage || 0;
     const percentChange =
       firstPoint.totalSales > 0
         ? ((lastPoint.totalSales - firstPoint.totalSales) /
@@ -472,10 +475,7 @@ function Dashboard() {
     if (!statsSummary || !salesData?.length) return [];
 
     const lines = [];
-    const avgSale =
-      statsSummary.periodTotal && salesData.length
-        ? statsSummary.periodTotal / salesData.length
-        : 0;
+    const avgSale = statsSummary.periodAverage || 0;
     const optionLabel =
       option === "daily"
         ? "day"
@@ -1022,9 +1022,11 @@ function Dashboard() {
                         </p>
                       </div>
                       <p className="text-lg sm:text-xl font-bold text-blue-600 mb-0.5">
-                        {formatPrice(overallAverageSales)}
+                        {formatPrice(statsSummary.periodAverage)}
                       </p>
-                      <p className="text-xs text-gray-500">Since business start</p>
+                      <p className="text-xs text-gray-500">
+                        Per {option === "daily" ? "day" : option === "monthly" ? "month" : "year"} (filtered period)
+                      </p>
                     </div>
 
                     {/* Total Sales (Period) */}

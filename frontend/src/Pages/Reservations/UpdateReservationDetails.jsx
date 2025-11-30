@@ -6,11 +6,13 @@ import Modal from "../../components/Modal";
 import { useProductStore } from "../../store/productStore";
 import { useReservationStore } from "../../store/reservationStore";
 import { formatVariantLabel } from "../../utils/formatVariantLabel";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   const { user } = useAuthContext();
   const { updateReservation } = useReservationStore();
   const { products, fetchProducts } = useProductStore();
+  const quickToast = useQuickToast();
 
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -283,6 +285,12 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
 
       setIsOpen(false);
       setStockMessages({}); // Clear messages on success
+      
+      // Show success alert
+      quickToast({
+        title: "Reservation updated",
+        icon: "success",
+      });
     } catch (error) {
       console.error("Update failed:", error);
       // Show error if backend validation fails
@@ -297,7 +305,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   return (
     <>
       <button
-        className="btn btn-sm btn-ghost gap-1.5 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
+        className="btn btn-sm btn-ghost gap-1.5 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
         onClick={() => {
           setIsOpen(true);
           setStockMessages({}); // Reset stock messages when opening
@@ -316,14 +324,14 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
         }}
         className="bg-white rounded-2xl max-w-3xl w-full p-0 max-h-[90vh] flex flex-col"
       >
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-t-2xl flex-shrink-0">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <Edit className="w-6 h-6 text-white" />
             </div>
             <div>
               <h3 className="text-xl font-bold text-white">Edit Reservation</h3>
-              <p className="text-purple-100 text-sm">Update order details and remarks</p>
+              <p className="text-blue-100 text-sm">Update order details and remarks</p>
             </div>
           </div>
         </div>
@@ -340,7 +348,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, remarks: e.target.value }))
               }
-                className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 text-gray-900"
+                className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
                 rows={3}
                 placeholder="Add any special notes or instructions..."
             />
@@ -550,7 +558,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                 return (
                   <div
                     key={index}
-                        className="bg-gradient-to-br from-gray-50 to-white rounded-xl border-2 border-gray-200 p-4 relative hover:border-purple-300 transition-colors"
+                        className="bg-gradient-to-br from-gray-50 to-white rounded-xl border-2 border-gray-200 p-4 relative hover:border-blue-300 transition-colors"
                   >
                     {/* Remove Button */}
                     <button
@@ -566,7 +574,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
 
                         <div className="pr-10">
                           <h5 className="font-bold text-gray-900 mb-3">
-                            {detail?.productVariantId?.product?.name || "Unnamed Product"}
+                            {detail?.productVariantId?.product?.name || detail?.productName || "Unnamed Product"}
                         </h5>
 
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -605,7 +613,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                                 className={`input input-bordered input-sm w-full bg-white border-2 ${
                                   stockMessages[index]
                                     ? "border-red-300 focus:border-red-500"
-                                    : "border-gray-300 focus:border-purple-500"
+                                    : "border-gray-300 focus:border-blue-500"
                                 }`}
                               />
                               {stockMessages[index] && (
@@ -646,7 +654,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                                     e.target.value
                                   )
                                 }
-                                className="select select-bordered select-sm w-full bg-white border-2 border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 text-gray-900 cursor-pointer"
+                                className="select select-bordered select-sm w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-900 cursor-pointer"
                               >
                                 <option value="">Select Size</option>
                                 {availableSizes.length > 0 ? (
@@ -673,7 +681,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Subtotal:</span>
-                          <span className="text-lg font-bold text-purple-600">
+                          <span className="text-lg font-bold text-blue-600">
                             ₱
                             {(
                               (typeof detail.price === "number"
@@ -709,7 +717,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
             </button>
             <button
               type="submit"
-                className="flex-1 btn bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 hover:from-purple-600 hover:to-purple-700 shadow-lg"
+                className="flex-1 btn bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg"
               disabled={loading}
             >
                 {loading ? (

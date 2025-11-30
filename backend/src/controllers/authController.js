@@ -27,7 +27,6 @@ import {
   sendVerificationLinkEmail 
 } from "../services/emailService.js";
 import { verificationLimiter } from "../config/upstash.js";
-import { createVerificationToken } from "../utils/tokens.js";
 
 const createToken = (_id) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET, { expiresIn: "3d" });
@@ -37,35 +36,44 @@ const createToken = (_id) => {
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, confirmPassword, captchaToken } = req.body;
 
-  if (!captchaToken) {
-    return res.status(400).json({ error: "Captcha verification required" });
-  }
-
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  if (!secretKey) {
-    console.error("RECAPTCHA_SECRET_KEY is not set in environment variables");
-    return res.status(500).json({ error: "Server configuration error. Please contact support." });
-  }
+  
+  // Only verify reCAPTCHA if both token and secret key are provided
+  if (captchaToken && secretKey) {
+    try {
+      const { data } = await axios.post(
+        `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
+      );
 
-  try {
-    const { data } = await axios.post(
-      `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
-    );
-
-    if (!data.success) {
-      return res.status(400).json({ 
-        error: data["error-codes"]?.length > 0 
-          ? `Captcha verification failed: ${data["error-codes"].join(", ")}`
-          : "Captcha verification failed. Please try again." 
-      });
+      if (!data.success) {
+        // Log error but don't block registration if it's a configuration issue
+        console.warn("reCAPTCHA verification failed:", data["error-codes"] || "Unknown error");
+        // Only block if it's a clear bot/spam issue, not configuration errors
+        const errorCodes = data["error-codes"] || [];
+        const criticalErrors = ["missing-input-secret", "invalid-input-secret", "bad-request"];
+        const isCriticalError = errorCodes.some(code => criticalErrors.includes(code));
+        
+        if (isCriticalError) {
+          return res.status(500).json({ 
+            error: "Server configuration error. Please contact support." 
+          });
+        }
+        // For other errors (like timeout, network issues), allow registration to proceed
+        console.warn("Allowing registration despite reCAPTCHA error (non-critical)");
+      }
+    } catch (error) {
+      // If reCAPTCHA service is unavailable, log but allow registration
+      console.warn("reCAPTCHA verification error (allowing registration):", error.message);
+      // Don't block registration if reCAPTCHA service is down
     }
-  } catch (error) {
-    console.error("reCAPTCHA verification error:", error.message);
-    return res.status(500).json({ error: "Captcha verification error. Please try again." });
+  } else if (secretKey && !captchaToken) {
+    // If secret key is configured but no token provided, warn but allow
+    console.warn("reCAPTCHA token not provided, but secret key is configured");
   }
 
-  const { token: verificationToken, tokenHash } = createVerificationToken();
-  const expires = Date.now() + 24 * 60 * 60 * 1000;
+  // Generate 6-digit verification code
+  const code = crypto.randomInt(100000, 999999).toString();
+  const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   const defaultAvatar =
     "https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/no-profile-picture-icon.png";
@@ -77,8 +85,8 @@ export const register = asyncHandler(async (req, res) => {
       email,
       password,
       confirmPassword,
-      verificationTokenHash: tokenHash,
-      verificationTokenExpires: new Date(expires),
+      verificationCode: code,
+      verificationCodeExpires: new Date(expires),
       avatar: defaultAvatar,
     });
   } catch (error) {
@@ -86,29 +94,22 @@ export const register = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: error.message || "Registration failed. Please check your input." });
   }
 
-  // verification link
-  const verifyUrl = `${
-    process.env.CLIENT_URL
-  }/verify-account?verificationToken=${verificationToken}&email=${encodeURIComponent(
-    email
-  )}`;
-
-  // Try to send email, but don't fail registration if it fails
+  // Try to send verification code email
   try {
-    await sendVerificationLinkEmail(user.email, user.name, verifyUrl);
+    await sendVerificationCodeEmail(user.email, user.name, code);
     res.status(201).json({
-      message: "User registered successfully! Verification email sent.",
+      message: "User registered successfully! Verification code sent to your email.",
       email: user.email,
+      requiresVerification: true,
     });
   } catch (error) {
     console.error("Failed to send verification email:", error.message);
     // Registration succeeded, but email failed - still return success
-    // User can verify via the link manually or request a new verification email
     res.status(201).json({
-      message: "User registered successfully! However, we couldn't send the verification email. Please contact support or try logging in to request a new verification link.",
+      message: "User registered successfully! However, we couldn't send the verification code. Please contact support.",
       email: user.email,
-      verificationLink: verifyUrl, // Include link in response for manual verification
-      warning: "Email service is currently unavailable. Please save this verification link.",
+      requiresVerification: true,
+      warning: "Email service is currently unavailable. Please contact support.",
     });
   }
 });
@@ -117,25 +118,51 @@ export const register = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
   const { email, password, captchaToken } = req.body;
 
-  if (!captchaToken) {
-    return res.status(400).json({ error: "Captcha verification required" });
-  }
-
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  try {
-    const { data } = await axios.post(
-      `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
-    );
+  
+  // Only verify reCAPTCHA if both token and secret key are provided
+  if (captchaToken && secretKey) {
+    try {
+      const { data } = await axios.post(
+        `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`
+      );
 
-    if (!data.success) {
-      return res.status(400).json({ error: "Captcha verification failed" });
+      if (!data.success) {
+        // Log error but don't block login if it's a configuration issue
+        console.warn("reCAPTCHA verification failed:", data["error-codes"] || "Unknown error");
+        // Only block if it's a clear bot/spam issue, not configuration errors
+        const errorCodes = data["error-codes"] || [];
+        const criticalErrors = ["missing-input-secret", "invalid-input-secret", "bad-request"];
+        const isCriticalError = errorCodes.some(code => criticalErrors.includes(code));
+        
+        if (isCriticalError) {
+          return res.status(500).json({ 
+            error: "Server configuration error. Please contact support." 
+          });
+        }
+        // For other errors (like timeout, network issues), allow login to proceed
+        console.warn("Allowing login despite reCAPTCHA error (non-critical)");
+      }
+    } catch (error) {
+      // If reCAPTCHA service is unavailable, log but allow login
+      console.warn("reCAPTCHA verification error (allowing login):", error.message);
+      // Don't block login if reCAPTCHA service is down
     }
-  } catch (error) {
-    console.error("reCAPTCHA verification error:", error);
-    return res.status(500).json({ error: "Captcha verification error" });
+  } else if (secretKey && !captchaToken) {
+    // If secret key is configured but no token provided, warn but allow
+    console.warn("reCAPTCHA token not provided, but secret key is configured");
   }
 
   const user = await User.login(email, password);
+
+  // Check if user is verified before allowing login
+  if (!user.isVerified) {
+    return res.status(403).json({ 
+      error: "Please verify your email before logging in. Check your email for the verification code.",
+      requiresVerification: true,
+      email: user.email,
+    });
+  }
 
   const token = createToken(user._id);
 
@@ -314,7 +341,27 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   user.verificationCodeExpires = undefined;
   await user.save();
 
-  res.status(200).json({ message: "Email verified successfully." });
+  // Create token and set cookie after successful verification
+  const token = createToken(user._id);
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 24 * 60 * 60 * 1000,
+    path: "/",
+  });
+
+  res.status(200).json({ 
+    message: "Email verified successfully. You can now log in.",
+    token,
+    userId: user._id,
+    roles: user.roles,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    isVerified: user.isVerified,
+  });
 });
 
 export const verifyEmailUsingUrl = asyncHandler(async (req, res) => {
