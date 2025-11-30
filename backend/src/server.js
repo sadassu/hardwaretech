@@ -17,6 +17,7 @@ import {
   initRealtime,
   emitGlobalUpdate,
   deriveTopicsFromPath,
+  addSSEClient,
 } from "./services/realtime.js";
 
 import { connectDB } from "./config/db.js";
@@ -46,7 +47,7 @@ const allowedOrigins = [
     : []),
 ].filter(Boolean);
 
-// Note: No need for http.createServer when using Pusher
+// Note: Using SSE (Server-Sent Events) for real-time updates
 
 // Middleware
 app.use(express.json());
@@ -106,6 +107,45 @@ app.use((req, res, next) => {
 // ✅ Serve uploads folder as static (important for images)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+// SSE endpoint for real-time updates
+app.get("/api/events", (req, res) => {
+  // Set headers for SSE
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
+  
+  // Enable CORS for SSE
+  const origin = req.headers.origin;
+  if (origin && (allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production")) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+
+  // Send initial connection message
+  res.write(`: SSE connection established\n\n`);
+
+  // Add client to SSE clients set
+  addSSEClient(res);
+
+  // Send heartbeat every 30 seconds to keep connection alive
+  const heartbeatInterval = setInterval(() => {
+    try {
+      res.write(`: heartbeat\n\n`);
+    } catch (error) {
+      clearInterval(heartbeatInterval);
+    }
+  }, 30000);
+
+  // Clean up on client disconnect
+  req.on("close", () => {
+    clearInterval(heartbeatInterval);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🔌 SSE client disconnected");
+    }
+  });
+});
+
 // Routes
 app.use("/api/reservations", reservationRoutes);
 
@@ -131,7 +171,7 @@ app.use((err, req, res, next) => {
 
 // Connect DB and start server
 connectDB().then(async () => {
-  // Initialize Pusher for real-time updates
+  // Initialize SSE for real-time updates
   initRealtime();
   
   app.listen(PORT, async () => {

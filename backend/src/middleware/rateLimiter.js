@@ -1,8 +1,8 @@
 import { ratelimit } from "../config/upstash.js";
 
 const rateLimiter = async (req, res, next) => {
-  // Skip rate limiting for OPTIONS requests (CORS preflight)
-  if (req.method === "OPTIONS") {
+  // Skip rate limiting for OPTIONS requests (CORS preflight) and SSE endpoint
+  if (req.method === "OPTIONS" || req.path === "/api/events") {
     return next();
   }
 

@@ -1,6 +1,4 @@
-import Pusher from "pusher";
-
-let pusherInstance = null;
+// SSE (Server-Sent Events) implementation for real-time updates
 
 const TOPIC_MATCHERS = [
   { topic: "reservations", regex: /reservations?/i },
@@ -11,6 +9,9 @@ const TOPIC_MATCHERS = [
   { topic: "categories", regex: /categories/i },
   { topic: "users", regex: /auth|profile|user/i },
 ];
+
+// Store all connected SSE clients
+const sseClients = new Set();
 
 export const deriveTopicsFromPath = (path = "") => {
   const normalized = (path || "").toLowerCase();
@@ -24,40 +25,42 @@ export const deriveTopicsFromPath = (path = "") => {
 };
 
 export const initRealtime = () => {
-  // Check if Pusher credentials are configured
-  const appId = process.env.PUSHER_APP_ID;
-  const key = process.env.PUSHER_KEY;
-  const secret = process.env.PUSHER_SECRET;
-  const cluster = process.env.PUSHER_CLUSTER || "ap1";
-
-  if (!appId || !key || !secret) {
-    console.warn("⚠️ Pusher credentials not configured. Real-time updates will be disabled.");
-    console.warn("   Set PUSHER_APP_ID, PUSHER_KEY, and PUSHER_SECRET in your environment variables.");
-    return null;
+  if (process.env.NODE_ENV !== "production") {
+    console.log("✅ SSE (Server-Sent Events) initialized for real-time updates");
   }
+  return true;
+};
 
-  pusherInstance = new Pusher({
-    appId,
-    key,
-    secret,
-    cluster,
-    useTLS: true,
-    // Performance optimizations
-    enabledTransports: ["ws", "wss"], // WebSocket only for better performance
+// Add a new SSE client connection
+export const addSSEClient = (res) => {
+  sseClients.add(res);
+  
+  // Remove client when connection closes
+  res.on("close", () => {
+    sseClients.delete(res);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`🔌 SSE client disconnected. Total clients: ${sseClients.size}`);
+    }
   });
 
   if (process.env.NODE_ENV !== "production") {
-    console.log("✅ Pusher initialized for real-time updates");
+    console.log(`✅ SSE client connected. Total clients: ${sseClients.size}`);
   }
-
-  return pusherInstance;
 };
 
+// Remove a client (cleanup)
+export const removeSSEClient = (res) => {
+  sseClients.delete(res);
+};
+
+// Get count of connected clients
+export const getClientCount = () => sseClients.size;
+
 export const emitGlobalUpdate = (payload = {}) => {
-  if (!pusherInstance) {
-    // Only warn in development if Pusher is not initialized
+  if (sseClients.size === 0) {
+    // Only warn in development if no clients are connected
     if (process.env.NODE_ENV !== "production") {
-      console.warn("⚠️ Pusher instance not initialized. Cannot emit update.");
+      console.warn("⚠️ No SSE clients connected. Cannot emit update.");
     }
     return;
   }
@@ -74,35 +77,32 @@ export const emitGlobalUpdate = (payload = {}) => {
 
   // Log in development for debugging
   if (process.env.NODE_ENV !== "production") {
-    console.log(`📡 Emitting Pusher update for topics:`, enrichedPayload.topics);
+    console.log(`📡 Emitting SSE update for topics:`, enrichedPayload.topics);
   }
 
-  // Emit to each topic channel
-  enrichedPayload.topics.forEach((topic) => {
+  // Send to all connected clients
+  const message = `data: ${JSON.stringify(enrichedPayload)}\n\n`;
+  const deadClients = [];
+
+  sseClients.forEach((res) => {
     try {
-      const channelName = `hardware-tech-${topic}`;
-      pusherInstance.trigger(channelName, "app:update", enrichedPayload);
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`✅ Emitted to channel: ${channelName}`);
-      }
+      res.write(message);
     } catch (error) {
-      // Only log errors in development
+      // Client connection is dead, mark for removal
+      deadClients.push(res);
       if (process.env.NODE_ENV !== "production") {
-        console.error(`❌ Failed to emit update to topic "${topic}":`, error);
+        console.warn(`⚠️ Failed to send SSE update to client:`, error.message);
       }
     }
   });
 
-  // Also emit to general channel
-  try {
-    pusherInstance.trigger("hardware-tech-general", "app:update", enrichedPayload);
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`✅ Emitted to channel: hardware-tech-general`);
-    }
-  } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("❌ Failed to emit update to general channel:", error);
-    }
+  // Clean up dead clients
+  deadClients.forEach((res) => {
+    sseClients.delete(res);
+  });
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`✅ Emitted SSE update to ${sseClients.size} client(s)`);
   }
 };
 

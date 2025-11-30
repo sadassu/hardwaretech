@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import Pusher from "pusher-js";
 
 const dispatchLiveEvent = (detail) => {
   const eventDetail = {
@@ -14,9 +13,95 @@ const dispatchLiveEvent = (detail) => {
   });
 };
 
-// Singleton Pusher instance to prevent multiple connections
-let pusherInstance = null;
-let subscribedChannels = new Set();
+// Singleton EventSource instance to prevent multiple connections
+let eventSourceInstance = null;
+let reconnectTimeout = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY = 3000; // 3 seconds
+
+const createEventSource = () => {
+  try {
+    // Get API base URL from environment or use default
+    let apiBaseUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || "http://localhost:5001";
+    
+    // Remove trailing slash if present
+    apiBaseUrl = apiBaseUrl.replace(/\/$/, "");
+    
+    // If base URL already includes /api, use /events, otherwise use /api/events
+    const eventSourceUrl = apiBaseUrl.endsWith("/api") 
+      ? `${apiBaseUrl}/events`
+      : `${apiBaseUrl}/api/events`;
+    
+    if (import.meta.env.DEV) {
+      console.log(`🔌 Connecting to SSE endpoint: ${eventSourceUrl}`);
+    }
+
+    // EventSource automatically sends credentials for same-origin requests
+    // For cross-origin, CORS must be configured on the server
+    const eventSource = new EventSource(eventSourceUrl);
+
+    eventSource.onopen = () => {
+      reconnectAttempts = 0;
+      if (import.meta.env.DEV) {
+        console.log("✅ SSE connection established");
+      }
+      dispatchLiveEvent({ topics: ["general"], message: "sse-connected" });
+    };
+
+    eventSource.onmessage = (event) => {
+      try {
+        // Skip heartbeat messages (lines starting with ':')
+        if (event.data.startsWith(":")) {
+          return;
+        }
+
+        const payload = JSON.parse(event.data);
+        if (import.meta.env.DEV) {
+          console.log("📨 Received SSE update:", payload);
+        }
+        dispatchLiveEvent(payload);
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn("⚠️ Failed to parse SSE message:", error);
+        }
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      if (import.meta.env.DEV) {
+        console.warn("⚠️ SSE connection error:", error);
+      }
+
+      // Close the connection
+      eventSource.close();
+      eventSourceInstance = null;
+
+      // Attempt to reconnect
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        const delay = RECONNECT_DELAY * reconnectAttempts;
+        
+        if (import.meta.env.DEV) {
+          console.log(`🔄 Reconnecting SSE in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+        }
+
+        reconnectTimeout = setTimeout(() => {
+          eventSourceInstance = createEventSource();
+        }, delay);
+      } else {
+        if (import.meta.env.DEV) {
+          console.error("❌ Max SSE reconnection attempts reached. Please refresh the page.");
+        }
+      }
+    };
+
+    return eventSource;
+  } catch (error) {
+    console.error("❌ Failed to create SSE connection:", error);
+    return null;
+  }
+};
 
 export const useLiveUpdates = () => {
   const isMountedRef = useRef(true);
@@ -24,127 +109,15 @@ export const useLiveUpdates = () => {
   useEffect(() => {
     isMountedRef.current = true;
 
-    // Get Pusher configuration from environment variables
-    const pusherKey = import.meta.env.VITE_PUSHER_KEY;
-    const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER || "ap1";
-
-    if (!pusherKey) {
-      // Only warn in development
-      if (import.meta.env.DEV) {
-        console.warn("⚠️ Pusher key not configured. Live updates disabled.");
-        console.warn("   Set VITE_PUSHER_KEY in your environment variables.");
-      }
-      return;
+    // Initialize EventSource if not already initialized
+    if (!eventSourceInstance) {
+      eventSourceInstance = createEventSource();
     }
-
-    // Initialize Pusher if not already initialized
-    if (!pusherInstance) {
-      try {
-        pusherInstance = new Pusher(pusherKey, {
-          cluster: pusherCluster,
-          encrypted: true,
-          // Performance optimizations
-          enabledTransports: ["ws", "wss"], // WebSocket only for better performance
-          forceTLS: true,
-          // Reconnection settings
-          authEndpoint: undefined, // No auth needed for public channels
-        });
-
-        pusherInstance.connection.bind("connected", () => {
-          if (!isMountedRef.current) return;
-          // Only log in development
-          if (import.meta.env.DEV) {
-            console.log("✅ Pusher connected");
-          }
-          dispatchLiveEvent({ topics: ["general"], message: "socket-connected" });
-        });
-
-        pusherInstance.connection.bind("disconnected", () => {
-          if (!isMountedRef.current) return;
-          // Only log in development
-          if (import.meta.env.DEV) {
-            console.log("🔌 Pusher disconnected");
-          }
-        });
-
-        pusherInstance.connection.bind("error", (error) => {
-          if (!isMountedRef.current) return;
-          // Only log significant errors
-          if (import.meta.env.DEV) {
-            console.warn("⚠️ Pusher connection error:", error);
-          }
-        });
-
-        pusherInstance.connection.bind("state_change", (states) => {
-          if (!isMountedRef.current) return;
-          // Only log state changes in development
-          if (import.meta.env.DEV && states.previous !== states.current) {
-            console.log(`🔄 Pusher state: ${states.previous} → ${states.current}`);
-          }
-        });
-      } catch (error) {
-        // Always log initialization errors as they're critical
-        console.error("❌ Failed to initialize Pusher:", error);
-        return;
-      }
-    }
-
-    // Subscribe to channels for different topics
-    const channels = [
-      "hardware-tech-general",
-      "hardware-tech-reservations",
-      "hardware-tech-sales",
-      "hardware-tech-supply",
-      "hardware-tech-inventory",
-      "hardware-tech-dashboard",
-      "hardware-tech-categories",
-      "hardware-tech-users",
-    ];
-
-    channels.forEach((channelName) => {
-      if (!subscribedChannels.has(channelName)) {
-        try {
-          const channel = pusherInstance.subscribe(channelName);
-          
-          channel.bind("app:update", (payload) => {
-            if (!isMountedRef.current) return;
-            // Log in development for debugging
-            if (import.meta.env.DEV) {
-              console.log(`📨 Received Pusher update on ${channelName}:`, payload);
-            }
-            dispatchLiveEvent(payload);
-          });
-
-          channel.bind("pusher:subscription_succeeded", () => {
-            if (!isMountedRef.current) return;
-            // Only log in development
-            if (import.meta.env.DEV) {
-              console.log(`✅ Subscribed to channel: ${channelName}`);
-            }
-          });
-
-          channel.bind("pusher:subscription_error", (error) => {
-            if (!isMountedRef.current) return;
-            // Only log in development
-            if (import.meta.env.DEV) {
-              console.warn(`⚠️ Subscription error for ${channelName}:`, error);
-            }
-          });
-
-          subscribedChannels.add(channelName);
-        } catch (error) {
-          // Only log in development
-          if (import.meta.env.DEV) {
-            console.warn(`⚠️ Failed to subscribe to ${channelName}:`, error);
-          }
-        }
-      }
-    });
 
     return () => {
       isMountedRef.current = false;
-      // Don't disconnect Pusher on unmount - let it stay connected for other components
-      // Pusher will automatically clean up when the page is closed
+      // Don't close EventSource on unmount - let it stay connected for other components
+      // EventSource will automatically clean up when the page is closed
     };
   }, []);
 
@@ -152,6 +125,11 @@ export const useLiveUpdates = () => {
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      // Clean up reconnect timeout if component unmounts
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
     };
   }, []);
 };
