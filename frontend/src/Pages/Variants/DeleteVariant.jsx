@@ -43,7 +43,7 @@ function DeleteVariant({ variant }) {
     <>
       {/* Delete button */}
         <button
-        className="btn btn-sm btn-ghost gap-1.5 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
+        className="btn btn-sm gap-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white border-0 hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-200"
           onClick={() => setIsOpen(true)}
         title="Delete Variant"
         >
@@ -51,25 +51,34 @@ function DeleteVariant({ variant }) {
         </button>
 
       {/* Confirmation Modal */}
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <div className="text-center">
-          <div className="mb-4 flex justify-center">
-            <AlertTriangle className="h-12 w-12 text-red-500" />
+      <Modal 
+        isOpen={isOpen} 
+        onClose={() => setIsOpen(false)}
+        className="bg-white rounded-2xl max-w-md w-full p-0"
+      >
+        <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-t-2xl">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Delete Variant</h2>
+              <p className="text-red-100 text-sm">This action cannot be undone</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="text-center mb-6">
+            <p className="text-sm text-gray-700">
+              Are you sure you want to delete this variant? All stock and history will be permanently removed.
+            </p>
           </div>
 
-          <h3 className="text-lg font-semibold text-white mb-2">
-            Delete Variant
-          </h3>
-
-          <p className="text-sm text-gray-300 mb-6">
-            Are you sure you want to delete this variant? This action cannot be
-            undone.
-          </p>
-
-          <div className="flex justify-center gap-3">
+          <div className="flex gap-3">
             <button
               type="button"
-              className="btn btn-outline"
+              className="flex-1 btn btn-ghost border-2 border-gray-200 hover:bg-gray-100"
               onClick={() => setIsOpen(false)}
               disabled={isDeleting}
             >
@@ -78,20 +87,20 @@ function DeleteVariant({ variant }) {
 
             <button
               type="button"
-              className="btn btn-error flex items-center gap-2 text-gray-200"
+              className="flex-1 btn bg-gradient-to-r from-red-500 to-red-600 text-white border-0 hover:from-red-600 hover:to-red-700 shadow-lg disabled:opacity-50"
               onClick={handleDelete}
               disabled={isDeleting}
             >
               {isDeleting ? (
-                <>
-                  <span className="loading loading-spinner loading-sm text-gray-200"></span>
+                <span className="flex items-center gap-2">
+                  <span className="loading loading-spinner loading-sm"></span>
                   Deleting...
-                </>
+                </span>
               ) : (
-                <>
-                  <Trash2 className="size-4" />
-                  Delete
-                </>
+                <span className="flex items-center gap-2">
+                  <Trash2 className="w-4 h-4" />
+                  Delete Variant
+                </span>
               )}
             </button>
           </div>

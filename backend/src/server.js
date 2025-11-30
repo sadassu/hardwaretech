@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
-import http from "http";
 
 import productsRoutes from "./routes/productsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -47,7 +46,7 @@ const allowedOrigins = [
     : []),
 ].filter(Boolean);
 
-const server = http.createServer(app);
+// Note: No need for http.createServer when using Pusher
 
 // Middleware
 app.use(express.json());
@@ -132,8 +131,10 @@ app.use((err, req, res, next) => {
 
 // Connect DB and start server
 connectDB().then(async () => {
-  initRealtime(server, allowedOrigins);
-  server.listen(PORT, async () => {
+  // Initialize Pusher for real-time updates
+  initRealtime();
+  
+  app.listen(PORT, async () => {
     console.log(`Server listening on port: ${PORT}`);
     
     // Check email configuration on startup

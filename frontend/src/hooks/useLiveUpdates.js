@@ -1,27 +1,5 @@
 import { useEffect, useRef } from "react";
-import { io } from "socket.io-client";
-
-const resolveSocketUrl = () => {
-  const explicit = import.meta.env.VITE_SOCKET_URL;
-  if (explicit) return explicit;
-
-  const apiBase = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || "";
-  if (!apiBase) return "";
-
-  try {
-    const url = new URL(apiBase);
-    // Remove trailing /api if present
-    const pathname = url.pathname.replace(/\/api\/?$/, "/");
-    url.pathname = pathname === "/" ? "" : pathname;
-    return url.toString().replace(/\/$/, "");
-  } catch (err) {
-    // Only warn in development
-    if (import.meta.env.DEV) {
-      console.warn("Unable to parse backend base URL for sockets:", err);
-    }
-    return "";
-  }
-};
+import Pusher from "pusher-js";
 
 const dispatchLiveEvent = (detail) => {
   const eventDetail = {
@@ -36,155 +14,137 @@ const dispatchLiveEvent = (detail) => {
   });
 };
 
-// Singleton socket instance to prevent multiple connections
-let socketInstance = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 1000; // Start with 1 second
+// Singleton Pusher instance to prevent multiple connections
+let pusherInstance = null;
+let subscribedChannels = new Set();
 
 export const useLiveUpdates = () => {
   const isMountedRef = useRef(true);
-  const reconnectTimeoutRef = useRef(null);
 
   useEffect(() => {
     isMountedRef.current = true;
-    const socketUrl = resolveSocketUrl();
-    
-    if (!socketUrl) {
+
+    // Get Pusher configuration from environment variables
+    const pusherKey = import.meta.env.VITE_PUSHER_KEY;
+    const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER || "ap1";
+
+    if (!pusherKey) {
       // Only warn in development
       if (import.meta.env.DEV) {
-        console.warn("⚠️ Socket URL not configured. Live updates disabled.");
+        console.warn("⚠️ Pusher key not configured. Live updates disabled.");
+        console.warn("   Set VITE_PUSHER_KEY in your environment variables.");
       }
       return;
     }
 
-    // Reuse existing socket if available and connected
-    if (socketInstance?.connected) {
-      return;
-    }
-
-    // Clean up existing socket if disconnected
-    if (socketInstance && !socketInstance.connected) {
-      socketInstance.removeAllListeners();
-      socketInstance.disconnect();
-      socketInstance = null;
-    }
-
-    const connectSocket = () => {
-      if (!isMountedRef.current) return;
-
+    // Initialize Pusher if not already initialized
+    if (!pusherInstance) {
       try {
-        socketInstance = io(socketUrl, {
-          transports: ["websocket", "polling"], // WebSocket first for better performance
-          withCredentials: true,
-          reconnection: true,
-          reconnectionDelay: RECONNECT_DELAY,
-          reconnectionDelayMax: 5000,
-          reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-          timeout: 10000,
+        pusherInstance = new Pusher(pusherKey, {
+          cluster: pusherCluster,
+          encrypted: true,
           // Performance optimizations
-          upgrade: true, // Allow transport upgrade
-          rememberUpgrade: true, // Remember transport preference
-          forceNew: false, // Reuse existing connection if available
-          // Compression for faster data transfer
-          compression: true,
+          enabledTransports: ["ws", "wss"], // WebSocket only for better performance
+          forceTLS: true,
+          // Reconnection settings
+          authEndpoint: undefined, // No auth needed for public channels
         });
 
-        socketInstance.on("connect", () => {
+        pusherInstance.connection.bind("connected", () => {
           if (!isMountedRef.current) return;
-          reconnectAttempts = 0;
           // Only log in development
           if (import.meta.env.DEV) {
-            console.log("✅ WebSocket connected:", socketInstance.id);
+            console.log("✅ Pusher connected");
           }
           dispatchLiveEvent({ topics: ["general"], message: "socket-connected" });
         });
 
-        socketInstance.on("disconnect", (reason) => {
-          if (!isMountedRef.current) return;
-          
-          // "transport close" is normal when switching transports - don't log it
-          if (reason !== "transport close" && import.meta.env.DEV) {
-            console.log("🔌 WebSocket disconnected:", reason);
-          }
-          
-          // Only attempt manual reconnect if it wasn't intentional
-          if (reason === "io server disconnect") {
-            // Server disconnected, reconnect manually
-            socketInstance.connect();
-          } else if (reason === "io client disconnect") {
-            // Client disconnected intentionally, don't reconnect
-            return;
-          }
-          // "transport close" is handled automatically by Socket.IO - no action needed
-        });
-
-        socketInstance.on("connect_error", (error) => {
-          if (!isMountedRef.current) return;
-          
-          // Filter out routine connection errors that are expected during reconnection
-          const isRoutineError = 
-            error.message.includes("xhr poll error") ||
-            error.message === "websocket error" ||
-            error.message.includes("transport close");
-          
-          // Only log significant errors, not routine connection attempts
-          if (!isRoutineError && import.meta.env.DEV) {
-            console.warn("⚠️ WebSocket connection error:", error.message);
-          }
-          
-          reconnectAttempts++;
-          if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS && import.meta.env.DEV) {
-            console.warn("⚠️ Max reconnection attempts reached. Live updates disabled.");
-          }
-        });
-
-        socketInstance.on("app:update", (payload) => {
-          if (!isMountedRef.current) return;
-          dispatchLiveEvent(payload);
-        });
-
-        socketInstance.on("reconnect", (attemptNumber) => {
-          if (!isMountedRef.current) return;
-          reconnectAttempts = 0;
-          // Only log in development
-          if (import.meta.env.DEV && attemptNumber > 1) {
-            console.log(`✅ WebSocket reconnected after ${attemptNumber} attempts`);
-          }
-        });
-
-        socketInstance.on("reconnect_error", (error) => {
+        pusherInstance.connection.bind("disconnected", () => {
           if (!isMountedRef.current) return;
           // Only log in development
           if (import.meta.env.DEV) {
-            console.warn("⚠️ WebSocket reconnection error:", error.message);
+            console.log("🔌 Pusher disconnected");
           }
         });
 
-        socketInstance.on("reconnect_failed", () => {
+        pusherInstance.connection.bind("error", (error) => {
           if (!isMountedRef.current) return;
-          // Always log critical failures
-          console.warn("❌ WebSocket reconnection failed. Please refresh the page.");
+          // Only log significant errors
+          if (import.meta.env.DEV) {
+            console.warn("⚠️ Pusher connection error:", error);
+          }
         });
 
+        pusherInstance.connection.bind("state_change", (states) => {
+          if (!isMountedRef.current) return;
+          // Only log state changes in development
+          if (import.meta.env.DEV && states.previous !== states.current) {
+            console.log(`🔄 Pusher state: ${states.previous} → ${states.current}`);
+          }
+        });
       } catch (error) {
         // Always log initialization errors as they're critical
-        console.error("❌ Failed to initialize WebSocket:", error);
+        console.error("❌ Failed to initialize Pusher:", error);
+        return;
       }
-    };
+    }
 
-    // Immediate connection for faster startup (removed delay)
-    connectSocket();
+    // Subscribe to channels for different topics
+    const channels = [
+      "hardware-tech-general",
+      "hardware-tech-reservations",
+      "hardware-tech-sales",
+      "hardware-tech-supply",
+      "hardware-tech-inventory",
+      "hardware-tech-dashboard",
+      "hardware-tech-categories",
+      "hardware-tech-users",
+    ];
+
+    channels.forEach((channelName) => {
+      if (!subscribedChannels.has(channelName)) {
+        try {
+          const channel = pusherInstance.subscribe(channelName);
+          
+          channel.bind("app:update", (payload) => {
+            if (!isMountedRef.current) return;
+            // Log in development for debugging
+            if (import.meta.env.DEV) {
+              console.log(`📨 Received Pusher update on ${channelName}:`, payload);
+            }
+            dispatchLiveEvent(payload);
+          });
+
+          channel.bind("pusher:subscription_succeeded", () => {
+            if (!isMountedRef.current) return;
+            // Only log in development
+            if (import.meta.env.DEV) {
+              console.log(`✅ Subscribed to channel: ${channelName}`);
+            }
+          });
+
+          channel.bind("pusher:subscription_error", (error) => {
+            if (!isMountedRef.current) return;
+            // Only log in development
+            if (import.meta.env.DEV) {
+              console.warn(`⚠️ Subscription error for ${channelName}:`, error);
+            }
+          });
+
+          subscribedChannels.add(channelName);
+        } catch (error) {
+          // Only log in development
+          if (import.meta.env.DEV) {
+            console.warn(`⚠️ Failed to subscribe to ${channelName}:`, error);
+          }
+        }
+      }
+    });
 
     return () => {
       isMountedRef.current = false;
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      
-      // Don't disconnect on unmount - let it stay connected for other components
-      // Only disconnect if this is the last component using it
-      // For now, we'll keep it connected to maintain real-time updates
+      // Don't disconnect Pusher on unmount - let it stay connected for other components
+      // Pusher will automatically clean up when the page is closed
     };
   }, []);
 

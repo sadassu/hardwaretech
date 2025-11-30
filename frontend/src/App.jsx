@@ -71,7 +71,20 @@ const App = () => {
           <Route path="/verification" element={<Verification />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/verify-account" element={<VerificationUrl />} />
-          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/"
+            element={
+              !user ? (
+                <HomePage />
+              ) : user.roles?.includes("admin") ? (
+                <Navigate to="/dashboard" replace />
+              ) : user.roles?.includes("cashier") ? (
+                <Navigate to="/pos" replace />
+              ) : (
+                <HomePage />
+              )
+            }
+          />
 
           <Route
             path="/login"

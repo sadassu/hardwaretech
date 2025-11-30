@@ -799,7 +799,7 @@ export const getPendingReservationCount = asyncHandler(async (req, res) => {
  *
  * Features:
  * - Supports:
- *   - "low"  → quantity <= 50 but > 0
+ *   - "low"  → quantity <= 15 but > 0
  *   - "out"  → quantity = 0
  *   - "all"  → no filter (all items)
  * - Pagination support.
@@ -822,7 +822,7 @@ export const getStockStatus = async (req, res) => {
 
     // Build query depending on stock type
     let query = {};
-    if (type === "low") query = { quantity: { $gt: 0, $lte: 50 } };
+    if (type === "low") query = { quantity: { $gt: 0, $lte: 15 } };
     if (type === "out") query = { quantity: 0 };
     if (type === "all") query = {}; // no filter
 
@@ -1285,8 +1285,15 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
     const profit = salesData.totalSales - (salesData.totalCOGS || 0);
 
     let periodLabel;
+    let weekStart = null;
+    let weekEnd = null;
+    
     if (option === "month") {
       periodLabel = formatWeekPeriod(s._id.year, s._id.week, s._id.month);
+      // Get week date range for display
+      const weekRange = getISOWeekRange(s._id.year, s._id.week);
+      weekStart = weekRange.start;
+      weekEnd = weekRange.end;
     } else if (option === "year") {
       periodLabel = formatMonthPeriod(s._id.month);
     } else {
@@ -1298,6 +1305,8 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
       period: periodLabel,
       week: option === "month" ? s._id.week : null,
       month: option === "year" ? s._id.month : (option === "overall" ? null : s._id.month),
+      weekStart: weekStart ? weekStart.toISOString() : null,
+      weekEnd: weekEnd ? weekEnd.toISOString() : null,
       totalSupplyCost: s.totalSupplyCost,
       totalSales: salesData.totalSales,
       totalCOGS: salesData.totalCOGS || 0,
@@ -1313,12 +1322,18 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
 
     let periodLabel;
     let yearInt, weekInt, monthInt;
+    let weekStart = null;
+    let weekEnd = null;
 
     if (option === "month") {
       const [yr, week] = key.split("-");
       yearInt = parseInt(yr);
       weekInt = parseInt(week);
       periodLabel = formatWeekPeriod(yearInt, weekInt, salesData.month);
+      // Get week date range for display
+      const weekRange = getISOWeekRange(yearInt, weekInt);
+      weekStart = weekRange.start;
+      weekEnd = weekRange.end;
     } else if (option === "year") {
       const [yr, mon] = key.split("-");
       yearInt = parseInt(yr);
@@ -1334,6 +1349,8 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
       period: periodLabel,
       week: option === "month" ? weekInt : null,
       month: option === "year" ? monthInt : (option === "overall" ? null : salesData.month),
+      weekStart: weekStart ? weekStart.toISOString() : null,
+      weekEnd: weekEnd ? weekEnd.toISOString() : null,
       totalSupplyCost: 0,
       totalSales: salesData.totalSales,
       totalCOGS: salesData.totalCOGS || 0,

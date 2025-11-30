@@ -295,14 +295,14 @@ const ReservationNotification = () => {
 
   const Icon = Bell;
 
-  return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Bell Button */}
-      <button
-        className="relative group cursor-pointer btn btn-ghost hover:bg-gray-400 transition-all duration-300 ease-in-out transform hover:scale-105"
-        onClick={() => setIsOpen(!isOpen)}
-        title="Reservation Updates"
-      >
+      return (
+        <div className="relative" ref={dropdownRef}>
+          {/* Bell Button */}
+          <button
+            className="relative group cursor-pointer btn btn-ghost hover:bg-gray-400 transition-all duration-300 ease-in-out transform hover:scale-105 p-0 m-0"
+            onClick={() => setIsOpen(!isOpen)}
+            title="Reservation Updates"
+          >
         <div className="relative">
           <Icon className="h-7 w-7 text-white" />
           {unreadCount > 0 && (
@@ -336,7 +336,7 @@ const ReservationNotification = () => {
           </div>
 
           {/* Notifications List */}
-          <div className="flex-1 overflow-y-auto p-2">
+          <div className="flex-1 overflow-y-auto p-2 min-h-0" style={{ maxHeight: 'calc(90vh - 200px)' }}>
             {notifications.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -455,7 +455,7 @@ const ReservationNotification = () => {
               />
 
               {/* Notification Panel */}
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-[9999] max-h-[500px] flex flex-col">
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-[9999] max-h-[600px] flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-t-xl flex items-center justify-between border-b border-blue-800/30">
               <div className="flex items-center gap-2">
@@ -472,7 +472,7 @@ const ReservationNotification = () => {
             </div>
 
             {/* Notifications List */}
-            <div className="flex-1 overflow-y-auto p-2">
+            <div className="flex-1 overflow-y-auto p-2 min-h-0" style={{ maxHeight: '450px' }}>
               {notifications.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300" />

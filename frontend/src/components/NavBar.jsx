@@ -117,7 +117,7 @@ const NavBar = () => {
             </Link>
           </div>
         ) : (
-          <div className="flex gap-3 justify-center items-center">
+          <div className="flex gap-2 justify-center items-center">
             <ReservationNotification />
             <CartContent />
             <div className="dropdown dropdown-end text-black">

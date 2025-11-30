@@ -11,6 +11,11 @@ import {
   X,
   AlertCircle,
   Boxes,
+  ChevronRight,
+  Package,
+  Loader2,
+  FileWarning,
+  DollarSign,
 } from "lucide-react";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
@@ -37,10 +42,15 @@ const SupplyHistories = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [expandedRow, setExpandedRow] = useState(null);
   const limit = 10;
 
   const isMobile = useIsMobile(768);
   const supplyLiveKey = useLiveResourceRefresh(["supply", "inventory"]);
+
+  const toggleExpandedRow = (id) => {
+    setExpandedRow(expandedRow === id ? null : id);
+  };
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -214,259 +224,289 @@ const SupplyHistories = () => {
       </div>
 
       {/* ===== ANALYTICS CARDS ===== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        <div className="shadow-lg rounded-xl overflow-hidden bg-[#30475E] p-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium mb-1 text-white">
-              Money Spent (Last 7 Days)
-            </p>
-            <h3 className="text-3xl font-bold text-white">
-              ₱
-              {Number(last7DaysSpending || 0).toLocaleString("en-PH", {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+        {/* Money Spent (Last 7 Days) */}
+        <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="flex-1 min-w-0 pr-3">
+            <p className="text-gray-500 text-xs font-medium mb-1.5">Money Spent (Last 7 Days)</p>
+            <p className="text-base sm:text-lg font-bold text-gray-900 break-words leading-tight">
+              ₱{Number(last7DaysSpending || 0).toLocaleString("en-PH", {
                 minimumFractionDigits: 2,
               })}
-            </h3>
+            </p>
           </div>
-          <div className="p-3 rounded-lg bg-white/10">
-            <Clock className="h-8 w-8 text-white" />
+          <div className="p-2 bg-blue-100 rounded-full flex-shrink-0">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
           </div>
         </div>
 
-        <div className="shadow-lg rounded-xl overflow-hidden bg-[#1F2937] p-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium mb-1 text-white">
-              Total Stock On Hand
-            </p>
-            <h3 className="text-3xl font-bold text-white">
+        {/* Total Stock On Hand */}
+        <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="flex-1 min-w-0 pr-3">
+            <p className="text-gray-500 text-xs font-medium mb-1.5">Total Stock On Hand</p>
+            <p className="text-base sm:text-lg font-bold text-gray-900 break-words leading-tight">
               {Number(totalStock || 0).toLocaleString()}
-              <span className="text-base ml-1 font-medium">pcs</span>
-            </h3>
-            <p className="text-xs text-white/70 mt-1">
-              Includes all active product variants
+              <span className="text-xs ml-1 font-medium text-gray-600">pcs</span>
             </p>
+            <p className="text-xs text-gray-500 mt-0.5">All active variants</p>
           </div>
-          <div className="p-3 rounded-lg bg-white/10">
-            <Boxes className="h-8 w-8 text-white" />
+          <div className="p-2 bg-purple-100 rounded-full flex-shrink-0">
+            <Boxes className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
           </div>
         </div>
 
-        <div className="shadow-lg rounded-xl overflow-hidden bg-[#F05454] p-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium mb-1 text-white">
-              Total Money Spent (All Time)
-            </p>
-            <h3 className="text-3xl font-bold text-white">
-              ₱
-              {Number(totalMoneySpent || 0).toLocaleString("en-PH", {
+        {/* Total Money Spent (All Time) */}
+        <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="flex-1 min-w-0 pr-3">
+            <p className="text-gray-500 text-xs font-medium mb-1.5">Total Money Spent (All Time)</p>
+            <p className="text-base sm:text-lg font-bold text-gray-900 break-words leading-tight">
+              ₱{Number(totalMoneySpent || 0).toLocaleString("en-PH", {
                 minimumFractionDigits: 2,
               })}
-            </h3>
+            </p>
           </div>
-          <div className="p-3 rounded-lg bg-white/10">
-            <TrendingUp className="h-8 w-8 text-white" />
+          <div className="p-2 bg-green-100 rounded-full flex-shrink-0">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
           </div>
         </div>
 
-        <div className="shadow-lg rounded-xl overflow-hidden bg-[#7A1B1D] p-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium mb-1 text-white">
-              Lost Money (All Time)
-            </p>
-            <h3 className="text-3xl font-bold text-white">
-              ₱
-              {Number(lostMoney.total || 0).toLocaleString("en-PH", {
+        {/* Lost Money (All Time) */}
+        <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="flex-1 min-w-0 pr-3">
+            <p className="text-gray-500 text-xs font-medium mb-1.5">Lost Money (All Time)</p>
+            <p className="text-base sm:text-lg font-bold text-gray-900 break-words leading-tight">
+              ₱{Number(lostMoney.total || 0).toLocaleString("en-PH", {
                 minimumFractionDigits: 2,
               })}
-            </h3>
-            <p className="text-xs text-white/80 mt-1">
-              Last 7 days: ₱
-              {Number(lostMoney.last7 || 0).toLocaleString("en-PH", {
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Last 7 days: ₱{Number(lostMoney.last7 || 0).toLocaleString("en-PH", {
                 minimumFractionDigits: 2,
               })}
             </p>
           </div>
-          <div className="p-3 rounded-lg bg-white/10">
-            <AlertCircle className="h-8 w-8 text-white" />
+          <div className="p-2 bg-red-100 rounded-full flex-shrink-0">
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
           </div>
         </div>
       </div>
 
-      {/* ===== RESPONSIVE VIEW ===== */}
-      {isMobile ? (
-        // ===== CARD VIEW =====
-        <div className="space-y-4">
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <span className="loading loading-spinner loading-lg"></span>
+      {/* ===== SUPPLY HISTORY LIST ===== */}
+      {loading ? (
+        <div className="flex flex-col justify-center items-center min-h-[400px] bg-base-100 rounded-2xl">
+          <Loader2 className="animate-spin w-12 h-12 text-primary mb-4" />
+          <p className="text-base-content/60">Loading supply histories...</p>
+        </div>
+      ) : !supplyHistories?.length ? (
+        <div className="bg-base-100 rounded-2xl shadow-lg border-2 border-base-300">
+          <div className="text-center py-16">
+            <div className="bg-base-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileWarning className="h-10 w-10 text-base-content/30" />
             </div>
-          ) : supplyHistories.length > 0 ? (
-            supplyHistories.map((h) => (
-              <div
-                key={h._id}
-                className="card bg-base-100 shadow-md border border-base-300 p-4 rounded-xl"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-lg">
-                      {h.product_variant?.product?.name || h.productName || "Unknown"}
-                    </h3>
-                    <p className="text-sm text-base-content/70">
-                      {h.product_variant?.size || h.variantSize
-                        ? `${h.product_variant?.size || h.variantSize} ${
-                            h.product_variant?.unit || h.variantUnit || ""
-                          }`
-                        : h.product_variant?.unit || h.variantUnit || ""}
-                    </p>
-                  </div>
-                  <span className="badge badge-success badge-outline">
-                    {h.quantity} pcs
-                  </span>
-                </div>
-
-                <div className="mt-3 space-y-1 text-sm">
-                  <p>
-                    <strong>Supplier Price:</strong> ₱
-                    {h.supplier_price?.toLocaleString("en-PH", {
-                      minimumFractionDigits: 2,
-                    })}
-                  </p>
-                  <p>
-                    <strong>Total Cost:</strong> ₱
-                    {h.total_cost?.toLocaleString("en-PH", {
-                      minimumFractionDigits: 2,
-                    })}
-                  </p>
-                  <p>
-                    <strong>Date Supplied:</strong>{" "}
-                    {new Date(h.createdAt).toLocaleDateString("en-PH", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                  <p>
-                    <strong>Notes:</strong>{" "}
-                    {h.notes || (
-                      <span className="text-base-content/50 italic">
-                        No notes
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-base-content/60 py-12">
+            <h3 className="text-lg font-semibold text-base-content mb-2">
+              No Supply Histories Found
+            </h3>
+            <p className="text-base-content/60">
               {hasDateFilter
                 ? "No supply histories found for the selected date range"
-                : "No supply histories found"}
+                : "No supply histories have been created yet"}
             </p>
-          )}
+          </div>
         </div>
       ) : (
-        // ===== TABLE VIEW =====
-        <div className="card bg-base-100 shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="table table-zebra w-full">
-              <thead className="bg-base-200">
-                <tr>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Supplier Price</th>
-                  <th>Total Cost</th>
-                  <th>Date Supplied</th>
-                  <th>Created At</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="7" className="text-center py-12">
-                      <span className="loading loading-spinner loading-lg"></span>
-                    </td>
-                  </tr>
-                ) : supplyHistories.length > 0 ? (
-                  supplyHistories.map((h) => (
-                    <tr key={h._id}>
-                      <td>
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {h.product_variant?.product?.name || h.productName || "Unknown"}
-                          </span>
-                          <span className="text-sm text-base-content/70">
-                            {h.product_variant?.size || h.variantSize
-                              ? `${h.product_variant?.size || h.variantSize} ${
-                                  h.product_variant?.unit || h.variantUnit || ""
-                                }`
-                              : h.product_variant?.unit || h.variantUnit || ""}
-                          </span>
+        <div className="space-y-4">
+          {supplyHistories.map((h) => {
+            const isExpanded = expandedRow === h._id;
+            const productName = h.product_variant?.product?.name || h.productName || "Unknown Product";
+            const variantSize = h.product_variant?.size || h.variantSize || "";
+            const variantUnit = h.product_variant?.unit || h.variantUnit || "";
+            const variantColor = h.product_variant?.color || "";
+            
+            return (
+              <div
+                key={h._id}
+                className="bg-white rounded-2xl shadow-md border-2 border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden"
+              >
+                {/* Main Card Content */}
+                <div className="p-4 sm:p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                    {/* Left Section - Product Info */}
+                    <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                      {/* Icon */}
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                          <Package className="w-6 h-6 sm:w-7 sm:h-7" />
                         </div>
-                      </td>
-                      <td>
-                        <span className="badge badge-success badge-outline">
-                          {h.quantity} pcs
-                        </span>
-                      </td>
-                      <td>
-                        ₱
-                        {h.supplier_price?.toLocaleString("en-PH", {
-                          minimumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td>
-                        ₱
-                        {h.total_cost?.toLocaleString("en-PH", {
-                          minimumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td>
-                        {new Date(h.supplied_at).toLocaleDateString("en-PH", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </td>
-                      <td>
-                        <div className="text-sm">
-                          {new Date(h.createdAt).toLocaleDateString("en-PH", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                          <div className="text-xs text-base-content/60">
-                            {new Date(h.createdAt).toLocaleTimeString("en-PH", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                      </div>
+
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                              {productName}
+                            </h3>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              {variantSize && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium">
+                                  {variantSize}
+                                </span>
+                              )}
+                              {variantUnit && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">
+                                  {variantUnit}
+                                </span>
+                              )}
+                              {variantColor && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-lg bg-pink-50 text-pink-700 text-xs font-medium capitalize">
+                                  {variantColor}
+                                </span>
+                              )}
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border bg-green-100 text-green-700 border-green-200">
+                                {h.quantity} pcs
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </td>
-                      <td className="max-w-xs truncate">
-                        {h.notes || (
-                          <span className="text-base-content/50 italic">
-                            No notes
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="text-center py-12">
-                      <p className="text-base-content/60">
-                        {hasDateFilter
-                          ? "No supply histories found for the selected date range"
-                          : "No supply histories found"}
-                      </p>
-                    </td>
-                  </tr>
+
+                        {/* Date and Price - Mobile */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm mt-2">
+                          <div className="flex items-center gap-1.5 text-gray-600">
+                            <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>
+                              {new Date(h.supplied_at || h.createdAt).toLocaleDateString("en-PH", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-green-600">
+                              ₱{h.total_cost?.toLocaleString("en-PH", {
+                                minimumFractionDigits: 2,
+                              }) || "0.00"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Section - Actions (Desktop) */}
+                    <div className="hidden lg:flex items-center gap-4">
+                      {/* Expand Button */}
+                      <button
+                        onClick={() => toggleExpandedRow(h._id)}
+                        className="btn btn-ghost btn-sm btn-circle"
+                        aria-label="Toggle details"
+                      >
+                        <ChevronRight
+                          className={`w-5 h-5 transition-transform duration-200 ${
+                            isExpanded ? "rotate-90" : ""
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Mobile Actions */}
+                    <div className="lg:hidden flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => toggleExpandedRow(h._id)}
+                        className="btn btn-ghost btn-sm btn-circle ml-auto"
+                        aria-label="Toggle details"
+                      >
+                        <ChevronRight
+                          className={`w-5 h-5 transition-transform duration-200 ${
+                            isExpanded ? "rotate-90" : ""
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="border-t-2 border-gray-100 bg-gradient-to-br from-gray-50 to-white p-4 sm:p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                      {/* Left Column - Pricing Details */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <DollarSign className="w-4 h-4 text-green-600" />
+                          <h4 className="font-semibold text-sm text-gray-700">
+                            Pricing Details
+                          </h4>
+                        </div>
+                        <div className="bg-white rounded-xl border-2 border-gray-200 p-3 sm:p-4 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Supplier Price:</span>
+                            <span className="font-mono text-sm font-bold text-gray-900">
+                              ₱{h.supplier_price?.toLocaleString("en-PH", {
+                                minimumFractionDigits: 2,
+                              }) || "0.00"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Quantity:</span>
+                            <span className="font-semibold text-sm text-gray-900">
+                              {h.quantity} pcs
+                            </span>
+                          </div>
+                          <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                            <span className="text-sm font-semibold text-gray-700">Total Cost:</span>
+                            <span className="font-mono text-base font-bold text-green-600">
+                              ₱{h.total_cost?.toLocaleString("en-PH", {
+                                minimumFractionDigits: 2,
+                              }) || "0.00"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column - Date Information */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Calendar className="w-4 h-4 text-purple-600" />
+                          <h4 className="font-semibold text-sm text-gray-700">
+                            Date Information
+                          </h4>
+                        </div>
+
+                        <div className="bg-white rounded-xl border-2 border-gray-200 p-3 sm:p-4 space-y-3">
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Date Supplied</p>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {new Date(h.supplied_at || h.createdAt).toLocaleDateString("en-PH", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Created At</p>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {new Date(h.createdAt).toLocaleDateString("en-PH", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {new Date(h.createdAt).toLocaleTimeString("en-PH", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
