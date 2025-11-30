@@ -79,6 +79,10 @@ export const createVariant = asyncHandler(async (req, res) => {
       [
         {
           product_variant: newVariant[0]._id,
+          productName: existingProduct.name, // Store product name directly
+          variantSize: size || "",
+          variantUnit: unit || "",
+          variantColor: color || "",
           quantity: parsedQuantity,
           supplier_price: parsedSupplierPrice,
           total_cost,
@@ -198,8 +202,12 @@ export const updateVariant = asyncHandler(async (req, res) => {
         [
           {
             product_variant: updatedVariant._id,
-              quantity: quantityDelta,
-              supplier_price: additionSupplierPrice,
+            productName: updatedVariant.product?.name || "Unknown Product", // Store product name directly
+            variantSize: updatedVariant.size || "",
+            variantUnit: updatedVariant.unit || "",
+            variantColor: updatedVariant.color || "",
+            quantity: quantityDelta,
+            supplier_price: additionSupplierPrice,
             total_cost,
             notes,
               pulledOutQuantity: 0,
@@ -284,8 +292,10 @@ export const restockVariant = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: "Quantity must be positive" });
     }
 
-    // Fetch the variant inside the transaction
-    const variant = await ProductVariant.findById(id).session(session);
+    // Fetch the variant with product populated inside the transaction
+    const variant = await ProductVariant.findById(id)
+      .populate("product")
+      .session(session);
     if (!variant) {
       return res.status(404).json({ message: "Variant not found" });
     }
@@ -307,6 +317,10 @@ export const restockVariant = asyncHandler(async (req, res) => {
       [
         {
           product_variant: variant._id,
+          productName: variant.product?.name || "Unknown Product", // Store product name directly
+          variantSize: variant.size || "",
+          variantUnit: variant.unit || "",
+          variantColor: variant.color || "",
           quantity: parsedQuantity,
           supplier_price: effectiveSupplierPrice,
           total_cost,
@@ -393,6 +407,29 @@ export const deleteVariant = asyncHandler(async (req, res) => {
         ],
         { session }
       );
+    }
+
+    // If this variant has autoConvert enabled (converts from another variant),
+    // set the source variant's quantity to 0
+    if (variant.autoConvert && variant.conversionSource) {
+      const sourceVariant = await ProductVariant.findById(variant.conversionSource).session(session);
+      if (sourceVariant) {
+        sourceVariant.quantity = 0;
+        await sourceVariant.save({ session });
+      }
+    }
+
+    // Find all variants that convert from this variant and set their quantity to 0
+    const dependentVariants = await ProductVariant.find({
+      conversionSource: variant._id,
+      autoConvert: true,
+    }).session(session);
+
+    for (const dependentVariant of dependentVariants) {
+      if (dependentVariant.quantity > 0) {
+        dependentVariant.quantity = 0;
+        await dependentVariant.save({ session });
+      }
     }
 
     // Delete the variant

@@ -96,7 +96,7 @@ function PullOutModal({ user, history, pullOutSupplyHistory }) {
 
           <div className="rounded-lg bg-base-200 p-3 text-sm space-y-1">
             <p className="font-semibold text-base-content">
-              {history?.product_variant?.product?.name || "Unknown product"}
+              {history?.product_variant?.product?.name || history?.productName || "Unknown product"}
             </p>
             <p className="text-base-content/70">
               Available from this supply:{" "}

@@ -75,6 +75,11 @@ export const useVariant = () => {
       page: 1,
       pages: 1,
     });
+
+    // Dispatch event to notify cart and other components
+    setTimeout(() => {
+      window.dispatchEvent(new Event("variantUpdated"));
+    }, 0);
   };
 
   // ✅ Create Variant

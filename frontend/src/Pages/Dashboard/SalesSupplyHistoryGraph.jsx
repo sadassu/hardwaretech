@@ -14,8 +14,17 @@ import {
 import { formatPrice } from "../../utils/formatPrice";
 
 function SalesSupplyHistoryGraph() {
-  const [option, setOption] = useState("weekly");
+  const [option, setOption] = useState("month");
+  const currentDate = new Date();
+  const [year, setYear] = useState(currentDate.getFullYear());
+  const [month, setMonth] = useState(currentDate.getMonth() + 1);
   const { user } = useAuthContext();
+  
+  const params = { option, year };
+  if (option === "month") {
+    params.month = month;
+  }
+  
   const {
     data: salesData,
     loading,
@@ -23,10 +32,10 @@ function SalesSupplyHistoryGraph() {
   } = useFetch(
     "dashboard/supply-sales",
     {
-      params: { option },
+      params,
       headers: { Authorization: `Bearer ${user.token}` },
     },
-    [option]
+    [option, year, month]
   );
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -75,7 +84,7 @@ function SalesSupplyHistoryGraph() {
   const interpretation = useMemo(() => {
     if (!summary || !salesData?.data?.length) return [];
 
-    const optionLabel = option === "weekly" ? "week" : "month";
+    const optionLabel = option === "month" ? "week" : option === "year" ? "month" : "year";
     const lines = [];
 
       lines.push(
@@ -109,17 +118,66 @@ function SalesSupplyHistoryGraph() {
             Supply vs Sales Analysis
           </h2>
           <p className="text-xs sm:text-sm text-gray-500">
-            {option === "weekly" ? "Weekly" : "Monthly"} performance overview
+            {option === "month" ? "Monthly (by week)" : option === "year" ? "Yearly (by month)" : "Overall (by year)"} performance overview
           </p>
         </div>
-        <select
-          value={option}
-          onChange={(e) => setOption(e.target.value)}
-          className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer shadow-sm"
-        >
-          <option value="weekly">📅 Weekly View</option>
-          <option value="monthly">📊 Monthly View</option>
-        </select>
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={option}
+            onChange={(e) => setOption(e.target.value)}
+            className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer shadow-sm"
+          >
+            <option value="month">📅 By Month</option>
+            <option value="year">📊 By Year</option>
+            <option value="overall">🌐 Overall</option>
+          </select>
+          
+          {option !== "overall" && (
+            <>
+              <select
+                value={year}
+                onChange={(e) => setYear(parseInt(e.target.value))}
+                className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer shadow-sm"
+              >
+                {Array.from({ length: 6 }, (_, idx) => {
+                  const yr = new Date().getFullYear() - idx;
+                  return (
+                    <option key={yr} value={yr}>
+                      {yr}
+                    </option>
+                  );
+                })}
+              </select>
+              
+              {option === "month" && (
+                <select
+                  value={month}
+                  onChange={(e) => setMonth(parseInt(e.target.value))}
+                  className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer shadow-sm"
+                >
+                  {[
+                    { value: 1, label: "January" },
+                    { value: 2, label: "February" },
+                    { value: 3, label: "March" },
+                    { value: 4, label: "April" },
+                    { value: 5, label: "May" },
+                    { value: 6, label: "June" },
+                    { value: 7, label: "July" },
+                    { value: 8, label: "August" },
+                    { value: 9, label: "September" },
+                    { value: 10, label: "October" },
+                    { value: 11, label: "November" },
+                    { value: 12, label: "December" },
+                  ].map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {loading && (
@@ -221,7 +279,7 @@ function SalesSupplyHistoryGraph() {
                     {formatPrice(summary.totalSupply)}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {option === "weekly" ? "Weekly" : "Monthly"} investment
+                    {option === "month" ? "Monthly" : option === "year" ? "Yearly" : "Overall"} investment
                   </p>
                 </div>
 

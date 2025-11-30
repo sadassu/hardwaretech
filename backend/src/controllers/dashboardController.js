@@ -46,28 +46,22 @@ export const getDashboardSales = asyncHandler(async (req, res) => {
       saleDate: { $gte: past14, $lte: today },
     };
 
+    // Group by date in Philippines timezone (UTC+8)
+    // Convert saleDate to Philippines timezone by using $dateToString with timezone
+    // Then extract date parts from the converted date
     groupStage = {
       _id: {
-        year: { $year: "$saleDate" },
-        month: { $month: "$saleDate" },
-        day: { $dayOfMonth: "$saleDate" },
+        $dateToString: {
+          format: "%Y-%m-%d",
+          date: "$saleDate",
+          timezone: "Asia/Manila"
+        }
       },
       totalSales: { $sum: "$totalPrice" },
       count: { $sum: 1 },
     };
 
-    formatDate = {
-      $dateToString: {
-        format: "%Y-%m-%d",
-        date: {
-          $dateFromParts: {
-            year: "$_id.year",
-            month: "$_id.month",
-            day: "$_id.day",
-          },
-        },
-      },
-    };
+    formatDate = "$_id";
   } else if (option === "monthly") {
     const currentYear = new Date().getFullYear();
     const start = new Date(`${currentYear}-01-01`);
@@ -102,7 +96,7 @@ export const getDashboardSales = asyncHandler(async (req, res) => {
     { $match: matchStage },
     { $group: groupStage },
     { $match: { totalSales: { $gt: 0 } } }, // exclude 0 sales
-    { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } },
+    { $sort: { "_id": option === "daily" ? 1 : option === "monthly" ? 1 : 1 } }, // Sort by date string (YYYY-MM-DD format sorts correctly)
     {
       $project: {
         _id: 0,
@@ -875,15 +869,17 @@ export const getStockStatus = async (req, res) => {
  * Get comparison of supply cost and sales totals
  *
  * Supports:
- * - ?option=weekly  → group by ISO week
- * - ?option=monthly → group by month
- * - ?year=YYYY      → optional, defaults to current year
+ * - ?option=month   → group by week (all weeks in selected month)
+ * - ?option=year    → group by month (all months in selected year)
+ * - ?option=overall → group by year (total)
+ * - ?year=YYYY      → required for month/year, optional for overall
+ * - ?month=MM       → required for month option (1-12)
  *
  * Response format:
  * [
  *   {
  *     year: 2025,
- *     period: "Week 40" or "2025-09",
+ *     period: "Week 40" or "January" or "2025",
  *     totalSupplyCost: 5000,
  *     totalSales: 8000,
  *     difference: 3000
@@ -892,12 +888,60 @@ export const getStockStatus = async (req, res) => {
  * ]
  */
 export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
-  const option = req.query.option || "weekly"; // default weekly
-  const year = parseInt(req.query.year, 10) || new Date().getFullYear();
-  let groupStageSupply = {};
+  try {
+    const option = req.query.option || "month"; // default month
+    const year = parseInt(req.query.year, 10) || new Date().getFullYear();
+    const month = parseInt(req.query.month, 10) || null;
+    let groupStageSupply = {};
+    let matchStageSupply = {};
+    let matchStageSales = {};
 
-  if (option === "weekly") {
-    // ----- WEEKLY AGGREGATION FOR SUPPLY -----
+  if (option === "month") {
+    // Filter by specific month and year, group by week (all weeks that have days in that month)
+    if (!month || month < 1 || month > 12) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid month. Use 1-12 for month option.",
+      });
+    }
+    
+    // Filter by the exact month boundaries first
+    const firstDayOfMonth = new Date(year, month - 1, 1);
+    firstDayOfMonth.setHours(0, 0, 0, 0);
+    const lastDayOfMonth = new Date(year, month, 0);
+    lastDayOfMonth.setHours(23, 59, 59, 999);
+    
+    // Find the Monday of the ISO week containing the first day of the month
+    // This ensures we capture all weeks that might have days in the month
+    const firstDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const daysToMonday = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Days to go back to Monday
+    const mondayOfFirstWeek = new Date(firstDayOfMonth);
+    mondayOfFirstWeek.setDate(firstDayOfMonth.getDate() - daysToMonday);
+    mondayOfFirstWeek.setHours(0, 0, 0, 0);
+    
+    // Find the Sunday of the ISO week containing the last day of the month
+    const lastDayOfWeek = lastDayOfMonth.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const daysToSunday = lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek; // Days to go forward to Sunday
+    const sundayOfLastWeek = new Date(lastDayOfMonth);
+    sundayOfLastWeek.setDate(lastDayOfMonth.getDate() + daysToSunday);
+    sundayOfLastWeek.setHours(23, 59, 59, 999);
+    
+    // Filter by the extended week range to capture all potential weeks
+    // We'll filter the results later to only include weeks that belong to the selected month
+    matchStageSupply = {
+      supplied_at: {
+        $gte: mondayOfFirstWeek,
+        $lte: sundayOfLastWeek,
+      },
+    };
+    matchStageSales = {
+      saleDate: {
+        $gte: mondayOfFirstWeek,
+        $lte: sundayOfLastWeek,
+      },
+    };
+    
+    // Group by ISO week, but we'll filter to only include weeks with days in the selected month
     groupStageSupply = {
       _id: {
         year: { $isoWeekYear: "$supplied_at" },
@@ -906,8 +950,20 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
       },
       totalSupplyCost: { $sum: "$total_cost" },
     };
-  } else if (option === "monthly") {
-    // ----- MONTHLY AGGREGATION FOR SUPPLY -----
+  } else if (option === "year") {
+    // Filter by year, group by month (all months in that year)
+    matchStageSupply = {
+      supplied_at: {
+        $gte: new Date(`${year}-01-01T00:00:00.000Z`),
+        $lte: new Date(`${year}-12-31T23:59:59.999Z`),
+      },
+    };
+    matchStageSales = {
+      saleDate: {
+        $gte: new Date(`${year}-01-01T00:00:00.000Z`),
+        $lte: new Date(`${year}-12-31T23:59:59.999Z`),
+      },
+    };
     groupStageSupply = {
       _id: {
         year: { $year: "$supplied_at" },
@@ -915,12 +971,39 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
       },
       totalSupplyCost: { $sum: "$total_cost" },
     };
+  } else if (option === "overall") {
+    // No date filter, group by year (total)
+    matchStageSupply = {};
+    matchStageSales = {};
+    groupStageSupply = {
+      _id: {
+        year: { $year: "$supplied_at" },
+      },
+      totalSupplyCost: { $sum: "$total_cost" },
+    };
   } else {
     return res.status(400).json({
       success: false,
-      message: "Invalid option. Use 'weekly' or 'monthly'.",
+      message: "Invalid option. Use 'month', 'year', or 'overall'.",
     });
   }
+
+  // Helper function to get ISO week date range
+  const getISOWeekRange = (isoYear, isoWeek) => {
+    // ISO week calculation: Week 1 is the week containing Jan 4
+    const jan4 = new Date(isoYear, 0, 4);
+    const jan4Day = jan4.getDay() || 7; // Sunday = 7
+    const mondayOfWeek1 = new Date(isoYear, 0, 4 - jan4Day + 1);
+    const mondayOfThisWeek = new Date(mondayOfWeek1);
+    mondayOfThisWeek.setDate(mondayOfWeek1.getDate() + (isoWeek - 1) * 7);
+    mondayOfThisWeek.setHours(0, 0, 0, 0);
+    
+    const sundayOfThisWeek = new Date(mondayOfThisWeek);
+    sundayOfThisWeek.setDate(mondayOfThisWeek.getDate() + 6);
+    sundayOfThisWeek.setHours(23, 59, 59, 999);
+    
+    return { start: mondayOfThisWeek, end: sundayOfThisWeek };
+  };
 
   // Helper function to format week period
   const formatWeekPeriod = (year, week, month) => {
@@ -981,29 +1064,52 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
   };
 
   // --- SUPPLY AGGREGATION ---
-  const supplyAgg = await SupplyHistory.aggregate([
-    {
-      $match: {
-        supplied_at: {
-          $gte: new Date(`${year}-01-01T00:00:00.000Z`),
-          $lte: new Date(`${year}-12-31T23:59:59.999Z`),
-        },
-      },
-    },
+  let supplyAgg = await SupplyHistory.aggregate([
+    ...(Object.keys(matchStageSupply).length > 0 ? [{ $match: matchStageSupply }] : []),
     { $group: groupStageSupply },
   ]);
+  
+  // For month option, filter to only include weeks that belong to the selected month
+  // A week "belongs" to a month if the majority of its days (4 or more) are in that month
+  if (option === "month") {
+    const monthStart = new Date(year, month - 1, 1);
+    monthStart.setHours(0, 0, 0, 0);
+    const monthEnd = new Date(year, month, 0);
+    monthEnd.setHours(23, 59, 59, 999);
+    
+    supplyAgg = supplyAgg.filter((entry) => {
+      try {
+        const weekYear = entry._id?.year;
+        const weekNum = entry._id?.week;
+        
+        if (!weekYear || !weekNum) return false;
+        
+        const { start, end } = getISOWeekRange(weekYear, weekNum);
+        
+        // Count how many days of this week fall within the selected month
+        let daysInMonth = 0;
+        const currentDay = new Date(start);
+        
+        while (currentDay <= end) {
+          if (currentDay >= monthStart && currentDay <= monthEnd) {
+            daysInMonth++;
+          }
+          currentDay.setDate(currentDay.getDate() + 1);
+        }
+        
+        // Only include weeks where at least 4 days (majority) are in the selected month
+        return daysInMonth >= 4;
+      } catch (error) {
+        console.error("Error filtering week:", error, entry);
+        return false;
+      }
+    });
+  }
 
   // --- SALES AGGREGATION WITH COGS (Cost of Goods Sold) ---
   // Use supplier_price from SupplyHistory (actual cost paid) instead of ProductVariant
-  const salesAgg = await Sale.aggregate([
-    {
-      $match: {
-        saleDate: {
-          $gte: new Date(`${year}-01-01T00:00:00.000Z`),
-          $lte: new Date(`${year}-12-31T23:59:59.999Z`),
-        },
-      },
-    },
+  let salesAgg = await Sale.aggregate([
+    ...(Object.keys(matchStageSales).length > 0 ? [{ $match: matchStageSales }] : []),
     // Unwind items to calculate COGS per item
     { $unwind: "$items" },
     // Lookup SupplyHistory to get the actual supplier_price that was paid
@@ -1068,15 +1174,19 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
         itemSales: {
           $multiply: ["$items.quantity", "$items.price"],
         },
-        periodId: option === "weekly"
+        periodId: option === "month"
           ? {
               year: { $isoWeekYear: "$saleDate" },
               week: { $isoWeek: "$saleDate" },
               month: { $month: "$saleDate" },
             }
-          : {
+          : option === "year"
+          ? {
               year: { $year: "$saleDate" },
               month: { $month: "$saleDate" },
+            }
+          : {
+              year: { $year: "$saleDate" },
             },
       },
     },
@@ -1089,47 +1199,105 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
       },
     },
   ]);
+  
+  // For month option, filter sales to only include weeks that belong to the selected month
+  // A week "belongs" to a month if the majority of its days (4 or more) are in that month
+  if (option === "month") {
+    const monthStart = new Date(year, month - 1, 1);
+    monthStart.setHours(0, 0, 0, 0);
+    const monthEnd = new Date(year, month, 0);
+    monthEnd.setHours(23, 59, 59, 999);
+    
+    salesAgg = salesAgg.filter((entry) => {
+      try {
+        const weekYear = entry._id?.year;
+        const weekNum = entry._id?.week;
+        
+        if (!weekYear || !weekNum) return false;
+        
+        const { start, end } = getISOWeekRange(weekYear, weekNum);
+        
+        // Count how many days of this week fall within the selected month
+        let daysInMonth = 0;
+        const currentDay = new Date(start);
+        
+        while (currentDay <= end) {
+          if (currentDay >= monthStart && currentDay <= monthEnd) {
+            daysInMonth++;
+          }
+          currentDay.setDate(currentDay.getDate() + 1);
+        }
+        
+        // Only include weeks where at least 4 days (majority) are in the selected month
+        return daysInMonth >= 4;
+      } catch (error) {
+        console.error("Error filtering sales week:", error, entry);
+        return false;
+      }
+    });
+  }
 
   // 🧩 Merge the two datasets
   const combined = [];
   const salesMap = new Map();
 
+  // Helper function to format year period
+  const formatYearPeriod = (year) => {
+    return `${year}`;
+  };
+
   // Index sales data with COGS
   for (const s of salesAgg) {
-    const key =
-      option === "weekly"
-        ? `${s._id.year}-${s._id.week}`
-        : `${s._id.year}-${s._id.month}`;
+    let key;
+    if (option === "month") {
+      key = `${s._id.year}-${s._id.week}`;
+    } else if (option === "year") {
+      key = `${s._id.year}-${s._id.month}`;
+    } else {
+      key = `${s._id.year}`;
+    }
     salesMap.set(key, {
       totalSales: s.totalSales,
       totalCOGS: s.totalCOGS || 0,
       month: s._id.month,
+      week: s._id.week,
     });
   }
 
   // Include all supply entries
   for (const s of supplyAgg) {
-    const key =
-      option === "weekly"
-        ? `${s._id.year}-${s._id.week}`
-        : `${s._id.year}-${s._id.month}`;
+    let key;
+    if (option === "month") {
+      key = `${s._id.year}-${s._id.week}`;
+    } else if (option === "year") {
+      key = `${s._id.year}-${s._id.month}`;
+    } else {
+      key = `${s._id.year}`;
+    }
     const salesData = salesMap.get(key) || {
       totalSales: 0,
       totalCOGS: 0,
       month: s._id.month,
+      week: s._id.week,
     };
 
     // Calculate profit as Sales - COGS (not Sales - Supply Cost)
     const profit = salesData.totalSales - (salesData.totalCOGS || 0);
 
+    let periodLabel;
+    if (option === "month") {
+      periodLabel = formatWeekPeriod(s._id.year, s._id.week, s._id.month);
+    } else if (option === "year") {
+      periodLabel = formatMonthPeriod(s._id.month);
+    } else {
+      periodLabel = formatYearPeriod(s._id.year);
+    }
+
     combined.push({
       year: s._id.year,
-      period:
-        option === "weekly"
-          ? formatWeekPeriod(s._id.year, s._id.week, s._id.month)
-          : formatMonthPeriod(s._id.month),
-      week: option === "weekly" ? s._id.week : null,
-      month: s._id.month,
+      period: periodLabel,
+      week: option === "month" ? s._id.week : null,
+      month: option === "year" ? s._id.month : (option === "overall" ? null : s._id.month),
       totalSupplyCost: s.totalSupplyCost,
       totalSales: salesData.totalSales,
       totalCOGS: salesData.totalCOGS || 0,
@@ -1140,41 +1308,64 @@ export const getSupplyAndSalesComparison = asyncHandler(async (req, res) => {
 
   // Include sales-only periods (no supply)
   for (const [key, salesData] of salesMap.entries()) {
-    const [yr, periodNum] = key.split("-");
-    const yearInt = parseInt(yr);
-    const periodInt = parseInt(periodNum);
-
     // Calculate profit as Sales - COGS
     const profit = salesData.totalSales - (salesData.totalCOGS || 0);
 
+    let periodLabel;
+    let yearInt, weekInt, monthInt;
+
+    if (option === "month") {
+      const [yr, week] = key.split("-");
+      yearInt = parseInt(yr);
+      weekInt = parseInt(week);
+      periodLabel = formatWeekPeriod(yearInt, weekInt, salesData.month);
+    } else if (option === "year") {
+      const [yr, mon] = key.split("-");
+      yearInt = parseInt(yr);
+      monthInt = parseInt(mon);
+      periodLabel = formatMonthPeriod(monthInt);
+    } else {
+      yearInt = parseInt(key);
+      periodLabel = formatYearPeriod(yearInt);
+    }
+
     combined.push({
       year: yearInt,
-      period:
-        option === "weekly"
-          ? formatWeekPeriod(yearInt, periodInt, salesData.month)
-          : formatMonthPeriod(periodInt),
-      week: option === "weekly" ? periodInt : null,
-      month: salesData.month,
+      period: periodLabel,
+      week: option === "month" ? weekInt : null,
+      month: option === "year" ? monthInt : (option === "overall" ? null : salesData.month),
       totalSupplyCost: 0,
       totalSales: salesData.totalSales,
       totalCOGS: salesData.totalCOGS || 0,
-      difference: profit, // Profit = Sales - COGS
+      difference: profit,
     });
   }
 
   // Sort results
   combined.sort((a, b) => {
     if (a.year !== b.year) return a.year - b.year;
-    if (option === "weekly") {
+    if (option === "month" && a.week !== b.week) {
       return (a.week || 0) - (b.week || 0);
     }
-    return (a.month || 0) - (b.month || 0);
+    if (option === "year" && a.month !== b.month) {
+      return (a.month || 0) - (b.month || 0);
+    }
+    return 0;
   });
 
-  res.json({
-    success: true,
-    option,
-    year,
-    data: combined,
-  });
+    res.json({
+      success: true,
+      option,
+      year: option !== "overall" ? year : null,
+      month: option === "month" ? month : null,
+      data: combined,
+    });
+  } catch (error) {
+    console.error("Error in getSupplyAndSalesComparison:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
 });

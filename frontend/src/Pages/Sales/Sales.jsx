@@ -384,6 +384,7 @@ const Sales = () => {
                                               <div>
                                                 <h5 className="font-medium text-sm">
                                                   {product?.name ||
+                                                    item.productName ||
                                                     variant?.name ||
                                                     "Unnamed Product"}
                                                 </h5>

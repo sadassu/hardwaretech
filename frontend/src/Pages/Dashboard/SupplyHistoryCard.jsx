@@ -55,7 +55,7 @@ function SupplyHistoryCard() {
           >
             <div className="flex items-start justify-between mb-1.5 sm:mb-2">
               <h4 className="text-xs sm:text-sm font-medium text-gray-900 line-clamp-1 flex-1">
-                {h.product_variant?.product?.name || "Unknown Product"}
+                {h.product_variant?.product?.name || h.productName || "Unknown Product"}
               </h4>
               <span className="text-xs font-semibold text-gray-900 ml-2 whitespace-nowrap">
                 ₱
@@ -70,11 +70,11 @@ function SupplyHistoryCard() {
                 <Package className="w-3.5 h-3.5 text-gray-400" />
                 <span>
                   {formatVariantLabel(h.product_variant) || 
-                    (h.product_variant?.size
-                      ? `${h.product_variant.size} ${
-                          h.product_variant.unit || ""
+                    (h.product_variant?.size || h.variantSize
+                      ? `${h.product_variant?.size || h.variantSize} ${
+                          h.product_variant?.unit || h.variantUnit || ""
                         }`
-                      : h.product_variant?.unit || "N/A")}
+                      : h.product_variant?.unit || h.variantUnit || "N/A")}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">

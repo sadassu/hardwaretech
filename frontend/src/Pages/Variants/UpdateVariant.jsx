@@ -126,6 +126,21 @@ const UpdateVariant = ({ variant, product }) => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
+                <label htmlFor="size" className="block text-sm font-medium mb-1">
+                  Size/Type <span className="text-gray-400 text-xs font-normal">(optional)</span>
+                </label>
+                <input
+                  id="size"
+                type="text"
+                name="size"
+                placeholder="Size (e.g., Small, Medium)"
+                value={formData.size}
+                onChange={handleChange}
+                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
+                />
+              </div>
+
+              <div>
                 <label className="label">
                   <span className="label-text font-semibold text-gray-200">
                     Unit
@@ -145,21 +160,6 @@ const UpdateVariant = ({ variant, product }) => {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label htmlFor="size" className="block text-sm font-medium mb-1">
-                  Size <span className="text-gray-400 text-xs font-normal">(optional)</span>
-                </label>
-                <input
-                  id="size"
-                type="text"
-                name="size"
-                placeholder="Size (e.g., Small, Medium)"
-                value={formData.size}
-                onChange={handleChange}
-                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
-                />
               </div>
             </div>
 

@@ -112,6 +112,66 @@ export function useCart() {
     });
   }, []);
 
+  // Sync cart items with updated product/variant data
+  const syncCartWithProducts = useCallback((products) => {
+    setCart((prevCart) => {
+      const updatedCart = prevCart.map((item) => {
+        // Find the product
+        const product = products.find((p) => p._id === item.productId);
+        if (!product) {
+          // Product was deleted, remove from cart
+          return null;
+        }
+
+        // Find the variant
+        const variant = product.variants?.find((v) => v._id === item.variantId);
+        if (!variant) {
+          // Variant was deleted, remove from cart
+          return null;
+        }
+
+        // Calculate available quantity (considering autoConvert)
+        let availableQuantity = variant.quantity || 0;
+        if (variant.autoConvert && variant.conversionSource) {
+          const sourceVariant = product.variants?.find(
+            (v) => v._id === variant.conversionSource
+          );
+          if (sourceVariant) {
+            const multiplier = variant.conversionQuantity || 1;
+            availableQuantity += (sourceVariant.quantity || 0) * multiplier;
+          }
+        }
+
+        // Update cart item with latest data
+        const updatedItem = {
+          ...item,
+          name: product.name, // Update product name
+          price: variant.price ?? product.price, // Update price
+          size: variant.size, // Update size
+          unit: variant.unit || item.unit || "pcs", // Update unit
+          quantityAvailable: availableQuantity, // Update available stock
+          // Recalculate total with new price
+          total: item.quantity * (variant.price ?? product.price),
+        };
+
+        // If quantity exceeds available stock, adjust it
+        if (updatedItem.quantity > availableQuantity) {
+          updatedItem.quantity = availableQuantity;
+          updatedItem.total = availableQuantity * (variant.price ?? product.price);
+        }
+
+        return updatedItem;
+      }).filter(Boolean); // Remove null items (deleted products/variants)
+
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("cartUpdated"));
+      }, 0);
+
+      return updatedCart;
+    });
+  }, []);
+
   // Derived values - these are computed during render and don't cause side effects
   const cartItems = cart;
   const cartCount = cart.length; // Count of unique products, not total quantity
@@ -125,5 +185,6 @@ export function useCart() {
     updateQuantity,
     removeItem: removeFromCart,
     clearCart,
+    syncCartWithProducts,
   };
 }
