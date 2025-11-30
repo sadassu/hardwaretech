@@ -66,13 +66,14 @@ export const getSupplyHistory = asyncHandler(async (req, res) => {
 
   let histories = await query.exec();
 
-  // 📌 If searching by product name
+  // 📌 If searching by product name (use stored name as fallback)
   if (search) {
     const regex = new RegExp(search, "i"); // case-insensitive
     histories = histories.filter(
-      (h) =>
-        h.product_variant?.product?.name &&
-        regex.test(h.product_variant.product.name)
+      (h) => {
+        const productName = h.product_variant?.product?.name || h.productName || "";
+        return productName && regex.test(productName);
+      }
     );
   }
 

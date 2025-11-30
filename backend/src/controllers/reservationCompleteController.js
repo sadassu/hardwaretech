@@ -88,10 +88,10 @@ export const completeReservation = asyncHandler(async (req, res) => {
           : d.productVariantId.price || 0;
       return {
         productVariantId: d.productVariantId._id,
-        productId: d.productVariantId.product._id,
-        name: d.productVariantId.product.name,
-        size: d.productVariantId.size,
-        unit: d.productVariantId.unit,
+        productName: d.productVariantId.product?.name || "Unknown Product", // Store product name directly
+        size: d.productVariantId.size || "",
+        unit: d.productVariantId.unit || "",
+        color: d.productVariantId.color || "",
         quantity: d.quantity,
         price: lockedPrice,
         subtotal: lockedPrice * d.quantity,

@@ -310,7 +310,7 @@ function Receipt({ sale, onClose }) {
                       className="my-2 pb-1 border-b border-dotted border-gray-400 last:border-0"
                     >
                       <div className="font-bold text-sm">
-                        {product?.name || "Unnamed Product"}
+                        {product?.name || item.productName || "Unnamed Product"}
                       </div>
                       <div className="text-xs text-gray-600 my-1 space-x-2">
                         {variant?.size && <span>Size: {variant.size}</span>}

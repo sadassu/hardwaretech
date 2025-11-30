@@ -308,14 +308,14 @@ const SupplyHistories = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-bold text-lg">
-                      {h.product_variant?.product?.name || "Unknown"}
+                      {h.product_variant?.product?.name || h.productName || "Unknown"}
                     </h3>
                     <p className="text-sm text-base-content/70">
-                      {h.product_variant?.size
-                        ? `${h.product_variant.size} ${
-                            h.product_variant.unit || ""
+                      {h.product_variant?.size || h.variantSize
+                        ? `${h.product_variant?.size || h.variantSize} ${
+                            h.product_variant?.unit || h.variantUnit || ""
                           }`
-                        : h.product_variant?.unit || ""}
+                        : h.product_variant?.unit || h.variantUnit || ""}
                     </p>
                   </div>
                   <span className="badge badge-success badge-outline">
@@ -394,14 +394,14 @@ const SupplyHistories = () => {
                       <td>
                         <div className="flex flex-col">
                           <span className="font-medium">
-                            {h.product_variant?.product?.name || "Unknown"}
+                            {h.product_variant?.product?.name || h.productName || "Unknown"}
                           </span>
                           <span className="text-sm text-base-content/70">
-                            {h.product_variant?.size
-                              ? `${h.product_variant.size} ${
-                                  h.product_variant.unit || ""
+                            {h.product_variant?.size || h.variantSize
+                              ? `${h.product_variant?.size || h.variantSize} ${
+                                  h.product_variant?.unit || h.variantUnit || ""
                                 }`
-                              : h.product_variant?.unit || ""}
+                              : h.product_variant?.unit || h.variantUnit || ""}
                           </span>
                         </div>
                       </td>

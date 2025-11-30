@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "../../components/Modal";
 import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
@@ -46,6 +46,27 @@ const CreateVariant = ({ product }) => {
     conversionNotes: "",
     includePerText: false,
   });
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        unit: "",
+        size: "",
+        dimension: "",
+        dimensionType: "",
+        color: "",
+        supplier_price: "",
+        price: "",
+        quantity: "",
+        conversionSource: "",
+        conversionQuantity: 1,
+        autoConvert: false,
+        conversionNotes: "",
+        includePerText: false,
+      });
+    }
+  }, [isOpen]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -139,6 +160,21 @@ const CreateVariant = ({ product }) => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
+                <label htmlFor="size" className="block text-sm font-medium mb-1">
+                  Size/Type <span className="text-gray-400 text-xs font-normal">(optional)</span>
+                </label>
+                <input
+                  id="size"
+                  type="text"
+                  name="size"
+                  placeholder="Size (e.g., Small, Medium)"
+                  value={formData.size}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
+                />
+              </div>
+
+              <div>
                 <label className="label">
                   <span className="label-text font-semibold text-gray-200">
                     Unit
@@ -158,21 +194,6 @@ const CreateVariant = ({ product }) => {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label htmlFor="size" className="block text-sm font-medium mb-1">
-                  Size <span className="text-gray-400 text-xs font-normal">(optional)</span>
-                </label>
-                <input
-                  id="size"
-                  type="text"
-                  name="size"
-                  placeholder="Size (e.g., Small, Medium)"
-                  value={formData.size}
-                  onChange={handleChange}
-                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
-                />
               </div>
             </div>
 

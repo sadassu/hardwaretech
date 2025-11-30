@@ -67,16 +67,35 @@ export const createSale = asyncHandler(async (req, res) => {
       await variant.save({ session });
     }
 
-    // ✅ Map variantId → productVariantId to match schema
-    const saleItems = items.map((item) => ({
-      productVariantId: item.variantId,
-      productId: item.productId,
-      quantity: item.quantity,
-      price: item.price,
-      total: item.total,
-      size: item.size,
-      unit: item.unit,
-    }));
+    // ✅ Map variantId → productVariantId and store product name/variant details
+    // Fetch all variants with their products to get names
+    const variantIds = items.map((item) => item.variantId);
+    const variantsWithProducts = await ProductVariant.find({
+      _id: { $in: variantIds },
+    })
+      .populate("product")
+      .session(session);
+
+    const variantMap = new Map();
+    variantsWithProducts.forEach((v) => {
+      variantMap.set(v._id.toString(), v);
+    });
+
+    const saleItems = items.map((item) => {
+      const variant = variantMap.get(item.variantId.toString());
+      const productName = variant?.product?.name || "Unknown Product";
+      
+      return {
+        productVariantId: item.variantId,
+        productName: productName, // Store product name directly
+        size: item.size || variant?.size || "",
+        unit: item.unit || variant?.unit || "",
+        color: variant?.color || "",
+        quantity: item.quantity,
+        price: item.price,
+        total: item.total,
+      };
+    });
 
     const sale = new Sale({
       items: saleItems,
@@ -214,7 +233,7 @@ export const getSales = asyncHandler(async (req, res) => {
     }
   }
 
-  // If search provided, match across saleIdString, cashier name/email, variants.name or variants.product.name
+  // If search provided, match across saleIdString, cashier name/email, variants.name, variants.product.name, or stored productName
   if (searchRegex) {
     matchConditions.push({
       $or: [
@@ -223,6 +242,7 @@ export const getSales = asyncHandler(async (req, res) => {
         { "cashier.email": { $regex: searchRegex } },
         { "variants.name": { $regex: searchRegex } },
         { "variants.product.name": { $regex: searchRegex } },
+        { "items.productName": { $regex: searchRegex } }, // Search stored product names
       ],
     });
   }
@@ -240,6 +260,7 @@ export const getSales = asyncHandler(async (req, res) => {
       metadata: [{ $count: "total" }],
       data: [
         // Map items to include the populated productVariantId object from variants lookup
+        // Use stored productName as fallback when product/variant is deleted
         {
           $addFields: {
             items: {
@@ -259,12 +280,86 @@ export const getSales = asyncHandler(async (req, res) => {
                       0,
                     ],
                   },
+                  // Use stored productName (preserved even if product is deleted)
+                  productName: {
+                    $ifNull: [
+                      {
+                        $arrayElemAt: [
+                          {
+                            $map: {
+                              input: {
+                                $filter: {
+                                  input: "$variants",
+                                  as: "v",
+                                  cond: { $eq: ["$$v._id", "$$it.productVariantId"] },
+                                },
+                              },
+                              as: "v",
+                              in: "$$v.product.name",
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                      {
+                        $ifNull: [
+                          "$$it.productName", // Fallback to stored name
+                          "Unknown Product", // Final fallback for old sales with deleted products
+                        ],
+                      },
+                    ],
+                  },
                   productId: "$$it.productId",
                   quantity: "$$it.quantity",
                   price: "$$it.price",
                   subtotal: "$$it.subtotal",
-                  size: "$$it.size",
-                  unit: "$$it.unit",
+                  size: {
+                    $ifNull: [
+                      {
+                        $arrayElemAt: [
+                          {
+                            $map: {
+                              input: {
+                                $filter: {
+                                  input: "$variants",
+                                  as: "v",
+                                  cond: { $eq: ["$$v._id", "$$it.productVariantId"] },
+                                },
+                              },
+                              as: "v",
+                              in: "$$v.size",
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                      "$$it.size", // Fallback to stored size
+                    ],
+                  },
+                  unit: {
+                    $ifNull: [
+                      {
+                        $arrayElemAt: [
+                          {
+                            $map: {
+                              input: {
+                                $filter: {
+                                  input: "$variants",
+                                  as: "v",
+                                  cond: { $eq: ["$$v._id", "$$it.productVariantId"] },
+                                },
+                              },
+                              as: "v",
+                              in: "$$v.unit",
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                      "$$it.unit", // Fallback to stored unit
+                    ],
+                  },
+                  color: "$$it.color", // Include stored color
                 },
               },
             },
@@ -407,6 +502,7 @@ export const exportSales = asyncHandler(async (req, res) => {
         { "cashier.email": { $regex: searchRegex } },
         { "variants.name": { $regex: searchRegex } },
         { "variants.product.name": { $regex: searchRegex } },
+        { "items.productName": { $regex: searchRegex } }, // Search stored product names
       ],
     });
   }
@@ -419,6 +515,7 @@ export const exportSales = asyncHandler(async (req, res) => {
   pipeline.push({ $sort: { saleDate: -1 } });
 
   // Map items to include populated productVariantId
+  // Use stored productName as fallback when product/variant is deleted
   pipeline.push({
     $addFields: {
       items: {
@@ -438,12 +535,86 @@ export const exportSales = asyncHandler(async (req, res) => {
                 0,
               ],
             },
+            // Use stored productName (preserved even if product is deleted)
+            productName: {
+              $ifNull: [
+                {
+                  $arrayElemAt: [
+                    {
+                      $map: {
+                        input: {
+                          $filter: {
+                            input: "$variants",
+                            as: "v",
+                            cond: { $eq: ["$$v._id", "$$it.productVariantId"] },
+                          },
+                        },
+                        as: "v",
+                        in: "$$v.product.name",
+                      },
+                    },
+                    0,
+                  ],
+                },
+                {
+                  $ifNull: [
+                    "$$it.productName", // Fallback to stored name
+                    "Unknown Product", // Final fallback for old sales with deleted products
+                  ],
+                },
+              ],
+            },
             productId: "$$it.productId",
             quantity: "$$it.quantity",
             price: "$$it.price",
             subtotal: "$$it.subtotal",
-            size: "$$it.size",
-            unit: "$$it.unit",
+            size: {
+              $ifNull: [
+                {
+                  $arrayElemAt: [
+                    {
+                      $map: {
+                        input: {
+                          $filter: {
+                            input: "$variants",
+                            as: "v",
+                            cond: { $eq: ["$$v._id", "$$it.productVariantId"] },
+                          },
+                        },
+                        as: "v",
+                        in: "$$v.size",
+                      },
+                    },
+                    0,
+                  ],
+                },
+                "$$it.size", // Fallback to stored size
+              ],
+            },
+            unit: {
+              $ifNull: [
+                {
+                  $arrayElemAt: [
+                    {
+                      $map: {
+                        input: {
+                          $filter: {
+                            input: "$variants",
+                            as: "v",
+                            cond: { $eq: ["$$v._id", "$$it.productVariantId"] },
+                          },
+                        },
+                        as: "v",
+                        in: "$$v.unit",
+                      },
+                    },
+                    0,
+                  ],
+                },
+                "$$it.unit", // Fallback to stored unit
+              ],
+            },
+            color: "$$it.color", // Include stored color
           },
         },
       },
@@ -498,7 +669,8 @@ export const exportSales = asyncHandler(async (req, res) => {
       sale.items.forEach((item) => {
         const variant = item.productVariantId;
         const product = variant?.product;
-        const productName = product?.name || variant?.name || "Unnamed Product";
+        // Use stored productName as fallback when product/variant is deleted
+        const productName = product?.name || item.productName || variant?.name || "Unnamed Product";
         const quantity = item.quantity || 0;
         const unit = item.unit || "";
         const size = item.size || "";

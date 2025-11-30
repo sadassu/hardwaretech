@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Modal from "../../components/Modal";
 import { useCart } from "../../hooks/useCart";
 import { ShoppingCart, X, Plus, Minus, PlusCircle, AlertTriangle } from "lucide-react";
@@ -7,6 +8,7 @@ import { useAuthContext } from "../../hooks/useAuthContext";
 function CreateCart({ product, variant }) {
   const { user } = useAuthContext();
   const { addToCart, cartItems } = useCart();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [maxStockMessage, setMaxStockMessage] = useState("");
@@ -84,6 +86,9 @@ function CreateCart({ product, variant }) {
     setIsOpen(false);
     setQuantity(1);
     setMaxStockMessage("");
+    
+    // Navigate to product list after adding to cart
+    navigate("/user/product-list");
   };
 
   return (

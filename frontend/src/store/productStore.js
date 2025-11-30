@@ -109,6 +109,11 @@ export const useProductStore = create(
           // Optimistic update
           const updated = products.filter((p) => p._id !== productId);
           set({ products: updated, loading: false });
+          
+          // Dispatch event to notify cart and other components
+          setTimeout(() => {
+            window.dispatchEvent(new Event("productUpdated"));
+          }, 0);
         } catch (err) {
           set({
             error: err.response?.data?.message || "Failed to delete product",
@@ -140,6 +145,12 @@ export const useProductStore = create(
             products: enhanceProducts(updatedProducts),
             loading: false,
           });
+          
+          // Dispatch event to notify cart and other components
+          setTimeout(() => {
+            window.dispatchEvent(new Event("productUpdated"));
+          }, 0);
+          
           return updatedProduct;
         } catch (err) {
           set({

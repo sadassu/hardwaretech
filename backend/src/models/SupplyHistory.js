@@ -7,6 +7,11 @@ const supplyHistorySchema = new mongoose.Schema(
       ref: "ProductVariant",
       required: true,
     },
+    // Store product name and variant details directly to preserve them even if product/variant is deleted
+    productName: { type: String },
+    variantSize: { type: String },
+    variantUnit: { type: String },
+    variantColor: { type: String },
     quantity: { type: Number, required: true, min: 0 },
     supplier_price: { type: Number, required: true, min: 0 },
     total_cost: { type: Number, required: true, min: 0 }, 
