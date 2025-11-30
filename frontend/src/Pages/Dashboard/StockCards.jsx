@@ -5,7 +5,7 @@ import Modal from "../../components/Modal";
 import { StockList } from "./StockList";
 import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 
-function StockCards() {
+function StockCards({ isPos = false }) {
   const [selectedType, setSelectedType] = useState(null);
   const inventoryLiveKey = useLiveResourceRefresh(["inventory", "supply"]);
 
@@ -54,7 +54,7 @@ function StockCards() {
     return (
       <div className="space-y-3">
         <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className={isPos ? "grid grid-cols-1 sm:grid-cols-3 gap-4" : "grid grid-cols-1 sm:grid-cols-3 gap-2.5"}>
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse bg-white rounded-lg border border-gray-200 overflow-hidden">
               <div className="h-1 bg-gray-200"></div>
@@ -108,7 +108,7 @@ function StockCards() {
       </div>
 
       {/* Cards Grid */}
-      <div className="space-y-3">
+      <div className={isPos ? "grid grid-cols-1 sm:grid-cols-3 gap-4" : "space-y-3"}>
         {stats.map((stat) => {
           return (
             <div

@@ -156,7 +156,7 @@ function Pos() {
           <SaleCards />
         </div>
         <div className="mb-6">
-          <StockCards />
+          <StockCards isPos={true} />
         </div>
       </div>
 

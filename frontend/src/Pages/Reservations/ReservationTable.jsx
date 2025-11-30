@@ -136,9 +136,9 @@ const ReservationTable = () => {
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
                             {res.userId?.name || res.userName || "Unknown User"}
-                          </h3>
+                        </h3>
                           {!res.userId && (res.userName || res.userEmail) && (
                             <span className="text-xs text-gray-500 italic whitespace-nowrap">
                               (Account Deleted)

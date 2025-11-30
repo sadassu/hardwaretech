@@ -39,8 +39,8 @@ export const returnSales = asyncHandler(async (req, res) => {
     const itemsWithQuantity = [];
     const errors = [];
 
-    // Return items to stock by incrementing the quantity field
-    for (const item of sale.items) {
+  // Return items to stock by incrementing the quantity field
+  for (const item of sale.items) {
       // Handle both populated and non-populated productVariantId
       const variantId = item.productVariantId?._id || item.productVariantId;
       
@@ -199,21 +199,21 @@ export const returnSales = asyncHandler(async (req, res) => {
         success: false,
         message: "Failed to return items: " + errors.join(", "),
         errors,
-      });
-    }
+    });
+  }
 
-    // Delete the sale after processing the return
+  // Delete the sale after processing the return
     await Sale.findByIdAndDelete(saleId).session(session);
 
     await session.commitTransaction();
     session.endSession();
 
-    res.status(200).json({
-      success: true,
-      message: "Sale items returned to stock and sale deleted successfully",
-      items: itemsWithQuantity,
+  res.status(200).json({
+    success: true,
+    message: "Sale items returned to stock and sale deleted successfully",
+    items: itemsWithQuantity,
       warnings: errors.length > 0 ? errors : undefined,
-    });
+  });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

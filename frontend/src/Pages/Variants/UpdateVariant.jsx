@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Modal from "../../components/Modal";
 import { toast } from "react-hot-toast";
-import TextInput from "../../components/TextInput.jsx";
 import { useVariant } from "../../hooks/useVariant.js";
 import { Edit } from "lucide-react";
 import { formatVariantLabel } from "../../utils/formatVariantLabel.js";
@@ -124,15 +123,25 @@ const UpdateVariant = ({ variant, product }) => {
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        className="bg-[#222831] text-white rounded-2xl w-full max-w-2xl shadow-2xl p-4 sm:p-6"
+        className="bg-white rounded-2xl max-w-2xl w-full p-0 max-h-[90vh] flex flex-col"
       >
-        <div className="max-h-[80vh] overflow-y-auto pr-1 sm:pr-2 space-y-6">
-          <h2 className="text-xl font-semibold">Update Variant</h2>
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <Edit className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Update Variant</h2>
+              <p className="text-blue-100 text-sm">Modify variant details</p>
+            </div>
+          </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="p-6 space-y-5 flex-1 overflow-y-auto">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="size" className="block text-sm font-medium mb-1">
+                <label htmlFor="size" className="block text-sm font-semibold text-gray-700 mb-2">
                   Size/Type <span className="text-gray-400 text-xs font-normal">(optional)</span>
                 </label>
                 <input
@@ -142,21 +151,19 @@ const UpdateVariant = ({ variant, product }) => {
                 placeholder="Size (e.g., Small, Medium)"
                 value={formData.size}
                 onChange={handleChange}
-                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
                 />
               </div>
 
               <div>
-                <label className="label">
-                  <span className="label-text font-semibold text-gray-200">
-                    Unit
-                  </span>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Unit
                 </label>
                 <select
                   name="unit"
                   value={formData.unit}
                   onChange={handleChange}
-                  className="select select-bordered w-full bg-[#30475E] text-white"
+                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
                   required
                 >
                   <option value="">No Unit</option>
@@ -171,7 +178,7 @@ const UpdateVariant = ({ variant, product }) => {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="dimension" className="block text-sm font-medium mb-1">
+                <label htmlFor="dimension" className="block text-sm font-semibold text-gray-700 mb-2">
                   Dimension <span className="text-gray-400 text-xs font-normal">(optional)</span>
                 </label>
                 <input
@@ -181,13 +188,13 @@ const UpdateVariant = ({ variant, product }) => {
                   placeholder="e.g., 1 inch, 2.5 cm"
                   value={formData.dimension}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-[#30475E] text-white placeholder:text-gray-400"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
                 />
-                <p className="text-xs text-gray-400 mt-1">e.g., diameter, thickness</p>
+                <p className="text-xs text-gray-500 mt-1">e.g., diameter, thickness</p>
               </div>
 
               <div>
-                <label htmlFor="dimensionType" className="block text-sm font-medium mb-1">
+                <label htmlFor="dimensionType" className="block text-sm font-semibold text-gray-700 mb-2">
                   Dimension Type <span className="text-gray-400 text-xs font-normal">(optional)</span>
                 </label>
                 <select
@@ -195,7 +202,7 @@ const UpdateVariant = ({ variant, product }) => {
                   name="dimensionType"
                   value={formData.dimensionType}
                   onChange={handleChange}
-                  className="select select-bordered w-full bg-[#30475E] text-white"
+                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
                 >
                   <option value="">None</option>
                   <option value="diameter">Diameter</option>
@@ -207,7 +214,7 @@ const UpdateVariant = ({ variant, product }) => {
               </div>
             </div>
 
-            <div className="flex items-start gap-3 rounded-2xl border border-gray-600/40 px-4 py-3">
+            <div className="flex items-start gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3">
               <input
                 type="checkbox"
                 id="includePerText"
@@ -216,58 +223,78 @@ const UpdateVariant = ({ variant, product }) => {
                 onChange={handleChange}
                 className="checkbox checkbox-primary mt-1"
               />
-              <label htmlFor="includePerText" className="text-sm font-medium leading-relaxed">
-                Insert the word <span className="font-semibold text-blue-200">"per"</span> between size and unit
+              <label htmlFor="includePerText" className="text-sm font-medium text-gray-700 leading-relaxed">
+                Insert the word <span className="font-semibold text-blue-600">"per"</span> between size and unit
                 (e.g., <span className="font-semibold">1 set per 30 m</span>)
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <TextInput
-                label="Supplier Price"
-                type="number"
-                name="supplier_price"
-                placeholder="Supplier price"
-                value={formData.supplier_price}
-                onChange={handleChange}
-                required
-              />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Supplier Price
+                </label>
+                <input
+                  type="number"
+                  name="supplier_price"
+                  placeholder="Supplier price"
+                  value={formData.supplier_price}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  required
+                />
+              </div>
 
-              <TextInput
-                label="Price"
-                type="number"
-                name="price"
-                placeholder="Price"
-                value={formData.price}
-                onChange={handleChange}
-                required
-              />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Price
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="Price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <TextInput
-                label="Quantity"
-                type="number"
-                name="quantity"
-                placeholder="Quantity"
-                value={formData.quantity}
-                onChange={handleChange}
-                required
-                min="0"
-              />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  placeholder="Quantity"
+                  value={formData.quantity}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  required
+                  min="0"
+                />
+              </div>
 
-              <TextInput
-                label="Color (if applicable)"
-                type="text"
-                name="color"
-                placeholder="Color (e.g., Red, Blue)"
-                value={formData.color}
-                onChange={handleChange}
-              />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Color (if applicable)
+                </label>
+                <input
+                  type="text"
+                  name="color"
+                  placeholder="Color (e.g., Red, Blue)"
+                  value={formData.color}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                />
+              </div>
             </div>
 
-            <div className="p-4 border border-dashed border-gray-300/60 rounded-2xl space-y-3">
-              <label className="flex items-center gap-2 text-sm font-medium">
+            <div className="p-4 border-2 border-dashed border-gray-300 bg-gray-50 rounded-xl space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <input
                   type="checkbox"
                   name="autoConvert"
@@ -281,14 +308,14 @@ const UpdateVariant = ({ variant, product }) => {
               {formData.autoConvert && (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Source Variant
                     </label>
                     <select
                       name="conversionSource"
                       value={formData.conversionSource}
                       onChange={handleChange}
-                      className="select select-bordered w-full bg-[#30475E] text-white"
+                      className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
                       required
                     >
                       <option value="">Select a variant</option>
@@ -304,37 +331,56 @@ const UpdateVariant = ({ variant, product }) => {
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <TextInput
-                      label="Units per source"
-                      type="number"
-                      name="conversionQuantity"
-                      min="1"
-                      value={formData.conversionQuantity}
-                      onChange={handleChange}
-                      required
-                    />
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Units per source
+                      </label>
+                      <input
+                        type="number"
+                        name="conversionQuantity"
+                        min="1"
+                        value={formData.conversionQuantity}
+                        onChange={handleChange}
+                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                        required
+                      />
+                    </div>
 
-                    <TextInput
-                      label="Conversion Notes (optional)"
-                      type="text"
-                      name="conversionNotes"
-                      placeholder="e.g., 1 box = 24 pcs"
-                      value={formData.conversionNotes}
-                      onChange={handleChange}
-                    />
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Conversion Notes (optional)
+                      </label>
+                      <input
+                        type="text"
+                        name="conversionNotes"
+                        placeholder="e.g., 1 box = 24 pcs"
+                        value={formData.conversionNotes}
+                        onChange={handleChange}
+                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
-            <button
-              type="submit"
-              className="btn bg-red-500 text-white border-red-500 w-full"
-            >
-              Update Variant
-            </button>
-          </form>
-        </div>
+            <div className="flex gap-3 pt-2 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="flex-1 btn btn-ghost border-2 border-gray-200 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 btn bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg"
+              >
+                Update Variant
+              </button>
+            </div>
+          </div>
+        </form>
       </Modal>
     </>
   );

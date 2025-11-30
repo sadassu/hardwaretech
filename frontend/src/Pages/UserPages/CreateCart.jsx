@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Modal from "../../components/Modal";
 import { useCart } from "../../hooks/useCart";
-import { ShoppingCart, X, Plus, Minus, PlusCircle, AlertTriangle } from "lucide-react";
+import { ShoppingCart, X, Plus, Minus, PlusCircle, AlertTriangle, Package } from "lucide-react";
 import { useAuthContext } from "../../hooks/useAuthContext";
+import { formatPrice } from "../../utils/formatPrice";
 
 function CreateCart({ product, variant }) {
   const { user } = useAuthContext();
@@ -122,34 +123,72 @@ function CreateCart({ product, variant }) {
         </div>
       </button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <div className="p-6 text-white">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">Add to Cart</h2>
+      <Modal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="bg-white rounded-2xl max-w-md w-full p-0 max-h-[90vh] flex flex-col"
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Add to Cart</h3>
+              <p className="text-blue-100 text-sm">Select quantity to add to your cart</p>
+            </div>
           </div>
+        </div>
 
+        {/* Content */}
+        <div className="p-6 space-y-5 flex-1 overflow-y-auto">
           {isUserUnverified ? (
-            <div className="text-center py-6 text-red-400 font-medium">
-              You must verify your account before adding items to your cart.
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700 font-medium">
+                You must verify your account before adding items to your cart.
+              </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-medium text-white">
-                    Quantity
-                  </span>
-                  <span className="label-text-alt text-white/70">
-                    Available: {availableStock}
-                  </span>
+            <>
+              {/* Product Info */}
+              <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                    <Package className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-base text-gray-900 mb-1 truncate">
+                      {product?.name || "Product"}
+                    </h4>
+                    {variant && (
+                      <p className="text-sm text-gray-600">
+                        {variant.size && `${variant.size} `}
+                        {variant.unit && `${variant.unit}`}
+                        {variant.color && ` • ${variant.color}`}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">
+                      Price: <span className="font-semibold text-gray-900">{formatPrice(variant?.price ?? product?.price ?? 0)}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quantity Section */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Quantity
                 </label>
                 <div className="flex items-center gap-3">
                   <button
-                    className="btn btn-outline btn-sm text-white border-white hover:border-white"
+                    className="btn btn-ghost btn-sm btn-circle border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => handleQuantityChange(quantity - 1)}
                     disabled={quantity <= 1}
+                    title="Decrease quantity"
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-4 h-4 text-gray-700" />
                   </button>
 
                   <input
@@ -157,7 +196,7 @@ function CreateCart({ product, variant }) {
                     min="1"
                     max={availableStock}
                     value={quantity}
-                    className="input input-bordered flex-1 text-center font-medium text-white border-white bg-transparent"
+                    className="input input-bordered flex-1 text-center font-semibold text-gray-900 bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     onChange={(e) => {
                       const value = Number(e.target.value) || 1;
                       handleQuantityChange(value);
@@ -165,44 +204,51 @@ function CreateCart({ product, variant }) {
                   />
 
                   <button
-                    className="btn btn-outline btn-sm text-white border-white hover:border-white"
+                    className="btn btn-ghost btn-sm btn-circle border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => handleQuantityChange(quantity + 1)}
                     disabled={quantity >= availableStock}
+                    title="Increase quantity"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 text-gray-700" />
                   </button>
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Available: <span className="font-semibold text-gray-700">{availableStock}</span>
+                </p>
                 {maxStockMessage && (
-                  <div className="mt-2 bg-amber-500/20 border border-amber-500/40 rounded-lg p-3 flex items-start gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-200">{maxStockMessage}</p>
+                  <div className="mt-3 bg-amber-50 border-2 border-amber-200 rounded-xl p-3 flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-amber-700 font-medium">{maxStockMessage}</p>
                   </div>
                 )}
               </div>
 
-              <div className="divider border-white"></div>
-
-              <div className="flex justify-between items-center py-2">
-                <span className="text-white/70">Total Price:</span>
-                <span className="text-lg font-bold text-primary">
-                  ₱
-                  {((variant?.price ?? product?.price ?? 0) * quantity).toFixed(
-                    2
-                  )}
-                </span>
+              {/* Total Price */}
+              <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-700">Total Price:</span>
+                  <span className="text-xl font-bold text-green-600 font-mono">
+                    {formatPrice((variant?.price ?? product?.price ?? 0) * quantity)}
+                  </span>
+                </div>
               </div>
-
-              <button
-                className="btn btn-primary w-full btn-lg shadow-md hover:shadow-lg transition-all duration-200 text-white"
-                onClick={handleAddToCart}
-                disabled={isUserUnverified || quantity > availableStock || availableStock <= 0}
-              >
-                <PlusCircle className="w-5 h-5 mr-2" />
-                Add to Cart
-              </button>
-            </div>
+            </>
           )}
         </div>
+
+        {/* Footer */}
+        {!isUserUnverified && (
+          <div className="border-t-2 border-gray-100 p-6 bg-gray-50 rounded-b-2xl flex-shrink-0">
+            <button
+              className="btn w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg flex items-center justify-center gap-2"
+              onClick={handleAddToCart}
+              disabled={isUserUnverified || quantity > availableStock || availableStock <= 0}
+            >
+              <PlusCircle className="w-5 h-5" />
+              Add to Cart
+            </button>
+          </div>
+        )}
       </Modal>
     </>
   );

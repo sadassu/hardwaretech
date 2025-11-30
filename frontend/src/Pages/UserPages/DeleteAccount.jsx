@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import Modal from "../../components/Modal";
 import api from "../../utils/api";
-import { Trash } from "lucide-react";
+import { Trash, AlertTriangle } from "lucide-react";
 import { useConfirm } from "../../hooks/useConfirm";
 import { useQuickToast } from "../../hooks/useQuickToast";
 
@@ -76,40 +76,70 @@ function DeleteAccount({ className = "", icon: Icon }) {
         <span className="sm:hidden text-white">Delete</span>
       </button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <div className="space-y-4 text-white">
-          <h2 className="text-lg sm:text-xl font-bold text-red-500">
-            Delete Account
-          </h2>
-          <p className="text-sm sm:text-base">
-            This action is irreversible. To confirm, type{" "}
-            <strong>delete</strong> below.
-          </p>
+      <Modal 
+        isOpen={isOpen} 
+        onClose={() => setIsOpen(false)}
+        className="bg-white rounded-2xl max-w-md w-full p-0 max-h-[90vh] flex flex-col"
+      >
+        <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-t-2xl flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Delete Account</h3>
+              <p className="text-red-100 text-sm">This action cannot be undone</p>
+            </div>
+          </div>
+        </div>
 
-          <input
-            type="text"
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            placeholder="Type 'delete' to confirm"
-            className="w-full border border-gray-600 rounded px-3 py-2 text-sm sm:text-base bg-gray-800 text-white placeholder-gray-400"
-          />
+        <div className="flex flex-col flex-1 min-h-0">
+          <div className="p-6 space-y-5 flex-1 overflow-y-auto">
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+              <p className="text-sm text-red-700 font-medium mb-2">
+                ⚠️ Warning: This action is irreversible
+              </p>
+              <p className="text-sm text-gray-700">
+                All your account data, reservations, and history will be permanently deleted. To confirm, type <strong className="text-red-600">delete</strong> below.
+              </p>
+            </div>
 
-          {error && <p className="text-red-400 text-xs sm:text-sm">{error}</p>}
-          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="cursor-pointer w-full sm:w-auto px-4 py-2 border border-gray-500 rounded-md text-sm sm:text-base text-white order-2 sm:order-1"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="cursor-pointer w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-md text-sm sm:text-base order-1 sm:order-2"
-            >
-              Delete
-            </button>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Type "delete" to confirm
+              </label>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="Type 'delete' to confirm"
+                className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 text-gray-900"
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3">
+                <p className="text-red-700 text-sm font-medium">{error}</p>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="flex-1 btn btn-ghost border-2 border-gray-200 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={confirmText.toLowerCase() !== "delete"}
+                className="flex-1 btn bg-gradient-to-r from-red-500 to-red-600 text-white border-0 hover:from-red-600 hover:to-red-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Delete Account
+              </button>
+            </div>
           </div>
         </div>
       </Modal>

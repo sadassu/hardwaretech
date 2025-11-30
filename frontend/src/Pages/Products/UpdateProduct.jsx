@@ -96,83 +96,118 @@ const UpdateProduct = ({ product, onUpdateSuccess }) => {
         <Edit className="w-4 h-4" />
       </button>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
-          Update Product
-        </h2>
-        {error && <div className="text-red-500 mb-4">{error}</div>}
+      <Modal 
+        isOpen={isOpen} 
+        onClose={() => setIsOpen(false)}
+        className="bg-white rounded-2xl max-w-2xl w-full p-0 max-h-[90vh] flex flex-col"
+      >
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <Edit className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Update Product</h2>
+              <p className="text-blue-100 text-sm">Modify product details</p>
+            </div>
+          </div>
+        </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 w-full max-w-md sm:max-w-lg mx-auto px-4 sm:px-0"
-        >
-          <TextInput
-            label="Product Name"
-            type="text"
-            name="name"
-            placeholder="Product Name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className="w-full"
-          />
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="p-6 space-y-5 flex-1 overflow-y-auto">
+            {error && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 mb-4">
+                <p className="text-red-700 text-sm font-medium">{error}</p>
+              </div>
+            )}
 
-          <label className="label">
-            <span className="label-text font-semibold text-gray-200">
-              Description
-            </span>
-          </label>
-          <textarea
-            name="description"
-            placeholder="Description"
-            value={formData.description}
-            onChange={handleChange}
-            className="textarea textarea-bordered w-full bg-[#30475E] text-white"
-          />
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Product Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                placeholder="Product Name"
+                value={formData.name}
+                onChange={handleChange}
+                className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                required
+              />
+            </div>
 
-          <label className="label">
-            <span className="label-text font-semibold text-gray-200">
-              Category
-            </span>
-          </label>
-          <input
-            list="categories-list"
-            name="category"
-            autoComplete="off"
-            placeholder="Select or type a category"
-            value={formData.category}
-            onChange={handleChange}
-            className="input input-bordered w-full bg-[#30475E] text-white"
-            required
-          />
-          <datalist id="categories-list">
-            {categories.map((cat) => (
-              <option key={cat._id} value={cat.name} />
-            ))}
-          </datalist>
-          {loading && (
-            <p className="text-gray-400 text-sm mt-1">Loading categories...</p>
-          )}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Description
+                </label>
+                <span className="text-xs text-gray-500">Optional</span>
+              </div>
+              <textarea
+                name="description"
+                placeholder="Brief description (optional)"
+                value={formData.description}
+                onChange={handleChange}
+                className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                rows={3}
+              />
+            </div>
 
-          <label className="label">
-            <span className="label-text font-semibold text-gray-200">
-              Image URL
-            </span>
-          </label>
-          <textarea
-            name="image"
-            placeholder="Paste image URL"
-            value={formData.image}
-            onChange={handleChange}
-            className="textarea textarea-bordered w-full bg-[#30475E] text-white"
-          />
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Category
+              </label>
+              <input
+                list="categories-list"
+                name="category"
+                autoComplete="off"
+                placeholder="Select or type a category"
+                value={formData.category}
+                onChange={handleChange}
+                className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                required
+              />
+              <datalist id="categories-list">
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat.name} />
+                ))}
+              </datalist>
+              {loading && (
+                <p className="text-gray-400 text-xs mt-1">Loading categories...</p>
+              )}
+            </div>
 
-          <button
-            type="submit"
-            className="btn bg-red-500 text-white border-red-500 w-full"
-          >
-            Update
-          </button>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Image URL
+              </label>
+              <textarea
+                name="image"
+                placeholder="Paste image URL"
+                value={formData.image}
+                onChange={handleChange}
+                className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                rows={2}
+                required
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="flex-1 btn btn-ghost border-2 border-gray-200 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 btn bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg"
+              >
+                Update Product
+              </button>
+            </div>
+          </div>
         </form>
       </Modal>
     </>

@@ -4,6 +4,7 @@ import ReservationDetail from "../models/ReservationDetail.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import ProductVariant from "../models/ProductVariant.js";
 import User from "../models/User.js";
+import { emitGlobalUpdate } from "../services/realtime.js";
 
 // Add reservation with details
 export const createReservation = asyncHandler(async (req, res) => {
@@ -141,6 +142,15 @@ export const createReservation = asyncHandler(async (req, res) => {
     res.status(201).json({
       message: "Reservation created",
       reservation,
+    });
+
+    // ✅ Explicitly trigger Pusher update for new reservation (after response is sent)
+    // This ensures the update is sent even if middleware doesn't catch it
+    emitGlobalUpdate({
+      method: "POST",
+      path: "/api/reservations",
+      statusCode: 201,
+      topics: ["reservations"],
     });
   } catch (err) {
     await session.abortTransaction();

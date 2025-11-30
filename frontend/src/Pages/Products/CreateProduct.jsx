@@ -6,6 +6,7 @@ import { useCategoriesStore } from "../../store/categoriesStore.js";
 import { useProductStore } from "../../store/productStore.js";
 import { useConfirm } from "../../hooks/useConfirm";
 import { useQuickToast } from "../../hooks/useQuickToast";
+import { Plus } from "lucide-react";
 
 const CreateProduct = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -100,23 +101,27 @@ const CreateProduct = () => {
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        className="bg-white text-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl p-0"
+        className="bg-white rounded-2xl max-w-2xl w-full p-0 max-h-[90vh] flex flex-col"
       >
-        <div className="border-b border-gray-200 px-6 py-4 flex flex-col gap-1">
-          <h2 className="text-xl font-semibold">Create Product</h2>
-          <p className="text-sm text-gray-500">
-            Provide basic details to add a new product to the catalog.
-          </p>
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <Plus className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Create Product</h2>
+              <p className="text-blue-100 text-sm">Add a new product to the catalog</p>
+            </div>
+          </div>
         </div>
 
-        <div className="p-6">
-          {localError && (
-            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              {localError}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="p-6 space-y-5 flex-1 overflow-y-auto">
+            {localError && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 mb-4">
+                <p className="text-red-700 text-sm font-medium">{localError}</p>
+              </div>
+            )}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -128,7 +133,7 @@ const CreateProduct = () => {
             placeholder="Product Name"
             value={formData.name}
             onChange={handleChange}
-                  className="input input-bordered w-full bg-white text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
             required
           />
               </div>
@@ -145,7 +150,7 @@ const CreateProduct = () => {
                   placeholder="Brief description (optional)"
             value={formData.description}
             onChange={handleChange}
-                  className="textarea textarea-bordered w-full bg-white text-gray-900"
+                  className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
                   rows={3}
           />
               </div>
@@ -161,7 +166,7 @@ const CreateProduct = () => {
             placeholder="Select or type a category"
             value={formData.category}
             onChange={handleChange}
-                  className="input input-bordered w-full bg-white text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
             required
           />
           <datalist id="categories-list">
@@ -185,30 +190,30 @@ const CreateProduct = () => {
             placeholder="Paste image URL"
             value={formData.image}
             onChange={handleChange}
-                  className="textarea textarea-bordered w-full bg-white text-gray-900"
+                  className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
                   rows={2}
                   required
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex gap-3 pt-2 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="btn btn-ghost border border-gray-200"
+                className="flex-1 btn btn-ghost border-2 border-gray-200 hover:bg-gray-100"
               >
                 Cancel
               </button>
           <button
             type="submit"
-                className="btn bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                className="flex-1 btn bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg"
           >
                 Create Product
           </button>
             </div>
+          </div>
         </form>
-        </div>
       </Modal>
 
       {/* ✅ Show only success toast */}

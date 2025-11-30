@@ -143,14 +143,14 @@ export function StockList({ type }) {
                           className={`inline-flex items-center px-2 py-1 rounded-lg text-sm font-bold ${
                         variant.quantity === 0
                               ? "bg-red-100 text-red-700"
-                          : variant.quantity <= 50
+                          : variant.quantity <= 15
                               ? "bg-amber-100 text-amber-700"
                               : "bg-green-100 text-green-700"
                       }`}
                     >
                       {variant.quantity}
                           {variant.quantity === 0 && " - Out"}
-                          {variant.quantity > 0 && variant.quantity <= 50 && " - Low"}
+                          {variant.quantity > 0 && variant.quantity <= 15 && " - Low"}
                     </span>
                       </div>
                     </div>

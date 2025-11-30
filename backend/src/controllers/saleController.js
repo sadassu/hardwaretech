@@ -90,15 +90,15 @@ export const createSale = asyncHandler(async (req, res) => {
       const categoryName = variant?.product?.category?.name || "";
       
       return {
-        productVariantId: item.variantId,
+      productVariantId: item.variantId,
         productName: productName, // Store product name directly
         categoryName: categoryName, // Store category name for persistence
         size: item.size || variant?.size || "",
         unit: item.unit || variant?.unit || "",
         color: variant?.color || "",
-        quantity: item.quantity,
-        price: item.price,
-        total: item.total,
+      quantity: item.quantity,
+      price: item.price,
+      total: item.total,
       };
     });
 

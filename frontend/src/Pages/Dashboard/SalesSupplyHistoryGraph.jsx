@@ -38,11 +38,57 @@ function SalesSupplyHistoryGraph() {
     [option, year, month]
   );
 
+  // Format date for display (MMM DD format)
+  const formatDateShort = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (isNaN(date)) return dateString;
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Process data to add formatted period with date range for weeks
+  const processedData = useMemo(() => {
+    if (!salesData?.data) return [];
+    
+    return salesData.data.map((item) => {
+      if (option === "month" && item.weekStart && item.weekEnd) {
+        // For weeks, format as "1st week - Nov 3 to Nov 9"
+        const startDate = formatDateShort(item.weekStart);
+        const endDate = formatDateShort(item.weekEnd);
+        
+        // Extract the week part from period (e.g., "1st week of Nov" -> "1st week")
+        const weekPart = item.period.split(" of ")[0] || item.period;
+        
+        const formattedLabel = `${weekPart} - ${startDate} to ${endDate}`;
+        return {
+          ...item,
+          periodWithRange: formattedLabel,
+          periodTooltip: formattedLabel,
+        };
+      }
+      return {
+        ...item,
+        periodWithRange: item.period,
+        periodTooltip: item.period,
+      };
+    });
+  }, [salesData?.data, option]);
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      // The label might be the formatted period with range, find the matching data point
+      const dataPoint = processedData.find((d) => 
+        d.period === label || d.periodWithRange === label || d.periodTooltip === label
+      );
+      // Use periodTooltip for display (includes date range for weeks)
+      const displayLabel = dataPoint?.periodTooltip || label;
+      
       return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-          <p className="font-semibold text-gray-800 mb-2">{label}</p>
+          <p className="font-semibold text-gray-800 mb-2">{displayLabel}</p>
           {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               <span className="font-medium">{entry.name}:</span>{" "}
@@ -204,15 +250,23 @@ function SalesSupplyHistoryGraph() {
           <div className="bg-white rounded-xl p-4 sm:p-6 shadow-inner">
             <ResponsiveContainer width="100%" height={350} className="sm:h-[400px]">
             <LineChart
-              data={salesData.data}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              data={processedData}
+              margin={{ top: 5, right: 30, left: 20, bottom: option === "month" ? 80 : 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
-                dataKey="period"
-                tick={{ fontSize: 13, fill: "#6b7280", fontWeight: 500 }}
+                dataKey={option === "month" ? "periodWithRange" : "period"}
+                tick={{ 
+                  fontSize: option === "month" ? 9 : 13, 
+                  fill: "#6b7280", 
+                  fontWeight: 500 
+                }}
                 tickMargin={10}
                 stroke="#d1d5db"
+                angle={option === "month" ? -45 : 0}
+                textAnchor={option === "month" ? "end" : "middle"}
+                height={option === "month" ? 100 : 30}
+                interval={0}
               />
               <YAxis
                 tick={{ fontSize: 13, fill: "#6b7280", fontWeight: 500 }}
