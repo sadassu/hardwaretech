@@ -12,6 +12,11 @@ const ReservationDetailSchema = new mongoose.Schema({
     ref: "ProductVariant",
     required: true,
   },
+  // Store product and variant details for persistence (even if product/variant is deleted)
+  productName: { type: String },
+  variantSize: { type: String },
+  variantUnit: { type: String },
+  variantColor: { type: String },
   quantity: { type: Number, required: true },
   size: { type: String },
   unit: {

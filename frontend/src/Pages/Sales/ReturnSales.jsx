@@ -1,19 +1,19 @@
 import React, { useState } from "react";
 import { RotateCcw, AlertTriangle } from "lucide-react";
 import Modal from "../../components/Modal";
-import { useToast } from "../../context/ToastContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import api from "../../utils/api";
 import { useSalesContext } from "../../hooks/useSaleContext";
 import { useConfirm } from "../../hooks/useConfirm";
+import { useQuickToast } from "../../hooks/useQuickToast";
 
 const ReturnSales = ({ sale }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
-  const setToast = useToast();
   const { user } = useAuthContext();
   const { dispatch } = useSalesContext();
   const confirm = useConfirm();
+  const quickToast = useQuickToast();
 
   const handleReturn = async () => {
     if (!user) return;
@@ -39,11 +39,9 @@ const ReturnSales = ({ sale }) => {
         }
       );
 
-      setToast({
-        show: true,
-        color: "border-green-500 bg-green-100 text-green-700",
-        header: "Success",
-        message: "Sale returned successfully.",
+      quickToast({
+        title: "Sale returned",
+        icon: "success",
       });
 
       const refreshed = await api.get("/sales", {
@@ -61,11 +59,10 @@ const ReturnSales = ({ sale }) => {
       });
     } catch (error) {
       console.error("Return sale error:", error);
-      setToast({
-        show: true,
-        color: "border-red-500 bg-red-100 text-red-700",
-        header: "Error",
-        message: error.response?.data?.message || "Failed to return sale.",
+      quickToast({
+        title: "Failed to return sale",
+        message: error.response?.data?.message || "An error occurred while returning the sale.",
+        icon: "error",
       });
     } finally {
       setIsReturning(false);

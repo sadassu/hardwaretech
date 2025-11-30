@@ -122,11 +122,11 @@ function SalesSupplyHistoryGraph() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
-          <select
-            value={option}
-            onChange={(e) => setOption(e.target.value)}
-            className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer shadow-sm"
-          >
+        <select
+          value={option}
+          onChange={(e) => setOption(e.target.value)}
+          className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer shadow-sm"
+        >
             <option value="month">📅 By Month</option>
             <option value="year">📊 By Year</option>
             <option value="overall">🌐 Overall</option>
@@ -173,7 +173,7 @@ function SalesSupplyHistoryGraph() {
                       {m.label}
                     </option>
                   ))}
-                </select>
+        </select>
               )}
             </>
           )}

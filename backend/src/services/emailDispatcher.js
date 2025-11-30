@@ -21,7 +21,7 @@ class EmailDispatcher {
   constructor() {
     this.queue = [];
     this.active = 0;
-    this.maxConcurrent = 4;
+    this.maxConcurrent = 8; // Increased from 4 to 8 for faster email processing
   }
 
   enqueue(job) {

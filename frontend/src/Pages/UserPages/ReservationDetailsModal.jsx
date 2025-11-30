@@ -90,6 +90,11 @@ function ReservationDetailsModal({
             {selectedReservation.reservationDetails.map((detail, index) => {
               const variant = detail?.productVariantId;
               const product = variant?.product;
+              // Use stored names if product/variant is deleted
+              const productName = product?.name || detail.productName || "Unknown Product";
+              const variantSize = variant?.size || detail.variantSize || detail.size || "N/A";
+              const variantUnit = variant?.unit || detail.variantUnit || detail.unit || "N/A";
+              const variantColor = variant?.color || detail.variantColor;
 
               // Safely compute price and subtotal (locked at reservation time)
               const price =
@@ -106,13 +111,8 @@ function ReservationDetailsModal({
                   {/* Product Info */}
                   <div className="mb-3">
                     <h5 className="font-semibold text-lg text-white">
-                      {product?.name || "Unknown Product"}
+                      {productName}
                     </h5>
-                    {!product && (
-                      <p className="text-sm text-red-400">
-                        ⚠️ Product data not found (might have been deleted)
-                      </p>
-                    )}
                   </div>
 
                   {/* Variant Details */}
@@ -120,18 +120,18 @@ function ReservationDetailsModal({
                     <div>
                       <span className="text-gray-400">Size:</span>{" "}
                       <span className="text-gray-200">
-                        {variant?.size || "N/A"}
+                        {variantSize}
                       </span>
                     </div>
 
-                    {variant?.color && (
+                    {variantColor && (
                       <div>
                         <span className="text-gray-400">Color:</span>{" "}
                         <span className="inline-flex items-center gap-2 text-gray-200">
-                          <span>{variant.color}</span>
+                          <span>{variantColor}</span>
                           <span
                             className="inline-block w-4 h-4 rounded-full border border-gray-400"
-                            style={{ backgroundColor: variant.color }}
+                            style={{ backgroundColor: variantColor }}
                           ></span>
                         </span>
                       </div>
@@ -140,7 +140,7 @@ function ReservationDetailsModal({
                     <div>
                       <span className="text-gray-400">Unit:</span>{" "}
                       <span className="text-gray-200">
-                        {variant?.unit || "N/A"}
+                        {variantUnit}
                       </span>
                     </div>
 

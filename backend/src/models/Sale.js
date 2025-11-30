@@ -7,8 +7,11 @@ const saleItemSchema = new mongoose.Schema({
     ref: "ProductVariant",
     required: true,
   },
+  productName: { type: String }, // Store product name for persistence
+  categoryName: { type: String }, // Store category name for persistence
   size: { type: String },
   unit: { type: String },
+  color: { type: String }, // Store color for persistence
   quantity: { type: Number, required: true },
   price: { type: Number, required: true },
   subtotal: { type: Number },

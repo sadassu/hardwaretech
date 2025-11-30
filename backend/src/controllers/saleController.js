@@ -73,7 +73,10 @@ export const createSale = asyncHandler(async (req, res) => {
     const variantsWithProducts = await ProductVariant.find({
       _id: { $in: variantIds },
     })
-      .populate("product")
+      .populate({
+        path: "product",
+        populate: { path: "category" }
+      })
       .session(session);
 
     const variantMap = new Map();
@@ -84,10 +87,12 @@ export const createSale = asyncHandler(async (req, res) => {
     const saleItems = items.map((item) => {
       const variant = variantMap.get(item.variantId.toString());
       const productName = variant?.product?.name || "Unknown Product";
+      const categoryName = variant?.product?.category?.name || "";
       
       return {
         productVariantId: item.variantId,
         productName: productName, // Store product name directly
+        categoryName: categoryName, // Store category name for persistence
         size: item.size || variant?.size || "",
         unit: item.unit || variant?.unit || "",
         color: variant?.color || "",

@@ -55,8 +55,13 @@ export const useLogin = () => {
       // Handle captcha or login errors
       if (err.response?.data?.error === "Invalid reCAPTCHA") {
         setError("Captcha verification failed. Please try again.");
+      } else if (err.response?.status === 403 && err.response?.data?.requiresVerification) {
+        // User is not verified - return special error
+        setError(err.response?.data?.error || "Please verify your email before logging in.");
+        // Return error with verification info
+        return { requiresVerification: true, email: err.response?.data?.email };
       } else {
-        setError(err.response?.data?.message || "Login failed");
+        setError(err.response?.data?.error || err.response?.data?.message || "Login failed");
       }
       throw err; // Re-throw to let component handle it
     }

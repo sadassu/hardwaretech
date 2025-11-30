@@ -1,10 +1,14 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useLogin } from "../../hooks/useLogin";
+import { useAuthContext } from "../../hooks/useAuthContext";
 import ReCAPTCHA from "react-google-recaptcha";
+import api from "../../utils/api";
 
 function Login() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { dispatch } = useAuthContext();
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ""
   );
@@ -25,7 +29,14 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { login, error, isLoading } = useLogin();
   const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaError, setCaptchaError] = useState(false);
   const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState("");
+  const [verificationMessage, setVerificationMessage] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -37,14 +48,89 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (recaptchaSiteKey && !captchaToken) {
+    // Only require reCAPTCHA if it's configured and hasn't errored
+    if (recaptchaSiteKey && !captchaError && !captchaToken) {
       alert("Please complete the reCAPTCHA.");
       return;
     }
 
-    // ✅ The useLogin hook already handles role-based navigation
-    // No need to navigate here - it would override the hook's navigation
-    await login(formData.email, formData.password, captchaToken || "");
+    try {
+      const result = await login(formData.email, formData.password, captchaToken || "");
+      // If login returns requiresVerification, show verification input
+      if (result && result.requiresVerification) {
+        setVerificationEmail(result.email || formData.email);
+        setShowVerification(true);
+      }
+    } catch (err) {
+      // Error is already handled by useLogin hook
+      // Check if it's a verification error
+      if (err.response?.status === 403 && err.response?.data?.requiresVerification) {
+        setVerificationEmail(err.response?.data?.email || formData.email);
+        setShowVerification(true);
+      }
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    
+    if (!verificationCode || verificationCode.length !== 6) {
+      setVerificationError("Please enter a valid 6-digit code.");
+      return;
+    }
+
+    setVerificationError("");
+    setVerifying(true);
+
+    try {
+      const response = await api.post("/auth/confirm-verification-code", {
+        email: verificationEmail,
+        code: verificationCode,
+      });
+
+      const { token, userId, roles, name, email, avatar, isVerified } = response.data;
+
+      // Save user to localStorage
+      localStorage.setItem("user", JSON.stringify({
+        userId,
+        roles,
+        name,
+        email,
+        avatar,
+        isVerified,
+        token,
+      }));
+
+      // Update auth context
+      dispatch({ type: "LOGIN", payload: {
+        userId,
+        roles,
+        name,
+        email,
+        avatar,
+        isVerified,
+        token,
+      }});
+
+      setVerificationMessage("Email verified successfully! Redirecting...");
+      
+      // Navigate based on role
+      setTimeout(() => {
+        if (roles.includes("admin")) {
+          navigate("/dashboard", { replace: true });
+        } else if (roles.includes("cashier")) {
+          navigate("/pos", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
+      }, 1500);
+    } catch (err) {
+      setVerificationError(
+        err.response?.data?.error || "Failed to verify code. Please try again."
+      );
+    } finally {
+      setVerifying(false);
+    }
   };
 
   return (
@@ -73,13 +159,107 @@ function Login() {
         )}
 
         {/* Error Message */}
-        {error && (
+        {error && !showVerification && (
           <div className="bg-red-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center animate-pulse">
             {error}
           </div>
         )}
 
+        {/* Verification Code Input */}
+        {showVerification && (
+          <div className="mb-4">
+            <p className="text-white text-sm mb-2 text-center">
+              Please verify your email. A code has been sent to:
+            </p>
+            <div className="text-center font-semibold text-yellow-400 mb-4 break-words">
+              {verificationEmail}
+            </div>
+
+            {verificationMessage && (
+              <div className="bg-green-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center">
+                {verificationMessage}
+              </div>
+            )}
+
+            {verificationError && (
+              <div className="bg-red-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center animate-pulse">
+                {verificationError}
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
+              <div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setVerificationCode(value);
+                    }}
+                    placeholder="Enter 6-digit code"
+                    className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none text-center text-2xl tracking-widest"
+                    maxLength={6}
+                    disabled={verifying}
+                    required
+                  />
+                  <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
+                    Verification Code
+                  </span>
+                </div>
+                <p className="text-sm text-white mx-2 mt-2">
+                  Enter the 6-digit code sent to your email
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={verifying || verificationCode.length !== 6}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition-transform duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {verifying ? "Verifying..." : "Verify Email"}
+              </button>
+            </form>
+
+            <div className="text-center mt-4">
+              <p className="text-gray-300 text-sm">
+                Didn't receive the code?{" "}
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.post("/auth/send-verification-code", {
+                        email: verificationEmail,
+                      });
+                      setVerificationMessage("Verification code resent to your email.");
+                      setVerificationError("");
+                    } catch (err) {
+                      setVerificationError(
+                        err.response?.data?.error || "Failed to resend code."
+                      );
+                    }
+                  }}
+                  className="text-yellow-400 hover:text-yellow-500 font-semibold transition"
+                >
+                  Resend Code
+                </button>
+              </p>
+              <button
+                onClick={() => {
+                  setShowVerification(false);
+                  setVerificationCode("");
+                  setVerificationError("");
+                  setVerificationMessage("");
+                }}
+                className="text-gray-300 text-sm mt-2 hover:text-white transition"
+              >
+                Back to Login
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Form */}
+        {!showVerification && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 relative">
           {/* Email */}
           <div className="relative">
@@ -121,11 +301,27 @@ function Login() {
           </div>
 
           {/* ✅ reCAPTCHA - Only render if site key is configured */}
-          {recaptchaSiteKey && (
+          {recaptchaSiteKey && !captchaError && (
             <ReCAPTCHA
               sitekey={recaptchaSiteKey}
-              onChange={(token) => setCaptchaToken(token)}
+              onChange={(token) => {
+                setCaptchaToken(token);
+                setCaptchaError(false);
+              }}
+              onError={() => {
+                // Silently handle reCAPTCHA errors - they're expected if key is invalid/not configured
+                setCaptchaError(true);
+                setCaptchaToken(""); // Clear token since reCAPTCHA failed
+              }}
+              onExpired={() => {
+                setCaptchaToken("");
+              }}
             />
+          )}
+          {captchaError && recaptchaSiteKey && (
+            <div className="bg-yellow-600/90 text-white text-xs px-4 py-2 rounded text-center">
+              reCAPTCHA is unavailable. You can still proceed with login.
+            </div>
           )}
 
           {/* Submit */}
@@ -137,6 +333,7 @@ function Login() {
             {isLoading ? "Signing In..." : "Log in"}
           </button>
         </form>
+        )}
 
         {/* Divider */}
         <div className="flex items-center my-4">

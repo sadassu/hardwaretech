@@ -15,7 +15,10 @@ const resolveSocketUrl = () => {
     url.pathname = pathname === "/" ? "" : pathname;
     return url.toString().replace(/\/$/, "");
   } catch (err) {
-    console.warn("Unable to parse backend base URL for sockets:", err);
+    // Only warn in development
+    if (import.meta.env.DEV) {
+      console.warn("Unable to parse backend base URL for sockets:", err);
+    }
     return "";
   }
 };
@@ -48,7 +51,10 @@ export const useLiveUpdates = () => {
     const socketUrl = resolveSocketUrl();
     
     if (!socketUrl) {
-      console.warn("⚠️ Socket URL not configured. Live updates disabled.");
+      // Only warn in development
+      if (import.meta.env.DEV) {
+        console.warn("⚠️ Socket URL not configured. Live updates disabled.");
+      }
       return;
     }
 
@@ -69,25 +75,38 @@ export const useLiveUpdates = () => {
 
       try {
         socketInstance = io(socketUrl, {
-          transports: ["websocket", "polling"],
+          transports: ["websocket", "polling"], // WebSocket first for better performance
           withCredentials: true,
           reconnection: true,
           reconnectionDelay: RECONNECT_DELAY,
           reconnectionDelayMax: 5000,
           reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
           timeout: 10000,
+          // Performance optimizations
+          upgrade: true, // Allow transport upgrade
+          rememberUpgrade: true, // Remember transport preference
+          forceNew: false, // Reuse existing connection if available
+          // Compression for faster data transfer
+          compression: true,
         });
 
         socketInstance.on("connect", () => {
           if (!isMountedRef.current) return;
           reconnectAttempts = 0;
-          console.log("✅ WebSocket connected:", socketInstance.id);
+          // Only log in development
+          if (import.meta.env.DEV) {
+            console.log("✅ WebSocket connected:", socketInstance.id);
+          }
           dispatchLiveEvent({ topics: ["general"], message: "socket-connected" });
         });
 
         socketInstance.on("disconnect", (reason) => {
           if (!isMountedRef.current) return;
-          console.log("🔌 WebSocket disconnected:", reason);
+          
+          // "transport close" is normal when switching transports - don't log it
+          if (reason !== "transport close" && import.meta.env.DEV) {
+            console.log("🔌 WebSocket disconnected:", reason);
+          }
           
           // Only attempt manual reconnect if it wasn't intentional
           if (reason === "io server disconnect") {
@@ -97,18 +116,26 @@ export const useLiveUpdates = () => {
             // Client disconnected intentionally, don't reconnect
             return;
           }
+          // "transport close" is handled automatically by Socket.IO - no action needed
         });
 
         socketInstance.on("connect_error", (error) => {
           if (!isMountedRef.current) return;
-          console.warn("⚠️ WebSocket connection error:", error.message);
           
-          // Don't log connection refused errors repeatedly
-          if (!error.message.includes("xhr poll error")) {
-            reconnectAttempts++;
-            if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-              console.warn("⚠️ Max reconnection attempts reached. Live updates disabled.");
-            }
+          // Filter out routine connection errors that are expected during reconnection
+          const isRoutineError = 
+            error.message.includes("xhr poll error") ||
+            error.message === "websocket error" ||
+            error.message.includes("transport close");
+          
+          // Only log significant errors, not routine connection attempts
+          if (!isRoutineError && import.meta.env.DEV) {
+            console.warn("⚠️ WebSocket connection error:", error.message);
+          }
+          
+          reconnectAttempts++;
+          if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS && import.meta.env.DEV) {
+            console.warn("⚠️ Max reconnection attempts reached. Live updates disabled.");
           }
         });
 
@@ -119,33 +146,38 @@ export const useLiveUpdates = () => {
 
         socketInstance.on("reconnect", (attemptNumber) => {
           if (!isMountedRef.current) return;
-          console.log(`✅ WebSocket reconnected after ${attemptNumber} attempts`);
           reconnectAttempts = 0;
+          // Only log in development
+          if (import.meta.env.DEV && attemptNumber > 1) {
+            console.log(`✅ WebSocket reconnected after ${attemptNumber} attempts`);
+          }
         });
 
         socketInstance.on("reconnect_error", (error) => {
           if (!isMountedRef.current) return;
-          console.warn("⚠️ WebSocket reconnection error:", error.message);
+          // Only log in development
+          if (import.meta.env.DEV) {
+            console.warn("⚠️ WebSocket reconnection error:", error.message);
+          }
         });
 
         socketInstance.on("reconnect_failed", () => {
           if (!isMountedRef.current) return;
+          // Always log critical failures
           console.warn("❌ WebSocket reconnection failed. Please refresh the page.");
         });
 
       } catch (error) {
+        // Always log initialization errors as they're critical
         console.error("❌ Failed to initialize WebSocket:", error);
       }
     };
 
-    // Small delay to ensure server is ready
-    const initTimeout = setTimeout(() => {
-      connectSocket();
-    }, 100);
+    // Immediate connection for faster startup (removed delay)
+    connectSocket();
 
     return () => {
       isMountedRef.current = false;
-      clearTimeout(initTimeout);
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }

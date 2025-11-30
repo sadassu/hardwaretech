@@ -51,13 +51,37 @@ const server = http.createServer(app);
 
 // Middleware
 app.use(express.json());
-app.use(rateLimiter);
+
+// CORS must be before rate limiter to handle preflight requests
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // In development, allow all origins
+      if (process.env.NODE_ENV !== "production") {
+        return callback(null, true);
+      }
+      
+      // In production, check against allowed origins
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    exposedHeaders: ["Content-Range", "X-Content-Range"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
+
+// Rate limiter after CORS
+app.use(rateLimiter);
 
 app.use(passport.initialize());
 

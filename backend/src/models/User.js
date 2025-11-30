@@ -69,8 +69,8 @@ userSchema.statics.signup = async ({
   email,
   password,
   confirmPassword,
-  verificationTokenHash,
-  verificationTokenExpires,
+  verificationCode,
+  verificationCodeExpires,
   avatar,
 }) => {
   if (!email || !password || !name || !confirmPassword) {
@@ -111,9 +111,10 @@ userSchema.statics.signup = async ({
     name: name.trim(),
     email,
     password: hash,
-    verificationTokenHash,
-    verificationTokenExpires,
+    verificationCode,
+    verificationCodeExpires,
     avatar,
+    isVerified: false, // User must verify before they can use the account
   });
 
   return user;

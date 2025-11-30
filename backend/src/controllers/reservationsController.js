@@ -3,6 +3,7 @@ import Reservation from "../models/Reservation.js";
 import ReservationDetail from "../models/ReservationDetail.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import ProductVariant from "../models/ProductVariant.js";
+import User from "../models/User.js";
 
 // Add reservation with details
 export const createReservation = asyncHandler(async (req, res) => {
@@ -21,8 +22,13 @@ export const createReservation = asyncHandler(async (req, res) => {
   session.startTransaction();
 
   try {
+    // Get user info to store for persistence
+    const user = await User.findById(req.user._id).select("name email").session(session);
+    
     const reservationData = {
       userId: req.user._id,
+      userName: user?.name || "Unknown User",
+      userEmail: user?.email || "",
       reservationDate: reservationDate || Date.now(),
       status: "pending",
       totalPrice: 0,
@@ -48,8 +54,9 @@ export const createReservation = asyncHandler(async (req, res) => {
       ];
 
       const variants = await ProductVariant.find({ _id: { $in: variantIds } })
-        .select("price size unit")
-        .lean();
+        .populate("product", "name")
+        .select("price size unit color product")
+        .session(session);
       const variantMap = new Map(
         variants.map((variant) => [String(variant._id), variant])
       );
@@ -66,6 +73,10 @@ export const createReservation = asyncHandler(async (req, res) => {
         return {
           reservationId: reservation._id,
           productVariantId: variantId,
+          productName: variant?.product?.name || "Unknown Product",
+          variantSize: variant?.size || d.size || "",
+          variantUnit: variant?.unit || d.unit || "",
+          variantColor: variant?.color || "",
           quantity,
           size: d.size || variant?.size,
           unit: d.unit || variant?.unit,
@@ -250,8 +261,8 @@ export const updateReservation = asyncHandler(async (req, res) => {
 
   const variantDocs = variantIds.length
     ? await ProductVariant.find({ _id: { $in: variantIds } })
-        .select("price size unit")
-        .lean()
+        .populate("product", "name")
+        .select("price size unit color product")
     : [];
   const variantMap = new Map(
     variantDocs.map((variant) => [String(variant._id), variant])
@@ -314,6 +325,30 @@ export const updateReservation = asyncHandler(async (req, res) => {
       hasChanges = true;
     }
 
+    // Update stored product/variant information
+    // Always update if variant exists (to keep it current), but preserve if variant is deleted
+    if (variant) {
+      // Update stored information when variant exists
+      const newProductName = variant.product?.name || "Unknown Product";
+      if (detail.productName !== newProductName) {
+        detail.productName = newProductName;
+        hasChanges = true;
+      }
+      if (variant.size && detail.variantSize !== variant.size) {
+        detail.variantSize = variant.size;
+        hasChanges = true;
+      }
+      if (variant.unit && detail.variantUnit !== variant.unit) {
+        detail.variantUnit = variant.unit;
+        hasChanges = true;
+      }
+      if (variant.color && detail.variantColor !== variant.color) {
+        detail.variantColor = variant.color;
+        hasChanges = true;
+      }
+    }
+    // If variant doesn't exist, keep the stored information (don't overwrite)
+
     if (hasChanges) {
       await detail.save();
       updatedDetails.push(detail.productVariantId);
@@ -336,6 +371,10 @@ export const updateReservation = asyncHandler(async (req, res) => {
     const newDetail = new ReservationDetail({
       reservationId,
       productVariantId: variantId,
+      productName: variant?.product?.name || "Unknown Product",
+      variantSize: variant?.size || size || "",
+      variantUnit: variant?.unit || unit || "",
+      variantColor: variant?.color || "",
       quantity,
       size,
       unit,
@@ -583,21 +622,28 @@ export const getAllReservations = asyncHandler(async (req, res) => {
       const userId = reservation.userId;
       const reservationId = reservation._id.toString();
       
-      // Search in user name
-      const userNameMatch = userId?.name?.toLowerCase().includes(searchLower);
-      // Search in user email
-      const userEmailMatch = userId?.email?.toLowerCase().includes(searchLower);
+      // Search in user name (check both populated and stored names)
+      const userNameMatch = userId?.name?.toLowerCase().includes(searchLower) ||
+                            reservation.userName?.toLowerCase().includes(searchLower);
+      // Search in user email (check both populated and stored emails)
+      const userEmailMatch = userId?.email?.toLowerCase().includes(searchLower) ||
+                             reservation.userEmail?.toLowerCase().includes(searchLower);
       // Search in reservation ID (last 8 characters)
       const reservationIdMatch = reservationId.toLowerCase().includes(searchLower) || 
                                  reservationId.slice(-8).toLowerCase().includes(searchLower);
       
-      // Search in product names
+      // Search in product names (check both populated and stored names)
       let productNameMatch = false;
       if (reservation.reservationDetails && reservation.reservationDetails.length > 0) {
         productNameMatch = reservation.reservationDetails.some((detail) => {
           const product = detail.productVariantId?.product;
+          const storedProductName = detail.productName;
+          // Check both populated product name and stored product name
           if (product && product.name) {
             return product.name.toLowerCase().includes(searchLower);
+          }
+          if (storedProductName) {
+            return storedProductName.toLowerCase().includes(searchLower);
           }
           return false;
         });

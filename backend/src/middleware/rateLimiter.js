@@ -1,6 +1,11 @@
 import { ratelimit } from "../config/upstash.js";
 
 const rateLimiter = async (req, res, next) => {
+  // Skip rate limiting for OPTIONS requests (CORS preflight)
+  if (req.method === "OPTIONS") {
+    return next();
+  }
+
   try {
     const { success } = await ratelimit.limit("my-limit-key");
 
