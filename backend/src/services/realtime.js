@@ -33,15 +33,12 @@ export const initRealtime = () => {
 
 // Add a new SSE client connection
 export const addSSEClient = (res) => {
-  sseClients.add(res);
+  // Don't add if already in set
+  if (sseClients.has(res)) {
+    return;
+  }
   
-  // Remove client when connection closes
-  res.on("close", () => {
-    sseClients.delete(res);
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`🔌 SSE client disconnected. Total clients: ${sseClients.size}`);
-    }
-  });
+  sseClients.add(res);
 
   if (process.env.NODE_ENV !== "production") {
     console.log(`✅ SSE client connected. Total clients: ${sseClients.size}`);
@@ -57,52 +54,64 @@ export const removeSSEClient = (res) => {
 export const getClientCount = () => sseClients.size;
 
 export const emitGlobalUpdate = (payload = {}) => {
+  // Fast path: return early if no clients
   if (sseClients.size === 0) {
-    // Only warn in development if no clients are connected
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("⚠️ No SSE clients connected. Cannot emit update.");
-    }
     return;
   }
 
+  // Prepare payload efficiently
   const enrichedPayload = {
     timestamp: Date.now(),
-    message: "System updated",
+    message: payload.message || "System updated",
     ...payload,
   };
 
+  // Derive topics if not provided
   if (!enrichedPayload.topics || !enrichedPayload.topics.length) {
     enrichedPayload.topics = deriveTopicsFromPath(enrichedPayload.path);
   }
 
-  // Log in development for debugging
-  if (process.env.NODE_ENV !== "production") {
-    console.log(`📡 Emitting SSE update for topics:`, enrichedPayload.topics);
-  }
-
-  // Send to all connected clients
+  // Serialize message once (reused for all clients)
   const message = `data: ${JSON.stringify(enrichedPayload)}\n\n`;
   const deadClients = [];
 
+  // Send to all connected clients efficiently
   sseClients.forEach((res) => {
     try {
-      res.write(message);
+      // Check if response is still writable before attempting to write
+      if (!res.writable || res.destroyed) {
+        deadClients.push(res);
+        return;
+      }
+      
+      // Use res.write() which is non-blocking and fast
+      const written = res.write(message);
+      
+      // If write buffer is full, handle backpressure
+      if (!written) {
+        res.once("drain", () => {
+          // Buffer drained, can continue writing
+        });
+      }
     } catch (error) {
       // Client connection is dead, mark for removal
       deadClients.push(res);
       if (process.env.NODE_ENV !== "production") {
-        console.warn(`⚠️ Failed to send SSE update to client:`, error.message);
+        console.warn(`⚠️ Failed to write to SSE client: ${error.message}`);
       }
     }
   });
 
-  // Clean up dead clients
-  deadClients.forEach((res) => {
-    sseClients.delete(res);
-  });
+  // Clean up dead clients in batch
+  if (deadClients.length > 0) {
+    deadClients.forEach((res) => {
+      sseClients.delete(res);
+    });
+  }
 
-  if (process.env.NODE_ENV !== "production") {
-    console.log(`✅ Emitted SSE update to ${sseClients.size} client(s)`);
+  // Log only in development
+  if (process.env.NODE_ENV !== "production" && sseClients.size > 0) {
+    console.log(`📡 SSE update emitted: ${enrichedPayload.topics.join(", ")} → ${sseClients.size} client(s)`);
   }
 };
 
