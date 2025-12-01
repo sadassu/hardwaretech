@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import ProductVariant from "../models/ProductVariant.js";
 import User from "../models/User.js";
 import { emitGlobalUpdate } from "../services/realtime.js";
+import { logReservationUpdate } from "../utils/reservationUpdates.js";
 
 // Add reservation with details
 export const createReservation = asyncHandler(async (req, res) => {
@@ -95,6 +96,25 @@ export const createReservation = asyncHandler(async (req, res) => {
 
     await session.commitTransaction();
 
+    // ✅ Log reservation creation - MUST be saved to database
+    // This ensures the update is persisted even if page reloads
+    try {
+      await logReservationUpdate({
+        reservationId: reservation._id,
+        updateType: "created",
+        updatedBy: req.user._id,
+        description: `Reservation created with ${reservationDetails?.length || 0} item(s). Total: ₱${reservation.totalPrice.toFixed(2)}`,
+        newValue: "pending",
+        metadata: {
+          totalPrice: reservation.totalPrice,
+          itemCount: reservationDetails?.length || 0,
+        },
+      });
+    } catch (logError) {
+      // Log error but don't fail the request
+      console.error("Failed to log reservation creation:", logError);
+    }
+
     // ✅ Send email notification to user for new reservation
     try {
       const populatedReservation = await Reservation.findById(reservation._id).populate("userId", "name email");
@@ -144,16 +164,13 @@ export const createReservation = asyncHandler(async (req, res) => {
       reservation,
     });
 
-    // ✅ Explicitly trigger SSE update for new reservation (after response is sent)
-    // Include userId so frontend can filter updates for specific user
-    const userId = reservation.userId?.toString() || req.user._id?.toString();
+    // ✅ Explicitly trigger Pusher update for new reservation (after response is sent)
+    // This ensures the update is sent even if middleware doesn't catch it
     emitGlobalUpdate({
       method: "POST",
       path: "/api/reservations",
       statusCode: 201,
       topics: ["reservations"],
-      reservationId: reservation._id.toString(),
-      userId: userId,
     });
   } catch (err) {
     await session.abortTransaction();
@@ -188,8 +205,33 @@ export const cancelReservation = asyncHandler(async (req, res) => {
       .json({ message: "This reservation is not your reservation" });
   }
 
+  const oldStatus = reservation.status;
   reservation.status = "cancelled";
   await reservation.save();
+
+  // ✅ Log cancellation - MUST be saved to database
+  try {
+    await logReservationUpdate({
+      reservationId: reservation._id,
+      updateType: "cancelled",
+      updatedBy: req.user._id,
+      description: `Reservation cancelled by user`,
+      oldValue: oldStatus,
+      newValue: "cancelled",
+    });
+  } catch (logError) {
+    console.error("Failed to log reservation cancellation:", logError);
+  }
+
+  // ✅ Emit WebSocket update for real-time notifications
+  emitGlobalUpdate({
+    method: "PUT",
+    path: `/api/reservations/${reservation._id}/cancel`,
+    statusCode: 200,
+    topics: ["reservations"],
+    reservationId: reservation._id.toString(),
+    userId: reservation.userId._id.toString(),
+  });
 
   // ✅ Send email notification to user
   if (reservation.userId && reservation.userId.email) {
@@ -233,20 +275,9 @@ export const cancelReservation = asyncHandler(async (req, res) => {
     }
   }
 
-  res.status(200).json({ message: "Reservation cancelled successfully." });
-
-  // ✅ Emit SSE update for fast notifications (after response is sent)
-  // Include userId so frontend can filter updates for specific user
-  const userId = reservation.userId?._id?.toString() || reservation.userId?.toString();
-  emitGlobalUpdate({
-    method: "PUT",
-    path: `/api/reservations/${reservationId}/cancel`,
-    statusCode: 200,
-    topics: ["reservations"],
-    reservationId: reservationId.toString(),
-    userId: userId,
-    status: "cancelled",
-  });
+  return res
+    .status(200)
+    .json({ message: "Reservation cancelled successfully." });
 });
 
 // @desc update reservation change reservation status (pending, confirmed, cancelled)
@@ -265,6 +296,10 @@ export const updateReservation = asyncHandler(async (req, res) => {
   if (!reservation) {
     return res.status(404).json({ message: "Reservation not found" });
   }
+
+  // Store old values for logging
+  const oldTotalPrice = reservation.totalPrice;
+  const oldRemarks = reservation.remarks || "";
 
   // 🔍 Existing details
   const existingDetails = await ReservationDetail.find({ reservationId });
@@ -431,10 +466,91 @@ export const updateReservation = asyncHandler(async (req, res) => {
   }
 
   reservation.totalPrice = newTotalPrice;
-  if (typeof remarks === "string") {
-    reservation.remarks = remarks;
+  
+  // Update remarks if provided (even if empty string - to allow clearing remarks)
+  if (remarks !== undefined) {
+    reservation.remarks = remarks || "no remarks";
   }
   await reservation.save();
+
+  // ✅ Log updates - MUST be saved to database before response
+  const updateLogs = [];
+  
+  // Log details update if items were changed
+  if (updatedDetails.length > 0 || deletedDetails.length > 0 || newDetails.length > 0) {
+    const changes = {
+      updated: updatedDetails.length,
+      deleted: deletedDetails.length,
+      added: newDetails.length,
+    };
+    updateLogs.push(
+      logReservationUpdate({
+        reservationId: reservation._id,
+        updateType: "details_updated",
+        updatedBy: req.user._id,
+        description: `Reservation details updated: ${changes.added} added, ${changes.updated} updated, ${changes.deleted} removed`,
+        changes,
+        metadata: {
+          updatedVariantIds: updatedDetails,
+          deletedVariantIds: deletedDetails,
+          newVariantIds: newDetails,
+        },
+      })
+    );
+  }
+
+  // Log remarks update if changed (including when cleared)
+  const newRemarks = remarks !== undefined ? (remarks || "no remarks") : reservation.remarks || "no remarks";
+  if (remarks !== undefined && newRemarks !== oldRemarks) {
+    updateLogs.push(
+      logReservationUpdate({
+        reservationId: reservation._id,
+        updateType: "remarks_updated",
+        updatedBy: req.user._id,
+        description: `Remarks ${remarks ? "updated" : "cleared"}`,
+        oldValue: oldRemarks || "no remarks",
+        newValue: newRemarks,
+      })
+    );
+  }
+
+  // Log total price change if changed
+  if (oldTotalPrice !== newTotalPrice) {
+    updateLogs.push(
+      logReservationUpdate({
+        reservationId: reservation._id,
+        updateType: "total_price_changed",
+        updatedBy: req.user._id,
+        description: `Total price changed from ₱${oldTotalPrice.toFixed(2)} to ₱${newTotalPrice.toFixed(2)}`,
+        oldValue: oldTotalPrice.toString(),
+        newValue: newTotalPrice.toString(),
+        metadata: {
+          priceDifference: newTotalPrice - oldTotalPrice,
+        },
+      })
+    );
+  }
+
+  // ✅ CRITICAL: Wait for all logs to complete and save to database
+  // This ensures updates are persisted before response is sent
+  const logResults = await Promise.allSettled(updateLogs);
+  
+  // Log any failures (but don't fail the request)
+  logResults.forEach((result, index) => {
+    if (result.status === "rejected") {
+      console.error(`Failed to log reservation update ${index}:`, result.reason);
+    }
+  });
+
+  // ✅ Emit WebSocket update for real-time notifications
+  emitGlobalUpdate({
+    method: "PUT",
+    path: `/api/reservations/${reservationId}`,
+    statusCode: 200,
+    topics: ["reservations"],
+    reservationId: reservation._id.toString(),
+    userId: reservation.userId?.toString() || reservation.userId?._id?.toString(),
+  });
 
   // 📦 Populate for frontend
   const updatedReservation = await Reservation.findById(reservationId)
@@ -444,7 +560,7 @@ export const updateReservation = asyncHandler(async (req, res) => {
       populate: { path: "productVariantId" },
     });
 
-  res.status(200).json({
+  return res.status(200).json({
     message: "Reservation updated successfully",
     reservation: updatedReservation,
     updated: updatedDetails,
@@ -452,18 +568,6 @@ export const updateReservation = asyncHandler(async (req, res) => {
     added: newDetails,
     remarks: reservation.remarks,
     totalPrice: reservation.totalPrice,
-  });
-
-  // ✅ Emit SSE update for fast notifications (after response is sent)
-  // Include userId so frontend can filter updates for specific user
-  const userId = updatedReservation.userId?._id?.toString() || updatedReservation.userId?.toString() || reservation.userId?.toString();
-  emitGlobalUpdate({
-    method: "PUT",
-    path: `/api/reservations/${reservationId}`,
-    statusCode: 200,
-    topics: ["reservations"],
-    reservationId: reservationId.toString(),
-    userId: userId,
   });
 });
 
@@ -556,18 +660,56 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Invalid status value" });
   }
 
+  // Find reservation first to get old status
+  const oldReservation = await Reservation.findById(id);
+  if (!oldReservation) {
+    return res.status(404).json({ message: "Reservation not found" });
+  }
+
+  const oldStatus = oldReservation.status;
+
   // Find and update reservation
   const reservation = await Reservation.findByIdAndUpdate(
     id,
     { status },
     { new: true, runValidators: true }
   )
-    .populate("userId", "name email _id")
+    .populate("userId", "name email")
     .populate("reservationDetails");
 
   if (!reservation) {
     return res.status(404).json({ message: "Reservation not found" });
   }
+
+  // ✅ Log status change - MUST be saved to database
+  if (oldStatus !== status) {
+    try {
+      await logReservationUpdate({
+        reservationId: reservation._id,
+        updateType: "status_changed",
+        updatedBy: req.user._id,
+        description: `Reservation status changed from "${oldStatus}" to "${status}"`,
+        oldValue: oldStatus,
+        newValue: status,
+        metadata: {
+          changedBy: req.user.roles?.includes("admin") ? "admin" : "cashier",
+        },
+      });
+    } catch (logError) {
+      console.error("Failed to log status change:", logError);
+    }
+  }
+
+  // ✅ Emit WebSocket update for real-time notifications
+  emitGlobalUpdate({
+    method: "PUT",
+    path: `/api/reservations/${id}/status`,
+    statusCode: 200,
+    topics: ["reservations"],
+    reservationId: reservation._id.toString(),
+    userId: reservation.userId?._id?.toString() || reservation.userId?.toString(),
+    status: status,
+  });
 
   // ✅ Send email notification to user
   if (reservation.userId && reservation.userId.email) {
@@ -614,19 +756,6 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
   res.status(200).json({
     message: "Reservation status updated successfully",
     reservation,
-  });
-
-  // ✅ Emit SSE update for fast notifications (after response is sent)
-  // Include userId so frontend can filter updates for specific user
-  const userId = reservation.userId?._id?.toString() || reservation.userId?.toString();
-  emitGlobalUpdate({
-    method: "PUT",
-    path: `/api/reservations/${id}/status`,
-    statusCode: 200,
-    topics: ["reservations"],
-    reservationId: id,
-    userId: userId,
-    status: status,
   });
 });
 
@@ -776,9 +905,80 @@ export const getAllReservations = asyncHandler(async (req, res) => {
 export const deleteReservation = asyncHandler(async (req, res) => {
   const deletedReservation = await Reservation.findByIdAndDelete(req.params.id);
 
-  if (!deleteReservation) {
+  if (!deletedReservation) {
     return res.status(404).json({ message: "Reservation not found" });
   }
 
   res.status(200).json({ message: "Reservation deleted successfully" });
+});
+
+// Get all updates for a specific reservation
+export const getReservationUpdates = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 50;
+  const skip = (page - 1) * limit;
+
+  // Verify reservation exists and user has access
+  const reservation = await Reservation.findById(id);
+  if (!reservation) {
+    return res.status(404).json({ message: "Reservation not found" });
+  }
+
+  // Check if user has access (admin/cashier can see all, users can only see their own)
+  const isAdminOrCashier = req.user.roles?.includes("admin") || req.user.roles?.includes("cashier");
+  const isOwner = reservation.userId?.toString() === req.user._id.toString();
+
+  if (!isAdminOrCashier && !isOwner) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  // Get updates
+  const { getReservationUpdates, getReservationUpdateCount } = await import("../utils/reservationUpdates.js");
+  
+  const updates = await getReservationUpdates(id, { limit, skip, sort: -1 });
+  const total = await getReservationUpdateCount(id);
+
+  res.status(200).json({
+    total,
+    page,
+    pages: Math.ceil(total / limit),
+    updates,
+  });
+});
+
+// Get updates for all reservations (admin/cashier only)
+export const getAllReservationUpdates = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 50;
+  const skip = (page - 1) * limit;
+  const reservationId = req.query.reservationId; // Optional filter
+  const updateType = req.query.updateType; // Optional filter
+
+  const ReservationUpdate = (await import("../models/ReservationUpdate.js")).default;
+
+  // Build query
+  const filter = {};
+  if (reservationId) {
+    filter.reservationId = reservationId;
+  }
+  if (updateType) {
+    filter.updateType = updateType;
+  }
+
+  const updates = await ReservationUpdate.find(filter)
+    .populate("reservationId", "status totalPrice reservationDate")
+    .populate("updatedBy", "name email roles")
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .skip(skip);
+
+  const total = await ReservationUpdate.countDocuments(filter);
+
+  res.status(200).json({
+    total,
+    page,
+    pages: Math.ceil(total / limit),
+    updates,
+  });
 });

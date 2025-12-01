@@ -3,6 +3,7 @@ import { useAuthContext } from "../hooks/useAuthContext";
 import { useLogout } from "../hooks/useLogout";
 import CartContent from "./CartContent";
 import ReservationNotification from "./ReservationNotification";
+import Avatar from "./Avatar";
 import {
   Home,
   Wrench,
@@ -126,19 +127,7 @@ const NavBar = () => {
                 role="button"
                 className="btn btn-ghost btn-circle avatar placeholder"
               >
-                <div className="bg-primary text-neutral-content rounded-full w-10 h-10 flex items-center justify-center overflow-hidden">
-                  {user.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt="avatar"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-medium">
-                      {user.email?.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
+                <Avatar user={user} size="md" />
               </div>
               <ul
                 tabIndex={0}

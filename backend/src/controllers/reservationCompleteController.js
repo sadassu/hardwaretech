@@ -4,6 +4,7 @@ import ReservationDetail from "../models/ReservationDetail.js";
 import Sale from "../models/Sale.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ensureVariantStock } from "../utils/variantStock.js";
+import { logReservationUpdate } from "../utils/reservationUpdates.js";
 import { emitGlobalUpdate } from "../services/realtime.js";
 
 export const completeReservation = asyncHandler(async (req, res) => {
@@ -114,12 +115,43 @@ export const completeReservation = asyncHandler(async (req, res) => {
     await sale.save({ session });
 
     // 6️⃣ Update reservation status
+    const oldStatus = reservation.status;
     reservation.status = "completed";
     await reservation.save({ session });
 
     // ✅ Commit
     await session.commitTransaction();
     session.endSession();
+
+    // ✅ Log completion (after transaction commits) - MUST be saved to database
+    try {
+      await logReservationUpdate({
+        reservationId: reservation._id,
+        updateType: "completed",
+        updatedBy: cashierId,
+        description: `Reservation completed. Sale recorded with amount paid: ₱${finalAmountPaid.toFixed(2)}`,
+        oldValue: oldStatus,
+        newValue: "completed",
+        metadata: {
+          saleId: sale._id.toString(),
+          amountPaid: finalAmountPaid,
+          totalDue: totalDue,
+        },
+      });
+    } catch (logError) {
+      console.error("Failed to log reservation completion:", logError);
+    }
+
+    // ✅ Emit WebSocket update for real-time notifications
+    emitGlobalUpdate({
+      method: "POST",
+      path: `/api/reservations/${id}/complete`,
+      statusCode: 200,
+      topics: ["reservations", "sales"],
+      reservationId: reservation._id.toString(),
+      userId: reservation.userId?.toString() || reservation.userId?._id?.toString(),
+      status: "completed",
+    });
 
     // ✅ Send email notification to user
     try {
@@ -158,23 +190,10 @@ export const completeReservation = asyncHandler(async (req, res) => {
       // Don't fail the request if email fails
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Reservation completed and sale recorded successfully",
       reservation,
       sale,
-    });
-
-    // ✅ Emit SSE update for fast notifications (after response is sent)
-    // Include userId so frontend can filter updates for specific user
-    const userId = reservation.userId?.toString() || reservation.userId?._id?.toString();
-    emitGlobalUpdate({
-      method: "PUT",
-      path: `/api/reservations/${id}/complete`,
-      statusCode: 200,
-      topics: ["reservations", "sales"],
-      reservationId: id,
-      userId: userId,
-      status: "completed",
     });
   } catch (error) {
     await session.abortTransaction();

@@ -7,6 +7,8 @@ import {
   updateReservationStatus,
   updateReservation,
   cancelReservation,
+  getReservationUpdates,
+  getAllReservationUpdates,
 } from "../controllers/reservationsController.js";
 import requireAuth from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -53,6 +55,21 @@ router.put(
   requireAuth,
   requireRole(["admin", "cashier"]),
   updateReservation
+);
+
+// Get updates for a specific reservation
+router.get(
+  "/:id/updates",
+  requireAuth,
+  getReservationUpdates
+);
+
+// Get all reservation updates (admin/cashier only)
+router.get(
+  "/updates/all",
+  requireAuth,
+  requireRole(["admin", "cashier"]),
+  getAllReservationUpdates
 );
 
 export default router;

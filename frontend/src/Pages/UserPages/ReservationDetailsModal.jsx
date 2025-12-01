@@ -26,6 +26,7 @@ function ReservationDetailsModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      hideCloseButton={true}
       className="bg-white rounded-2xl max-w-4xl w-full p-0 max-h-[90vh] flex flex-col"
     >
       {/* Header */}

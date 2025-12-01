@@ -3,6 +3,7 @@ import ChangeName from "./ChangeName";
 import ChangePassword from "./ChangePassword";
 import { AlertTriangle, BarChart3, LockIcon, SquarePen, Shield, UserCog } from "lucide-react";
 import DeleteAccount from "./DeleteAccount";
+import Avatar from "../../components/Avatar";
 
 function UserInformationCard({ user }) {
   // Get role badge styling
@@ -38,11 +39,7 @@ function UserInformationCard({ user }) {
           <div className="space-y-4 flex gap-5">
             {/* Avatar Display (Read-only) */}
             <div className="flex-shrink-0">
-              <img
-                src={user?.avatar || "/default-avatar.png"}
-                alt="avatar"
-                className="w-24 h-24 rounded-full object-cover border-4 border-blue-200 shadow-lg"
-              />
+              <Avatar user={user} size="xl" showBorder={true} className="shadow-lg" />
             </div>
             <div className="mt">
               <p>
