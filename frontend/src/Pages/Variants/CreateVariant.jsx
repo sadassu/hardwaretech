@@ -242,20 +242,7 @@ const CreateVariant = ({ product }) => {
               </div>
             </div>
 
-            <div className="flex items-start gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3">
-              <input
-                type="checkbox"
-                id="includePerText"
-                name="includePerText"
-                checked={formData.includePerText}
-                onChange={handleChange}
-                className="checkbox checkbox-primary mt-1"
-              />
-              <label htmlFor="includePerText" className="text-sm font-medium text-gray-700 leading-relaxed">
-                Insert the word <span className="font-semibold text-blue-600">"per"</span> between size and unit
-                (e.g., <span className="font-semibold">1 set per 30 m</span>)
-              </label>
-            </div>
+            {/* Removed old 'per' helper copy as requested; behavior is still controlled by includePerText flag */}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>

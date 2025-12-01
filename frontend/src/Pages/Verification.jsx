@@ -14,10 +14,24 @@ function Verification() {
   const [verifying, setVerifying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [codeSent, setCodeSent] = useState(false);
+  const [fromChangePassword, setFromChangePassword] = useState(false);
 
   useEffect(() => {
     if (user && user.email) setEmail(user.email);
   }, [user]);
+
+  useEffect(() => {
+    // If we came from change-password flow, a code was already sent by backend.
+    // Skip the \"Send Verification Code\" step and show the code input directly.
+    const flag = localStorage.getItem("verificationCodeAlreadySent");
+    if (flag === "true") {
+      setCodeSent(true);
+      setMessage("A verification code has already been sent to your email. Please enter it below.");
+      setFromChangePassword(true);
+      // Clear the flag so future visits behave normally
+      localStorage.removeItem("verificationCodeAlreadySent");
+    }
+  }, []);
 
   useEffect(() => {
     const storedTimestamp = localStorage.getItem("verificationCooldown");
@@ -145,21 +159,25 @@ function Verification() {
         )}
 
         <p className="text-white text-sm mb-2 text-center">
-          We'll send a verification code to:
+          {codeSent
+            ? "Enter the verification code sent to:"
+            : "We'll send a verification code to:"}
         </p>
         <div className="text-center font-semibold text-yellow-400 mb-4 break-words">
           {email || "No email found"}
         </div>
 
-        <button
-          onClick={handleSendCode}
-          disabled={loading || !email}
-          className={`w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition text-sm mb-4 ${
-            loading ? "opacity-70 cursor-not-allowed" : ""
-          }`}
-        >
-          {loading ? `Please wait ${timeLeft}s` : "Send Verification Code"}
-        </button>
+        {!codeSent && (
+          <button
+            onClick={handleSendCode}
+            disabled={loading || !email}
+            className={`w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition text-sm mb-4 ${
+              loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
+          >
+            {loading ? `Please wait ${timeLeft}s` : "Send Verification Code"}
+          </button>
+        )}
 
         {codeSent && (
           <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">

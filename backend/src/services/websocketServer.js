@@ -40,15 +40,22 @@ export const initWebSocketServer = (server) => {
     server,
     path: "/ws",
     perMessageDeflate: false, // Disable compression for better performance
+    clientTracking: true, // Track clients for better connection management
   });
 
   wss.on("connection", (ws, req) => {
     const clientId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const clientIp = req.socket.remoteAddress || "unknown";
     clients.set(clientId, ws);
     
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`✅ WebSocket client connected: ${clientId}`);
-    }
+    // Log connection in production (limited logging)
+    console.log(`✅ WebSocket client connected: ${clientId.substring(0, 8)}... (${clientIp})`);
+    
+    // Set connection timeout for Railway (keep connections alive)
+    ws.isAlive = true;
+    ws.on("pong", () => {
+      ws.isAlive = true;
+    });
 
     // Send welcome message
     ws.send(JSON.stringify({
@@ -108,7 +115,7 @@ export const initWebSocketServer = (server) => {
     });
 
     // Handle client disconnect
-    ws.on("close", () => {
+    ws.on("close", (code, reason) => {
       // Remove from all subscriptions
       subscriptions.forEach((clientSet) => {
         clientSet.delete(clientId);
@@ -116,9 +123,7 @@ export const initWebSocketServer = (server) => {
       
       clients.delete(clientId);
       
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`🔌 WebSocket client disconnected: ${clientId}`);
-      }
+      console.log(`🔌 WebSocket client disconnected: ${clientId.substring(0, 8)}... (code: ${code})`);
     });
 
     // Handle errors
@@ -131,9 +136,25 @@ export const initWebSocketServer = (server) => {
     console.error("WebSocket server error:", error);
   });
 
-  if (process.env.NODE_ENV !== "production") {
-    console.log("✅ WebSocket server initialized on /ws");
-  }
+  // Health check ping interval for Railway (every 30 seconds)
+  const pingInterval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.isAlive === false) {
+        // Connection is dead, terminate it
+        return ws.terminate();
+      }
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30000);
+
+  // Cleanup interval on server close
+  wss.on("close", () => {
+    clearInterval(pingInterval);
+  });
+
+  console.log("✅ WebSocket server initialized on /ws");
+  console.log(`   Ready for Railway deployment`);
 
   return wss;
 };

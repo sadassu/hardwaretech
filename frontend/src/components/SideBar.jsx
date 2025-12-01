@@ -19,6 +19,7 @@ import ChangePassword from "../Pages/UserPages/ChangePassword";
 import ChangeName from "../Pages/UserPages/ChangeName";
 import api from "../utils/api";
 import { useLiveResourceRefresh } from "../hooks/useLiveResourceRefresh";
+import Avatar from "./Avatar";
 
 const SideBar = () => {
   const { user } = useAuthContext();
@@ -296,11 +297,7 @@ const SideBar = () => {
       hover:bg-slate-700 hover:scale-[1.01] 
       ${isCollapsed ? "justify-center" : "space-x-3"}`}
           >
-            <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-medium text-slate-200">
-                {user?.name?.charAt(0)?.toUpperCase() || "U"}
-              </span>
-            </div>
+            <Avatar user={user} size="sm" />
 
             {!isCollapsed && (
               <div className="flex-1 min-w-0">

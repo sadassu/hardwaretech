@@ -5,6 +5,7 @@ import Sale from "../models/Sale.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ensureVariantStock } from "../utils/variantStock.js";
 import { logReservationUpdate } from "../utils/reservationUpdates.js";
+import { emitGlobalUpdate } from "../services/realtime.js";
 
 export const completeReservation = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -122,19 +123,34 @@ export const completeReservation = asyncHandler(async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    // ✅ Log completion (after transaction commits)
-    await logReservationUpdate({
-      reservationId: reservation._id,
-      updateType: "completed",
-      updatedBy: cashierId,
-      description: `Reservation completed. Sale recorded with amount paid: ₱${finalAmountPaid.toFixed(2)}`,
-      oldValue: oldStatus,
-      newValue: "completed",
-      metadata: {
-        saleId: sale._id.toString(),
-        amountPaid: finalAmountPaid,
-        totalDue: totalDue,
-      },
+    // ✅ Log completion (after transaction commits) - MUST be saved to database
+    try {
+      await logReservationUpdate({
+        reservationId: reservation._id,
+        updateType: "completed",
+        updatedBy: cashierId,
+        description: `Reservation completed. Sale recorded with amount paid: ₱${finalAmountPaid.toFixed(2)}`,
+        oldValue: oldStatus,
+        newValue: "completed",
+        metadata: {
+          saleId: sale._id.toString(),
+          amountPaid: finalAmountPaid,
+          totalDue: totalDue,
+        },
+      });
+    } catch (logError) {
+      console.error("Failed to log reservation completion:", logError);
+    }
+
+    // ✅ Emit WebSocket update for real-time notifications
+    emitGlobalUpdate({
+      method: "POST",
+      path: `/api/reservations/${id}/complete`,
+      statusCode: 200,
+      topics: ["reservations", "sales"],
+      reservationId: reservation._id.toString(),
+      userId: reservation.userId?.toString() || reservation.userId?._id?.toString(),
+      status: "completed",
     });
 
     // ✅ Send email notification to user

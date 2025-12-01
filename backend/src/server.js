@@ -14,6 +14,7 @@ import deleteRoutes from "./routes/deleteRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import supplyHistoryRoute from "./routes/supplyHistoriesRoute.js";
 import categoryRoutes from "./routes/categoriesRoute.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import {
   initRealtime,
   emitGlobalUpdate,
@@ -111,6 +112,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Routes
 app.use("/api/reservations", reservationRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use("/", authRoutes);
 app.use("/api", productsRoutes);
@@ -134,11 +136,19 @@ app.use((err, req, res, next) => {
 
 // Connect DB and start server
 connectDB().then(async () => {
-  // Initialize WebSocket server for real-time updates
-  initWebSocketServer(server);
+  // Initialize WebSocket server for real-time updates (Railway-ready)
+  try {
+    initWebSocketServer(server);
+    console.log("✅ WebSocket server ready for Railway deployment");
+  } catch (error) {
+    console.error("❌ Failed to initialize WebSocket server:", error);
+    // Don't crash the server if WebSocket fails
+  }
   
-  server.listen(PORT, async () => {
-    console.log(`Server listening on port: ${PORT}`);
+  server.listen(PORT, "0.0.0.0", async () => {
+    console.log(`🚀 Server listening on port: ${PORT}`);
+    console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(`   WebSocket endpoint: ws://0.0.0.0:${PORT}/ws`);
     
     // Check email configuration on startup
     const emailConfig = {

@@ -92,6 +92,11 @@ function ChangePassword({ className = "", icon: Icon }) {
           "Password updated successfully! Please verify your email.",
         icon: "success",
       });
+
+      // Mark that a verification code was already sent by the backend
+      // so the verification page can go directly to the \"Enter code\" step
+      localStorage.setItem("verificationCodeAlreadySent", "true");
+
       setFormData({ password: "", confirmPassword: "" });
       setIsOpen(false);
     } catch (error) {
@@ -165,7 +170,10 @@ function ChangePassword({ className = "", icon: Icon }) {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Must be at least 8 characters with uppercase, lowercase, number,
+                and special characters
+              </p>
             </div>
 
             <div>

@@ -42,6 +42,70 @@ export const logReservationUpdate = async ({
     });
 
     await update.save();
+    
+    // Create notification for the reservation owner (if update is not by the owner themselves)
+    // Only create notifications for updates that matter to the customer
+    if (updateType !== "created" && updateType !== "cancelled") {
+      try {
+        const Reservation = (await import("../models/Reservation.js")).default;
+        const reservation = await Reservation.findById(reservationId)
+          .populate({
+            path: "reservationDetails",
+            populate: {
+              path: "productVariantId",
+              populate: { path: "product", select: "name" },
+            },
+          })
+          .lean();
+
+        if (reservation && reservation.userId && reservation.userId.toString() !== updatedBy.toString()) {
+          const { createNotification } = await import("./notifications.js");
+          
+          // Generate notification message based on update type
+          let message = "";
+          switch (updateType) {
+            case "status_changed":
+              switch (newValue) {
+                case "confirmed":
+                  message = "Your reservation has been confirmed!";
+                  break;
+                case "completed":
+                  message = "Your reservation has been completed!";
+                  break;
+                default:
+                  message = `Your reservation status changed to ${newValue}.`;
+              }
+              break;
+            case "remarks_updated":
+              message = newValue && newValue !== "no remarks"
+                ? "Remarks have been added to your reservation."
+                : "Your reservation has been updated.";
+              break;
+            case "details_updated":
+              message = "Your reservation details have been updated.";
+              break;
+            case "total_price_changed":
+              message = "Your reservation total price has been updated.";
+              break;
+            default:
+              message = description || "Your reservation has been updated.";
+          }
+
+          await createNotification({
+            userId: reservation.userId.toString(),
+            reservationId: reservationId.toString(),
+            reservationUpdateId: update._id.toString(),
+            type: updateType,
+            message,
+            reservation,
+          });
+        }
+      } catch (notifError) {
+        // Don't fail if notification creation fails
+        console.error("Failed to create notification:", notifError);
+      }
+    }
+    
     return update;
   } catch (error) {
     // Don't fail the main operation if logging fails
