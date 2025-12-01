@@ -256,52 +256,29 @@ const ReservationNotification = () => {
   // Listen to live updates for reservation changes
   useEffect(() => {
     const handleLiveUpdate = (event) => {
-      const { topics, path, userId: eventUserId, status } = event.detail || {};
+      const { topics, path } = event.detail || {};
       
       // Check if this is a reservation-related update
       const isReservationUpdate = 
         topics?.includes("reservations") || 
         path?.includes("/reservations/");
       
-      if (!isReservationUpdate || !user?.token || !user?.userId) {
-        return;
-      }
-      
-      // Normalize userIds to strings for reliable comparison
-      const currentUserId = String(user.userId || "");
-      const eventUserIdStr = eventUserId ? String(eventUserId) : null;
-      
-      // Only process if it's a reservation update AND it's for the current user
-      // If userId is not provided in event, process all reservation updates (backward compatibility)
-      const isForCurrentUser = !eventUserIdStr || eventUserIdStr === currentUserId;
-      
-      if (isForCurrentUser) {
-        if (import.meta.env.DEV) {
-          console.log("🔔 Reservation update received for current user:", {
-            eventUserId: eventUserIdStr,
-            currentUserId,
-            status,
-            path,
-          });
+      if (isReservationUpdate) {
+        // Refresh reservations when live update is received
+        if (user?.token && user?.userId) {
+          // Small delay to ensure backend has saved the changes
+          setTimeout(() => {
+            fetchUserReservations(user.token, user.userId, {
+              page: 1,
+              limit: 50,
+              status: "all",
+            }).then(() => {
+              // Reset lastChecked to a time slightly before now to catch the update
+              // This ensures we detect the change even if updatedAt is very recent
+              setLastChecked(new Date(Date.now() - 1000)); // 1 second ago
+            });
+          }, 500);
         }
-        
-        // Minimal delay to ensure backend has saved the changes (reduced for faster updates)
-        setTimeout(() => {
-          fetchUserReservations(user.token, user.userId, {
-            page: 1,
-            limit: 50,
-            status: "all",
-          }).then(() => {
-            // Reset lastChecked to a time slightly before now to catch the update
-            // This ensures we detect the change even if updatedAt is very recent
-            setLastChecked(new Date(Date.now() - 1000)); // 1 second ago
-          });
-        }, 200); // Reduced from 500ms to 200ms for faster notifications
-      } else if (import.meta.env.DEV) {
-        console.log("🔕 Reservation update ignored (different user):", {
-          eventUserId: eventUserIdStr,
-          currentUserId,
-        });
       }
     };
 

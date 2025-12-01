@@ -144,16 +144,13 @@ export const createReservation = asyncHandler(async (req, res) => {
       reservation,
     });
 
-    // ✅ Explicitly trigger SSE update for new reservation (after response is sent)
-    // Include userId so frontend can filter updates for specific user
-    const userId = reservation.userId?.toString() || req.user._id?.toString();
+    // ✅ Explicitly trigger Pusher update for new reservation (after response is sent)
+    // This ensures the update is sent even if middleware doesn't catch it
     emitGlobalUpdate({
       method: "POST",
       path: "/api/reservations",
       statusCode: 201,
       topics: ["reservations"],
-      reservationId: reservation._id.toString(),
-      userId: userId,
     });
   } catch (err) {
     await session.abortTransaction();
@@ -233,20 +230,9 @@ export const cancelReservation = asyncHandler(async (req, res) => {
     }
   }
 
-  res.status(200).json({ message: "Reservation cancelled successfully." });
-
-  // ✅ Emit SSE update for fast notifications (after response is sent)
-  // Include userId so frontend can filter updates for specific user
-  const userId = reservation.userId?._id?.toString() || reservation.userId?.toString();
-  emitGlobalUpdate({
-    method: "PUT",
-    path: `/api/reservations/${reservationId}/cancel`,
-    statusCode: 200,
-    topics: ["reservations"],
-    reservationId: reservationId.toString(),
-    userId: userId,
-    status: "cancelled",
-  });
+  return res
+    .status(200)
+    .json({ message: "Reservation cancelled successfully." });
 });
 
 // @desc update reservation change reservation status (pending, confirmed, cancelled)
@@ -444,7 +430,7 @@ export const updateReservation = asyncHandler(async (req, res) => {
       populate: { path: "productVariantId" },
     });
 
-  res.status(200).json({
+  return res.status(200).json({
     message: "Reservation updated successfully",
     reservation: updatedReservation,
     updated: updatedDetails,
@@ -452,18 +438,6 @@ export const updateReservation = asyncHandler(async (req, res) => {
     added: newDetails,
     remarks: reservation.remarks,
     totalPrice: reservation.totalPrice,
-  });
-
-  // ✅ Emit SSE update for fast notifications (after response is sent)
-  // Include userId so frontend can filter updates for specific user
-  const userId = updatedReservation.userId?._id?.toString() || updatedReservation.userId?.toString() || reservation.userId?.toString();
-  emitGlobalUpdate({
-    method: "PUT",
-    path: `/api/reservations/${reservationId}`,
-    statusCode: 200,
-    topics: ["reservations"],
-    reservationId: reservationId.toString(),
-    userId: userId,
   });
 });
 
@@ -562,7 +536,7 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
     { status },
     { new: true, runValidators: true }
   )
-    .populate("userId", "name email _id")
+    .populate("userId", "name email")
     .populate("reservationDetails");
 
   if (!reservation) {
@@ -614,19 +588,6 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
   res.status(200).json({
     message: "Reservation status updated successfully",
     reservation,
-  });
-
-  // ✅ Emit SSE update for fast notifications (after response is sent)
-  // Include userId so frontend can filter updates for specific user
-  const userId = reservation.userId?._id?.toString() || reservation.userId?.toString();
-  emitGlobalUpdate({
-    method: "PUT",
-    path: `/api/reservations/${id}/status`,
-    statusCode: 200,
-    topics: ["reservations"],
-    reservationId: id,
-    userId: userId,
-    status: status,
   });
 });
 
