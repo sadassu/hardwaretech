@@ -5,5 +5,5 @@ nixPkgs = ["nodejs-20_x"]
 cmds = ["npm ci"]
 
 [start]
-cmd = "npm start"
+cmd = "node src/server.js"
 
