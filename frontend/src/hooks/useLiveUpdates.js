@@ -18,8 +18,14 @@ let wsInstance = null;
 let reconnectTimeout = null;
 let reconnectAttempts = 0;
 let isConnecting = false; // Prevent multiple simultaneous connection attempts
-const MAX_RECONNECT_ATTEMPTS = 10;
-const RECONNECT_DELAY = 3000; // 3 seconds
+let connectionTimeout = null; // Connection timeout handler
+let pingInterval = null; // Client-side ping interval
+let lastPongTime = null; // Track last pong received
+const MAX_RECONNECT_ATTEMPTS = 15; // Increased attempts
+const RECONNECT_DELAY = 2000; // 2 seconds base delay
+const CONNECTION_TIMEOUT = 10000; // 10 seconds connection timeout
+const PING_INTERVAL = 25000; // 25 seconds (matches server)
+const PONG_TIMEOUT = 35000; // 35 seconds (if no pong, reconnect)
 let subscribedChannels = new Set();
 let connectionCallbacks = new Set(); // Track all components using the connection
 
@@ -86,7 +92,7 @@ const subscribeToChannels = (ws, channels) => {
   });
 };
 
-// Initialize WebSocket connection
+// Initialize WebSocket connection with improved reliability
 const initWebSocket = (onConnected, onDisconnected) => {
   // If already connected, just return the instance
   if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
@@ -105,7 +111,16 @@ const initWebSocket = (onConnected, onDisconnected) => {
   // If there's an instance but it's not open, close it first
   if (wsInstance) {
     try {
-      wsInstance.close();
+      // Clear any existing intervals/timeouts
+      if (pingInterval) {
+        clearInterval(pingInterval);
+        pingInterval = null;
+      }
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        connectionTimeout = null;
+      }
+      wsInstance.close(1000, "Reconnecting");
     } catch (e) {
       // Ignore errors when closing
     }
@@ -118,9 +133,39 @@ const initWebSocket = (onConnected, onDisconnected) => {
   try {
     const ws = new WebSocket(wsUrl);
     
+    // Set connection timeout
+    connectionTimeout = setTimeout(() => {
+      if (ws.readyState !== WebSocket.OPEN) {
+        console.warn("⚠️ WebSocket connection timeout");
+        isConnecting = false;
+        try {
+          ws.close();
+        } catch (e) {
+          // Ignore
+        }
+        // Retry connection
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts++;
+          const delay = RECONNECT_DELAY * Math.min(reconnectAttempts, 5);
+          reconnectTimeout = setTimeout(() => {
+            wsInstance = null;
+            initWebSocket(onConnected, onDisconnected);
+          }, delay);
+        }
+      }
+    }, CONNECTION_TIMEOUT);
+    
     ws.onopen = () => {
       isConnecting = false;
       reconnectAttempts = 0;
+      lastPongTime = Date.now();
+      
+      // Clear connection timeout
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        connectionTimeout = null;
+      }
+      
       if (import.meta.env.DEV) {
         console.log("✅ WebSocket connected");
       }
@@ -140,6 +185,26 @@ const initWebSocket = (onConnected, onDisconnected) => {
       subscribeToChannels(ws, channels);
       
       dispatchLiveEvent({ topics: ["general"], message: "socket-connected" });
+      
+      // Start client-side ping interval
+      if (pingInterval) {
+        clearInterval(pingInterval);
+      }
+      pingInterval = setInterval(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          try {
+            // Check if we've received a pong recently
+            if (lastPongTime && Date.now() - lastPongTime > PONG_TIMEOUT) {
+              console.warn("⚠️ No pong received, reconnecting...");
+              ws.close(1006, "No pong received");
+              return;
+            }
+            ws.send(JSON.stringify({ type: "ping" }));
+          } catch (error) {
+            console.error("Error sending ping:", error);
+          }
+        }
+      }, PING_INTERVAL);
       
       // Call all registered callbacks
       if (onConnected) onConnected();
@@ -172,7 +237,8 @@ const initWebSocket = (onConnected, onDisconnected) => {
             console.log(`✅ ${message.message}`);
           }
         } else if (message.type === "pong") {
-          // Heartbeat response
+          // Heartbeat response - update last pong time
+          lastPongTime = Date.now();
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
@@ -181,9 +247,19 @@ const initWebSocket = (onConnected, onDisconnected) => {
 
     ws.onerror = (error) => {
       isConnecting = false;
+      
+      // Clear connection timeout on error
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        connectionTimeout = null;
+      }
+      
       if (import.meta.env.DEV) {
         console.warn("⚠️ WebSocket error:", error);
       }
+      
+      // Don't immediately reconnect on error - let onclose handle it
+      // This prevents rapid reconnection attempts
     };
 
     ws.onclose = (event) => {
@@ -191,6 +267,16 @@ const initWebSocket = (onConnected, onDisconnected) => {
       const wasClean = event.wasClean;
       const code = event.code;
       const reason = event.reason || "Unknown reason";
+      
+      // Clear intervals and timeouts
+      if (pingInterval) {
+        clearInterval(pingInterval);
+        pingInterval = null;
+      }
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        connectionTimeout = null;
+      }
       
       if (import.meta.env.DEV) {
         console.log(`🔌 WebSocket disconnected (code: ${code}, clean: ${wasClean}, reason: ${reason})`);
@@ -206,22 +292,26 @@ const initWebSocket = (onConnected, onDisconnected) => {
         }
       });
       
-      // Don't reconnect if it was a clean close (e.g., server shutdown)
-      if (wasClean && code === 1000) {
+      // Don't reconnect if it was a clean close (e.g., server shutdown, manual close)
+      if (wasClean && (code === 1000 || code === 1001)) {
         if (import.meta.env.DEV) {
           console.log("Connection closed cleanly, not reconnecting");
         }
         wsInstance = null;
+        reconnectAttempts = 0; // Reset attempts on clean close
         return;
       }
       
       // Only reconnect if no other component is already handling reconnection
       if (!isConnecting && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
-        const delay = RECONNECT_DELAY * Math.min(reconnectAttempts, 5); // Exponential backoff, max 5x
+        // Exponential backoff with jitter: base * 2^attempts + random(0-1000ms)
+        const baseDelay = RECONNECT_DELAY * Math.min(Math.pow(2, reconnectAttempts - 1), 8);
+        const jitter = Math.random() * 1000;
+        const delay = baseDelay + jitter;
         
         if (import.meta.env.DEV) {
-          console.log(`🔄 Reconnecting in ${delay / 1000}s... (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+          console.log(`🔄 Reconnecting in ${(delay / 1000).toFixed(1)}s... (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
         }
         
         reconnectTimeout = setTimeout(() => {
@@ -233,7 +323,10 @@ const initWebSocket = (onConnected, onDisconnected) => {
         // Reset attempts after a longer delay to allow retry later
         setTimeout(() => {
           reconnectAttempts = 0;
-        }, 60000); // Reset after 1 minute
+          if (import.meta.env.DEV) {
+            console.log("🔄 Reconnection attempts reset, will retry on next connection attempt");
+          }
+        }, 120000); // Reset after 2 minutes
       }
     };
 
@@ -242,6 +335,23 @@ const initWebSocket = (onConnected, onDisconnected) => {
   } catch (error) {
     isConnecting = false;
     console.error("❌ Failed to initialize WebSocket:", error);
+    
+    // Clear timeout if connection failed immediately
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+      connectionTimeout = null;
+    }
+    
+    // Retry connection after delay
+    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      reconnectAttempts++;
+      const delay = RECONNECT_DELAY * Math.min(reconnectAttempts, 5);
+      reconnectTimeout = setTimeout(() => {
+        wsInstance = null;
+        initWebSocket(onConnected, onDisconnected);
+      }, delay);
+    }
+    
     return null;
   }
 };
@@ -264,16 +374,7 @@ export const useLiveUpdates = () => {
       }
     );
 
-    // Send ping every 30 seconds to keep connection alive
-    const pingInterval = setInterval(() => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send(JSON.stringify({ type: "ping" }));
-        } catch (error) {
-          console.error("Error sending ping:", error);
-        }
-      }
-    }, 30000);
+    // Note: Ping is now handled globally in initWebSocket, no need for component-level ping
 
     return () => {
       isMountedRef.current = false;
