@@ -13,7 +13,6 @@ const NotificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Reservation",
       required: true,
-      index: true,
     },
     reservationUpdateId: {
       type: mongoose.Schema.Types.ObjectId,
