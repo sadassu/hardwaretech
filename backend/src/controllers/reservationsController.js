@@ -96,18 +96,24 @@ export const createReservation = asyncHandler(async (req, res) => {
 
     await session.commitTransaction();
 
-    // ✅ Log reservation creation
-    await logReservationUpdate({
-      reservationId: reservation._id,
-      updateType: "created",
-      updatedBy: req.user._id,
-      description: `Reservation created with ${reservationDetails?.length || 0} item(s). Total: ₱${reservation.totalPrice.toFixed(2)}`,
-      newValue: "pending",
-      metadata: {
-        totalPrice: reservation.totalPrice,
-        itemCount: reservationDetails?.length || 0,
-      },
-    });
+    // ✅ Log reservation creation - MUST be saved to database
+    // This ensures the update is persisted even if page reloads
+    try {
+      await logReservationUpdate({
+        reservationId: reservation._id,
+        updateType: "created",
+        updatedBy: req.user._id,
+        description: `Reservation created with ${reservationDetails?.length || 0} item(s). Total: ₱${reservation.totalPrice.toFixed(2)}`,
+        newValue: "pending",
+        metadata: {
+          totalPrice: reservation.totalPrice,
+          itemCount: reservationDetails?.length || 0,
+        },
+      });
+    } catch (logError) {
+      // Log error but don't fail the request
+      console.error("Failed to log reservation creation:", logError);
+    }
 
     // ✅ Send email notification to user for new reservation
     try {
@@ -203,14 +209,28 @@ export const cancelReservation = asyncHandler(async (req, res) => {
   reservation.status = "cancelled";
   await reservation.save();
 
-  // ✅ Log cancellation
-  await logReservationUpdate({
-    reservationId: reservation._id,
-    updateType: "cancelled",
-    updatedBy: req.user._id,
-    description: `Reservation cancelled by user`,
-    oldValue: oldStatus,
-    newValue: "cancelled",
+  // ✅ Log cancellation - MUST be saved to database
+  try {
+    await logReservationUpdate({
+      reservationId: reservation._id,
+      updateType: "cancelled",
+      updatedBy: req.user._id,
+      description: `Reservation cancelled by user`,
+      oldValue: oldStatus,
+      newValue: "cancelled",
+    });
+  } catch (logError) {
+    console.error("Failed to log reservation cancellation:", logError);
+  }
+
+  // ✅ Emit WebSocket update for real-time notifications
+  emitGlobalUpdate({
+    method: "PUT",
+    path: `/api/reservations/${reservation._id}/cancel`,
+    statusCode: 200,
+    topics: ["reservations"],
+    reservationId: reservation._id.toString(),
+    userId: reservation.userId._id.toString(),
   });
 
   // ✅ Send email notification to user
@@ -446,12 +466,14 @@ export const updateReservation = asyncHandler(async (req, res) => {
   }
 
   reservation.totalPrice = newTotalPrice;
-  if (typeof remarks === "string") {
-    reservation.remarks = remarks;
+  
+  // Update remarks if provided (even if empty string - to allow clearing remarks)
+  if (remarks !== undefined) {
+    reservation.remarks = remarks || "no remarks";
   }
   await reservation.save();
 
-  // ✅ Log updates
+  // ✅ Log updates - MUST be saved to database before response
   const updateLogs = [];
   
   // Log details update if items were changed
@@ -477,16 +499,17 @@ export const updateReservation = asyncHandler(async (req, res) => {
     );
   }
 
-  // Log remarks update if changed
-  if (typeof remarks === "string" && remarks !== oldRemarks) {
+  // Log remarks update if changed (including when cleared)
+  const newRemarks = remarks !== undefined ? (remarks || "no remarks") : reservation.remarks || "no remarks";
+  if (remarks !== undefined && newRemarks !== oldRemarks) {
     updateLogs.push(
       logReservationUpdate({
         reservationId: reservation._id,
         updateType: "remarks_updated",
         updatedBy: req.user._id,
-        description: `Remarks updated`,
-        oldValue: oldRemarks || "No remarks",
-        newValue: remarks,
+        description: `Remarks ${remarks ? "updated" : "cleared"}`,
+        oldValue: oldRemarks || "no remarks",
+        newValue: newRemarks,
       })
     );
   }
@@ -508,8 +531,26 @@ export const updateReservation = asyncHandler(async (req, res) => {
     );
   }
 
-  // Wait for all logs to complete (non-blocking)
-  await Promise.allSettled(updateLogs);
+  // ✅ CRITICAL: Wait for all logs to complete and save to database
+  // This ensures updates are persisted before response is sent
+  const logResults = await Promise.allSettled(updateLogs);
+  
+  // Log any failures (but don't fail the request)
+  logResults.forEach((result, index) => {
+    if (result.status === "rejected") {
+      console.error(`Failed to log reservation update ${index}:`, result.reason);
+    }
+  });
+
+  // ✅ Emit WebSocket update for real-time notifications
+  emitGlobalUpdate({
+    method: "PUT",
+    path: `/api/reservations/${reservationId}`,
+    statusCode: 200,
+    topics: ["reservations"],
+    reservationId: reservation._id.toString(),
+    userId: reservation.userId?.toString() || reservation.userId?._id?.toString(),
+  });
 
   // 📦 Populate for frontend
   const updatedReservation = await Reservation.findById(reservationId)
@@ -640,20 +681,35 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Reservation not found" });
   }
 
-  // ✅ Log status change
+  // ✅ Log status change - MUST be saved to database
   if (oldStatus !== status) {
-    await logReservationUpdate({
-      reservationId: reservation._id,
-      updateType: "status_changed",
-      updatedBy: req.user._id,
-      description: `Reservation status changed from "${oldStatus}" to "${status}"`,
-      oldValue: oldStatus,
-      newValue: status,
-      metadata: {
-        changedBy: req.user.roles?.includes("admin") ? "admin" : "cashier",
-      },
-    });
+    try {
+      await logReservationUpdate({
+        reservationId: reservation._id,
+        updateType: "status_changed",
+        updatedBy: req.user._id,
+        description: `Reservation status changed from "${oldStatus}" to "${status}"`,
+        oldValue: oldStatus,
+        newValue: status,
+        metadata: {
+          changedBy: req.user.roles?.includes("admin") ? "admin" : "cashier",
+        },
+      });
+    } catch (logError) {
+      console.error("Failed to log status change:", logError);
+    }
   }
+
+  // ✅ Emit WebSocket update for real-time notifications
+  emitGlobalUpdate({
+    method: "PUT",
+    path: `/api/reservations/${id}/status`,
+    statusCode: 200,
+    topics: ["reservations"],
+    reservationId: reservation._id.toString(),
+    userId: reservation.userId?._id?.toString() || reservation.userId?.toString(),
+    status: status,
+  });
 
   // ✅ Send email notification to user
   if (reservation.userId && reservation.userId.email) {

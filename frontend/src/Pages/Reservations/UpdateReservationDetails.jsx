@@ -7,12 +7,14 @@ import { useProductStore } from "../../store/productStore";
 import { useReservationStore } from "../../store/reservationStore";
 import { formatVariantLabel } from "../../utils/formatVariantLabel";
 import { useQuickToast } from "../../hooks/useQuickToast";
+import { useConfirm } from "../../hooks/useConfirm";
 
 const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   const { user } = useAuthContext();
   const { updateReservation } = useReservationStore();
   const { products, fetchProducts } = useProductStore();
   const quickToast = useQuickToast();
+  const confirm = useConfirm();
 
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -244,6 +246,19 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
     }
 
     try {
+      // Ask for confirmation before updating
+      const result = await confirm({
+        title: "Update reservation?",
+        text: "This will update the items and remarks for this reservation.",
+        icon: "question",
+        confirmButtonText: "Yes, update",
+        cancelButtonText: "Cancel",
+      });
+
+      if (!result.isConfirmed) {
+        return; // User cancelled
+      }
+
       setLoading(true);
 
       const payload = {

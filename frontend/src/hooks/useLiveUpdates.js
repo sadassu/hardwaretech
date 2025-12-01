@@ -17,16 +17,50 @@ const dispatchLiveEvent = (detail) => {
 let wsInstance = null;
 let reconnectTimeout = null;
 let reconnectAttempts = 0;
+let isConnecting = false; // Prevent multiple simultaneous connection attempts
 const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_DELAY = 3000; // 3 seconds
 let subscribedChannels = new Set();
+let connectionCallbacks = new Set(); // Track all components using the connection
 
 // Get WebSocket URL from backend URL
 const getWebSocketUrl = () => {
-  const backendUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || "http://localhost:5001";
+  // Get backend URL from environment variable
+  let backendUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+  
+  // Fallback for development
+  if (!backendUrl) {
+    backendUrl = import.meta.env.DEV 
+      ? "http://localhost:5001" 
+      : window.location.origin.replace(/^https?/, "ws");
+  }
+  
+  // Remove any trailing paths (like /api) since WebSocket is at root /ws
   // Convert http:// to ws:// and https:// to wss://
-  const wsUrl = backendUrl.replace(/^http/, "ws");
-  return `${wsUrl}/ws`;
+  try {
+    const urlObj = new URL(backendUrl);
+    const protocol = urlObj.protocol === "https:" ? "wss" : "ws";
+    const host = urlObj.host; // This includes hostname:port (e.g., localhost:5001)
+    const wsUrl = `${protocol}://${host}/ws`;
+    
+    if (import.meta.env.DEV) {
+      console.log(`🔌 Connecting to WebSocket: ${wsUrl}`);
+    }
+    
+    return wsUrl;
+  } catch (error) {
+    // Fallback if URL parsing fails - strip any path manually
+    const protocol = backendUrl.startsWith("https") ? "wss" : "ws";
+    // Remove protocol and any path, keep only host:port
+    const host = backendUrl.replace(/^https?:\/\//, "").split("/")[0];
+    const wsUrl = `${protocol}://${host}/ws`;
+    
+    if (import.meta.env.DEV) {
+      console.log(`🔌 Connecting to WebSocket (fallback): ${wsUrl}`);
+    }
+    
+    return wsUrl;
+  }
 };
 
 // Subscribe to channels
@@ -54,16 +88,38 @@ const subscribeToChannels = (ws, channels) => {
 
 // Initialize WebSocket connection
 const initWebSocket = (onConnected, onDisconnected) => {
+  // If already connected, just return the instance
   if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
+    if (onConnected) onConnected();
     return wsInstance;
   }
 
+  // If already connecting, wait for it
+  if (isConnecting) {
+    // Store callbacks to call when connection is established
+    if (onConnected) connectionCallbacks.add(onConnected);
+    if (onDisconnected) connectionCallbacks.add(onDisconnected);
+    return wsInstance; // Return existing instance (even if not open yet)
+  }
+
+  // If there's an instance but it's not open, close it first
+  if (wsInstance) {
+    try {
+      wsInstance.close();
+    } catch (e) {
+      // Ignore errors when closing
+    }
+    wsInstance = null;
+  }
+
+  isConnecting = true;
   const wsUrl = getWebSocketUrl();
   
   try {
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
+      isConnecting = false;
       reconnectAttempts = 0;
       if (import.meta.env.DEV) {
         console.log("✅ WebSocket connected");
@@ -84,7 +140,17 @@ const initWebSocket = (onConnected, onDisconnected) => {
       subscribeToChannels(ws, channels);
       
       dispatchLiveEvent({ topics: ["general"], message: "socket-connected" });
+      
+      // Call all registered callbacks
       if (onConnected) onConnected();
+      connectionCallbacks.forEach(callback => {
+        try {
+          callback();
+        } catch (e) {
+          console.error("Error in connection callback:", e);
+        }
+      });
+      connectionCallbacks.clear();
     };
 
     ws.onmessage = (event) => {
@@ -114,20 +180,43 @@ const initWebSocket = (onConnected, onDisconnected) => {
     };
 
     ws.onerror = (error) => {
+      isConnecting = false;
       if (import.meta.env.DEV) {
         console.warn("⚠️ WebSocket error:", error);
       }
     };
 
     ws.onclose = (event) => {
+      isConnecting = false;
+      const wasClean = event.wasClean;
+      const code = event.code;
+      const reason = event.reason || "Unknown reason";
+      
       if (import.meta.env.DEV) {
-        console.log("🔌 WebSocket disconnected");
+        console.log(`🔌 WebSocket disconnected (code: ${code}, clean: ${wasClean}, reason: ${reason})`);
       }
       
+      // Call disconnected callbacks
       if (onDisconnected) onDisconnected();
+      connectionCallbacks.forEach(callback => {
+        try {
+          callback();
+        } catch (e) {
+          console.error("Error in disconnection callback:", e);
+        }
+      });
       
-      // Attempt to reconnect
-      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      // Don't reconnect if it was a clean close (e.g., server shutdown)
+      if (wasClean && code === 1000) {
+        if (import.meta.env.DEV) {
+          console.log("Connection closed cleanly, not reconnecting");
+        }
+        wsInstance = null;
+        return;
+      }
+      
+      // Only reconnect if no other component is already handling reconnection
+      if (!isConnecting && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
         const delay = RECONNECT_DELAY * Math.min(reconnectAttempts, 5); // Exponential backoff, max 5x
         
@@ -139,16 +228,19 @@ const initWebSocket = (onConnected, onDisconnected) => {
           wsInstance = null;
           initWebSocket(onConnected, onDisconnected);
         }, delay);
-      } else {
-        if (import.meta.env.DEV) {
-          console.error("❌ Max reconnection attempts reached. WebSocket connection failed.");
-        }
+      } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        console.error("❌ Max reconnection attempts reached. WebSocket connection failed.");
+        // Reset attempts after a longer delay to allow retry later
+        setTimeout(() => {
+          reconnectAttempts = 0;
+        }, 60000); // Reset after 1 minute
       }
     };
 
     wsInstance = ws;
     return ws;
   } catch (error) {
+    isConnecting = false;
     console.error("❌ Failed to initialize WebSocket:", error);
     return null;
   }

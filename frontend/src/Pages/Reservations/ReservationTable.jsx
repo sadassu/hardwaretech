@@ -18,6 +18,7 @@ import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 import UpdateReservationStatus from "./UpdateReservationStatus";
 import CompleteReservation from "./CompleteReservation";
 import UpdateReservationDetails from "./UpdateReservationDetails";
+import ReservationUpdateHistory from "../../components/ReservationUpdateHistory";
 
 const ReservationTable = () => {
   const {
@@ -296,14 +297,15 @@ const ReservationTable = () => {
                               </div>
                             </div>
 
-                  {/* Right Column - Order Details */}
-                            <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Package className="w-4 h-4 text-green-600" />
-                      <h4 className="font-semibold text-sm text-gray-700">
-                                Order Details
-                              </h4>
-                    </div>
+                  {/* Right Column - Order Details & Update History */}
+                            <div className="space-y-6">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Package className="w-4 h-4 text-green-600" />
+                        <h4 className="font-semibold text-sm text-gray-700">
+                                  Order Details
+                                </h4>
+                      </div>
 
                               {res.reservationDetails?.length > 0 ? (
                       <div className="space-y-3">
@@ -377,6 +379,12 @@ const ReservationTable = () => {
                                   </p>
                                 </div>
                               )}
+                    </div>
+
+                    {/* Update History */}
+                    <div>
+                      <ReservationUpdateHistory reservationId={res._id} />
+                    </div>
                             </div>
                           </div>
                         </div>
