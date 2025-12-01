@@ -12,7 +12,8 @@ import { EMAIL_TYPES } from "../constants/emailTypes.js";
  * Priority: High - User waiting for code
  */
 export const sendVerificationCodeEmail = async (email, userName, code) => {
-  const subject = "🔐 Email Verification Code - Hardware Tech";
+  // Removed emoji from subject for better spam filter compliance
+  const subject = "Email Verification Code - Hardware Tech";
   const html = `
 <!DOCTYPE html>
 <html>
@@ -84,7 +85,8 @@ export const sendVerificationCodeEmail = async (email, userName, code) => {
  * Priority: Medium
  */
 export const sendVerificationLinkEmail = async (email, userName, verificationLink) => {
-  const subject = "✅ Verify Your Email - Hardware Tech";
+  // Removed emoji from subject for better spam filter compliance
+  const subject = "Verify Your Email - Hardware Tech";
   const html = `
 <!DOCTYPE html>
 <html>
@@ -155,7 +157,8 @@ export const sendVerificationLinkEmail = async (email, userName, verificationLin
  * Priority: High - Security critical
  */
 export const sendPasswordResetEmail = async (email, userName, resetLink) => {
-  const subject = "🔒 Password Reset Request - Hardware Tech";
+  // Removed emoji from subject for better spam filter compliance
+  const subject = "Password Reset Request - Hardware Tech";
   const html = `
 <!DOCTYPE html>
 <html>
@@ -233,12 +236,13 @@ export const sendPasswordResetEmail = async (email, userName, resetLink) => {
 export const sendReservationStatusEmail = async (email, userName, reservationData) => {
   const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
   
+  // Removed emojis from subjects for better spam filter compliance
   const statusTitles = {
-    pending: "⏳ Reservation Pending - Hardware Tech",
-    confirmed: "✅ Reservation Confirmed - Hardware Tech",
-    cancelled: "❌ Reservation Cancelled - Hardware Tech",
-    failed: "⚠️ Reservation Failed - Hardware Tech",
-    completed: "🎉 Reservation Completed - Hardware Tech",
+    pending: "Reservation Pending - Hardware Tech",
+    confirmed: "Reservation Confirmed - Hardware Tech",
+    cancelled: "Reservation Cancelled - Hardware Tech",
+    failed: "Reservation Failed - Hardware Tech",
+    completed: "Reservation Completed - Hardware Tech",
   };
 
   const subject = statusTitles[reservationData.status] || "Reservation Update - Hardware Tech";
@@ -270,7 +274,8 @@ export const sendReservationStatusEmail = async (email, userName, reservationDat
 export const sendReservationCompletedEmail = async (email, userName, reservationData) => {
   const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
   
-  const subject = "🎉 Reservation Completed - Hardware Tech";
+  // Removed emoji from subject for better spam filter compliance
+  const subject = "Reservation Completed - Hardware Tech";
   const html = getReservationStatusEmailTemplate(
     userName,
     reservationData.reservationId,
@@ -299,7 +304,8 @@ export const sendReservationCompletedEmail = async (email, userName, reservation
 export const sendReservationCreatedEmail = async (email, userName, reservationData) => {
   const { getReservationStatusEmailTemplate } = await import("../utils/emailTemplates.js");
   
-  const subject = "📋 Reservation Created - Hardware Tech";
+  // Removed emoji from subject for better spam filter compliance
+  const subject = "Reservation Created - Hardware Tech";
   const html = getReservationStatusEmailTemplate(
     userName,
     reservationData.reservationId,

@@ -1,11 +1,11 @@
-import nodemailer from "nodemailer";
+import * as brevo from "@getbrevo/brevo";
 
 /**
- * Validates that all required SMTP environment variables are set
+ * Validates that Brevo API key is set
  * @returns {Object} { valid: boolean, missing: string[] }
  */
 const validateEmailConfig = () => {
-  const required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS"];
+  const required = ["BREVO_API_KEY"];
   const missing = required.filter((key) => !process.env[key]);
   
   return {
@@ -14,80 +14,82 @@ const validateEmailConfig = () => {
   };
 };
 
-// Singleton transporter for connection pooling (faster delivery)
-let cachedTransporter = null;
+// Reusable Brevo API instance (singleton pattern for better performance)
+let apiInstance = null;
+let apiKey = null;
 
 /**
- * Creates a nodemailer transporter with optimized settings for fast delivery
- * Uses singleton pattern for connection pooling
- * @returns {Object} Nodemailer transporter
+ * Get or create Brevo API instance (reused for better performance)
+ * @returns {brevo.TransactionalEmailsApi}
  */
-const createTransporter = () => {
-  // Return cached transporter if available and still connected
-  if (cachedTransporter) {
-    return cachedTransporter;
+const getApiInstance = () => {
+  const currentApiKey = process.env.BREVO_API_KEY;
+  
+  // Reuse instance if API key hasn't changed
+  if (apiInstance && apiKey === currentApiKey) {
+    return apiInstance;
   }
-
-  const port = parseInt(process.env.SMTP_PORT, 10);
-  const secure = port === 465;
-  const requireTLS = port === 587;
-
-  cachedTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: port,
-    secure: secure, // true for 465, false for other ports
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    // Optimized timeout settings for faster delivery
-    connectionTimeout: 3000, // 3 seconds (reduced for faster connection)
-    greetingTimeout: 3000, // 3 seconds (reduced for faster greeting)
-    socketTimeout: 5000, // 5 seconds (reduced for faster socket operations)
-    // TLS/SSL configuration
-    tls: {
-      rejectUnauthorized: false, // Accept self-signed certificates
-      minVersion: "TLSv1.2", // Minimum TLS version
-    },
-    // For port 587 (STARTTLS)
-    ...(requireTLS && {
-      requireTLS: true,
-    }),
-    // Connection pooling for better performance and faster delivery
-    pool: true,
-    maxConnections: 10, // Increased from 5 for better concurrency
-    maxMessages: 200, // Increased from 100 for better throughput
-    // Optimized rate limiting for faster throughput
-    rateDelta: 1000, // 1 second
-    rateLimit: 20, // 20 messages per second (increased from 10 for faster delivery)
-  });
-
-  return cachedTransporter;
+  
+  // Create new instance
+  apiInstance = new brevo.TransactionalEmailsApi();
+  apiInstance.setApiKey(
+    brevo.TransactionalEmailsApiApiKeys.apiKey,
+    currentApiKey
+  );
+  apiKey = currentApiKey;
+  
+  return apiInstance;
 };
 
 /**
- * Sends an email using nodemailer with retry logic
+ * Convert HTML to plain text (simple version for email deliverability)
+ * @param {string} html - HTML content
+ * @returns {string} Plain text version
+ */
+const htmlToPlainText = (html) => {
+  if (!html) return "";
+  
+  return html
+    .replace(/<style[^>]*>.*?<\/style>/gis, "")
+    .replace(/<script[^>]*>.*?<\/script>/gis, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+/**
+ * Generate Message-ID for email
+ * @param {string} domain - Sender domain
+ * @returns {string} Message-ID
+ */
+const generateMessageId = (domain) => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  return `<${timestamp}.${random}@${domain}>`;
+};
+
+/**
+ * Sends an email using Brevo API with retry logic and optimized performance
  * @param {string} to - Recipient email address
  * @param {string} subject - Email subject
  * @param {string} html - Email HTML content
- * @param {number} retries - Number of retry attempts (default: 2)
+ * @param {number} retries - Number of retry attempts (default: 1 for faster delivery)
+ * @param {boolean} isPriority - Whether this is a priority email (affects retry timing)
  * @throws {Error} If email configuration is invalid or sending fails after retries
  */
-export const sendEmail = async (to, subject, html, retries = 2) => {
+export const sendEmail = async (to, subject, html, retries = 1, isPriority = false) => {
   // Validate email configuration
   const configCheck = validateEmailConfig();
   if (!configCheck.valid) {
     const errorMsg = `Email configuration incomplete. Missing: ${configCheck.missing.join(", ")}. Please check your environment variables.`;
     console.error("❌ Email Configuration Error:", errorMsg);
-    console.error("📖 See backend/EMAIL_SETUP.md for configuration guide");
-    throw new Error(errorMsg);
-  }
-
-  // Validate port
-  const port = parseInt(process.env.SMTP_PORT, 10);
-  if (isNaN(port)) {
-    const errorMsg = `Invalid SMTP_PORT: ${process.env.SMTP_PORT}. Must be a number (e.g., 587 or 465).`;
-    console.error("❌ Email Configuration Error:", errorMsg);
+    console.error("📖 Set BREVO_API_KEY in your environment variables");
     throw new Error(errorMsg);
   }
 
@@ -98,128 +100,103 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
     throw new Error(errorMsg);
   }
 
-  // Gmail-specific validation and warnings
-  if (process.env.SMTP_HOST === "smtp.gmail.com") {
-    // Check if using Gmail and provide helpful warnings
-    const smtpUser = process.env.SMTP_USER || "";
-    const smtpPass = process.env.SMTP_PASS || "";
-    
-    // Warn if password looks like a regular password (too short or contains spaces)
-    if (smtpPass.length < 16 || smtpPass.includes(" ")) {
-      console.warn("⚠️  Gmail Warning: App Password should be 16 characters with no spaces.");
-      console.warn("   If you're using a regular password, Gmail will reject it.");
-      console.warn("   Generate an App Password: https://myaccount.google.com/apppasswords");
-    }
-    
-    // Warn if email format looks wrong
-    if (!smtpUser.includes("@gmail.com") && !smtpUser.includes("@googlemail.com")) {
-      console.warn("⚠️  Gmail Warning: SMTP_USER should be your Gmail address (e.g., yourname@gmail.com)");
-    }
-  }
+  // Prepare sender info
+  const fromEmail = process.env.BREVO_FROM_EMAIL || "onboarding@resend.dev";
+  const fromName = process.env.BREVO_FROM_NAME || "Hardware Tech";
+  const domain = fromEmail.split("@")[1] || "hardwaretech.com";
+  
+  // Generate plain text version for better deliverability
+  const textContent = htmlToPlainText(html);
+  
+  // Generate unique Message-ID for spam prevention
+  const messageId = generateMessageId(domain);
+  
+  // Get reusable API instance
+  const apiInstance = getApiInstance();
 
   let lastError = null;
 
-  // Retry logic with optimized backoff
+  // Optimized retry logic with faster backoff for priority emails
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      // Use singleton transporter for connection pooling (faster)
-      const transporter = createTransporter();
+      // Create email object with anti-spam headers
+      const sendSmtpEmail = new brevo.SendSmtpEmail();
+      sendSmtpEmail.subject = subject;
+      sendSmtpEmail.htmlContent = html;
+      sendSmtpEmail.textContent = textContent; // Plain text alternative for better deliverability
+      sendSmtpEmail.sender = {
+        email: fromEmail,
+        name: fromName,
+      };
+      sendSmtpEmail.to = [{ email: to }];
+      
+      // Add headers for spam prevention and deliverability
+      sendSmtpEmail.headers = {
+        "Message-ID": messageId,
+        "X-Mailer": "HardwareTech-Email-System",
+        "X-Priority": isPriority ? "1" : "3",
+        "List-Unsubscribe": `mailto:unsubscribe@${domain}, https://${domain}/unsubscribe`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        "Precedence": "bulk",
+        "X-Auto-Response-Suppress": "All",
+      };
+      
+      // Add reply-to for better deliverability
+      sendSmtpEmail.replyTo = {
+        email: process.env.BREVO_REPLY_TO || fromEmail,
+        name: fromName,
+      };
 
-      // Skip verification in production for faster delivery (only verify if explicitly enabled)
-      // Verification is skipped by default for maximum speed - only verify on first attempt if explicitly requested
-      if (process.env.VERIFY_SMTP === "true" && attempt === 0) {
-        try {
-          await Promise.race([
-            transporter.verify(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("SMTP verification timeout")), 2000) // Reduced from 3s to 2s
-            )
-          ]);
-          console.log("✅ SMTP connection verified successfully");
-        } catch (verifyError) {
-          console.warn("⚠️ SMTP verification failed (continuing anyway):", verifyError.message);
-          // Don't throw, some servers don't support verify but can still send emails
-        }
-      }
-
-      // Send email with timeout
-      const sendPromise = transporter.sendMail({
-        from: process.env.EMAIL_FROM || `"Hardwaretech" <${process.env.SMTP_USER}>`,
-        to,
-        subject,
-        html,
-        // Additional headers for better deliverability
-        headers: {
-          "X-Priority": "3",
-          "X-MSMail-Priority": "Normal",
-        },
-      });
-
-      // Optimized timeout for faster delivery (reduced to 8s for quicker feedback)
-      const info = await Promise.race([
+      // Send email with optimized timeout (5 seconds instead of 10)
+      const sendPromise = apiInstance.sendTransacEmail(sendSmtpEmail);
+      
+      const data = await Promise.race([
         sendPromise,
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Email sending timeout after 8 seconds")), 8000)
+          setTimeout(() => reject(new Error("Email sending timeout after 5 seconds")), 5000)
         )
       ]);
 
-      console.log(`✅ Email sent successfully to ${to}. Message ID: ${info.messageId}`);
+      console.log(`✅ Email sent successfully to ${to}. Message ID: ${data?.messageId || "N/A"}`);
       
-      // Don't close pooled connection - keep it open for reuse (faster subsequent sends)
-      // Only close if not using connection pooling
-      if (!cachedTransporter) {
-        transporter.close();
-      }
-      
-      return info;
+      return data;
     } catch (error) {
       lastError = error;
       
-      // Enhanced error logging with Gmail-specific help
+      // Enhanced error logging
       const errorDetails = {
         attempt: attempt + 1,
         maxAttempts: retries + 1,
         to,
         subject: subject.substring(0, 50) + (subject.length > 50 ? "..." : ""),
-        error: error.message,
-        code: error.code,
-        command: error.command,
-        response: error.response,
-        responseCode: error.responseCode,
-        errno: error.errno,
-        syscall: error.syscall,
-        hostname: error.hostname,
+        error: error.message || error.body?.message || "Unknown error",
+        statusCode: error.statusCode,
+        response: error.response?.text || error.body,
       };
 
       console.error(`❌ Email sending failed (attempt ${attempt + 1}/${retries + 1}):`, errorDetails);
 
-      // Gmail-specific error help
-      if (process.env.SMTP_HOST === "smtp.gmail.com") {
-        const isAuthError = error.message?.includes("Invalid login") || 
-                           error.message?.includes("BadCredentials") ||
-                           error.message?.includes("535-5.7.8") ||
-                           error.responseCode === 535;
-        
-        if (isAuthError) {
-          console.error("\n🔴 GMAIL AUTHENTICATION ERROR DETECTED:");
-          console.error("   This usually means:");
-          console.error("   1. You're using your regular Gmail password (NOT allowed)");
-          console.error("   2. You need to use a Gmail App Password instead");
-          console.error("   3. 2-Factor Authentication must be enabled");
-          console.error("\n   📝 How to fix:");
-          console.error("   1. Go to: https://myaccount.google.com/apppasswords");
-          console.error("   2. Enable 2-Factor Authentication if not already enabled");
-          console.error("   3. Generate a new App Password (select 'Mail' and your device)");
-          console.error("   4. Copy the 16-character password (no spaces)");
-          console.error("   5. Use it as SMTP_PASS in your environment variables");
-          console.error("   6. Make sure SMTP_USER is your full Gmail address");
-          console.error("");
-        }
+      // Brevo-specific error help
+      if (error.statusCode === 401 || error.body?.code === "unauthorized") {
+        console.error("\n🔴 BREVO AUTHENTICATION ERROR DETECTED:");
+        console.error("   This usually means:");
+        console.error("   1. Your BREVO_API_KEY is invalid or expired");
+        console.error("   2. Check your Brevo dashboard for the correct API key");
+        console.error("   3. Make sure BREVO_API_KEY is set in your environment variables");
+        console.error("");
+      } else if (error.statusCode === 400 || error.body?.code === "invalid_parameter") {
+        console.error("\n🔴 BREVO VALIDATION ERROR:");
+        console.error("   This usually means:");
+        console.error("   1. Invalid sender email address");
+        console.error("   2. Sender domain not verified in Brevo");
+        console.error("   3. Check BREVO_FROM_EMAIL and verify your domain in Brevo dashboard");
+        console.error("");
       }
 
-      // Optimized backoff for faster retries
+      // Optimized backoff: faster for priority emails, standard for others
       if (attempt < retries) {
-        const waitTime = Math.min((attempt + 1) * 300, 1500); // Faster backoff: 300ms, 600ms, max 1500ms
+        const baseWaitTime = isPriority ? 100 : 200; // Faster for priority
+        const waitTime = Math.min((attempt + 1) * baseWaitTime, isPriority ? 500 : 1000);
         console.log(`⏳ Retrying in ${waitTime}ms...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
@@ -227,20 +204,20 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
   }
 
   // All retries failed
-  const finalError = `Failed to send email after ${retries + 1} attempts. Last error: ${lastError?.message || "Unknown error"}`;
+  const finalError = `Failed to send email after ${retries + 1} attempts. Last error: ${lastError?.message || lastError?.body?.message || "Unknown error"}`;
   console.error("❌ Email sending failed completely:", {
     to,
     subject,
     finalError,
-    lastError: lastError?.message,
-    code: lastError?.code,
+    lastError: lastError?.message || lastError?.body?.message,
+    statusCode: lastError?.statusCode,
   });
 
   throw new Error(finalError);
 };
 
 /**
- * Tests the email configuration by attempting to verify SMTP connection
+ * Tests the email configuration by attempting to verify Brevo API connection
  * @returns {Promise<Object>} { success: boolean, message: string }
  */
 export const testEmailConfig = async () => {
@@ -254,27 +231,29 @@ export const testEmailConfig = async () => {
   }
 
   try {
-    const transporter = createTransporter();
-    
-    // Test connection with timeout
+    // Test by getting account info (lightweight API call)
+    const apiInstance = new brevo.AccountApi();
+    apiInstance.setApiKey(
+      brevo.AccountApiApiKeys.apiKey,
+      process.env.BREVO_API_KEY
+    );
+
     await Promise.race([
-      transporter.verify(),
+      apiInstance.getAccount(),
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Connection test timeout")), 10000)
       )
     ]);
     
-    transporter.close();
-    
     return {
       success: true,
-      message: "Email configuration is valid and connection successful",
+      message: "Brevo API configuration is valid and connection successful",
     };
   } catch (error) {
     return {
       success: false,
-      message: `Email connection test failed: ${error.message}`,
-      error: error.message,
+      message: `Brevo API connection test failed: ${error.message || error.body?.message || "Unknown error"}`,
+      error: error.message || error.body?.message,
     };
   }
 };

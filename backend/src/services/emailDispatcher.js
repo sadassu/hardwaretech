@@ -21,7 +21,8 @@ class EmailDispatcher {
   constructor() {
     this.queue = [];
     this.active = 0;
-    this.maxConcurrent = 8; // Increased from 4 to 8 for faster email processing
+    this.maxConcurrent = 12; // Optimized for better throughput
+    this.processing = false;
   }
 
   enqueue(job) {
@@ -92,11 +93,13 @@ class EmailDispatcher {
   }
 
   async execute(job) {
+    const isPriority = job.priority === PRIORITY.IMMEDIATE || job.priority === PRIORITY.HIGH;
     return sendEmail(
       job.to,
       job.subject,
       job.html,
-      job.retries ?? 2
+      job.retries ?? 1, // Default to 1 retry for faster delivery
+      isPriority
     );
   }
 }

@@ -1215,8 +1215,8 @@ function Dashboard() {
                             tick={{ fontSize: 10 }}
                             tickFormatter={(value) =>
                               value >= 1000
-                                ? `₱${(value / 1000).toFixed(0)}k`
-                                : `₱${value.toLocaleString()}`
+                                ? `${(value / 1000).toFixed(0)}k`
+                                : `${value.toLocaleString()}`
                             }
                           />
                           <Tooltip content={<SupplyHistoryTooltip />} />
@@ -1387,7 +1387,14 @@ function Dashboard() {
                             tick={{ fontSize: 10 }}
                             interval={0}
                           />
-                          <YAxis tick={{ fontSize: 10 }} />
+                          <YAxis 
+                            tick={{ fontSize: 10 }}
+                            tickFormatter={(value) =>
+                              value >= 1000
+                                ? `₱${(value / 1000).toFixed(0)}k`
+                                : `₱${value.toLocaleString()}`
+                            }
+                          />
                           <Legend
                             wrapperStyle={{ paddingTop: "20px", fontSize: "11px" }}
                             iconType="rect"
