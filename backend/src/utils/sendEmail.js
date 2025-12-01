@@ -14,15 +14,76 @@ const validateEmailConfig = () => {
   };
 };
 
+// Reusable Brevo API instance (singleton pattern for better performance)
+let apiInstance = null;
+let apiKey = null;
+
 /**
- * Sends an email using Brevo API with retry logic
+ * Get or create Brevo API instance (reused for better performance)
+ * @returns {brevo.TransactionalEmailsApi}
+ */
+const getApiInstance = () => {
+  const currentApiKey = process.env.BREVO_API_KEY;
+  
+  // Reuse instance if API key hasn't changed
+  if (apiInstance && apiKey === currentApiKey) {
+    return apiInstance;
+  }
+  
+  // Create new instance
+  apiInstance = new brevo.TransactionalEmailsApi();
+  apiInstance.setApiKey(
+    brevo.TransactionalEmailsApiApiKeys.apiKey,
+    currentApiKey
+  );
+  apiKey = currentApiKey;
+  
+  return apiInstance;
+};
+
+/**
+ * Convert HTML to plain text (simple version for email deliverability)
+ * @param {string} html - HTML content
+ * @returns {string} Plain text version
+ */
+const htmlToPlainText = (html) => {
+  if (!html) return "";
+  
+  return html
+    .replace(/<style[^>]*>.*?<\/style>/gis, "")
+    .replace(/<script[^>]*>.*?<\/script>/gis, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+/**
+ * Generate Message-ID for email
+ * @param {string} domain - Sender domain
+ * @returns {string} Message-ID
+ */
+const generateMessageId = (domain) => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  return `<${timestamp}.${random}@${domain}>`;
+};
+
+/**
+ * Sends an email using Brevo API with retry logic and optimized performance
  * @param {string} to - Recipient email address
  * @param {string} subject - Email subject
  * @param {string} html - Email HTML content
- * @param {number} retries - Number of retry attempts (default: 2)
+ * @param {number} retries - Number of retry attempts (default: 1 for faster delivery)
+ * @param {boolean} isPriority - Whether this is a priority email (affects retry timing)
  * @throws {Error} If email configuration is invalid or sending fails after retries
  */
-export const sendEmail = async (to, subject, html, retries = 2) => {
+export const sendEmail = async (to, subject, html, retries = 1, isPriority = false) => {
   // Validate email configuration
   const configCheck = validateEmailConfig();
   if (!configCheck.valid) {
@@ -42,36 +103,57 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
   // Prepare sender info
   const fromEmail = process.env.BREVO_FROM_EMAIL || "onboarding@resend.dev";
   const fromName = process.env.BREVO_FROM_NAME || "Hardware Tech";
+  const domain = fromEmail.split("@")[1] || "hardwaretech.com";
+  
+  // Generate plain text version for better deliverability
+  const textContent = htmlToPlainText(html);
+  
+  // Generate unique Message-ID for spam prevention
+  const messageId = generateMessageId(domain);
+  
+  // Get reusable API instance
+  const apiInstance = getApiInstance();
 
   let lastError = null;
 
-  // Retry logic with optimized backoff
+  // Optimized retry logic with faster backoff for priority emails
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      // Initialize Brevo API client (create fresh instance for each attempt)
-      const apiInstance = new brevo.TransactionalEmailsApi();
-      apiInstance.setApiKey(
-        brevo.TransactionalEmailsApiApiKeys.apiKey,
-        process.env.BREVO_API_KEY
-      );
-
-      // Create email object
+      // Create email object with anti-spam headers
       const sendSmtpEmail = new brevo.SendSmtpEmail();
       sendSmtpEmail.subject = subject;
       sendSmtpEmail.htmlContent = html;
+      sendSmtpEmail.textContent = textContent; // Plain text alternative for better deliverability
       sendSmtpEmail.sender = {
         email: fromEmail,
         name: fromName,
       };
       sendSmtpEmail.to = [{ email: to }];
+      
+      // Add headers for spam prevention and deliverability
+      sendSmtpEmail.headers = {
+        "Message-ID": messageId,
+        "X-Mailer": "HardwareTech-Email-System",
+        "X-Priority": isPriority ? "1" : "3",
+        "List-Unsubscribe": `mailto:unsubscribe@${domain}, https://${domain}/unsubscribe`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        "Precedence": "bulk",
+        "X-Auto-Response-Suppress": "All",
+      };
+      
+      // Add reply-to for better deliverability
+      sendSmtpEmail.replyTo = {
+        email: process.env.BREVO_REPLY_TO || fromEmail,
+        name: fromName,
+      };
 
-      // Send email with timeout
+      // Send email with optimized timeout (5 seconds instead of 10)
       const sendPromise = apiInstance.sendTransacEmail(sendSmtpEmail);
       
       const data = await Promise.race([
         sendPromise,
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Email sending timeout after 10 seconds")), 10000)
+          setTimeout(() => reject(new Error("Email sending timeout after 5 seconds")), 5000)
         )
       ]);
 
@@ -104,16 +186,17 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
         console.error("");
       } else if (error.statusCode === 400 || error.body?.code === "invalid_parameter") {
         console.error("\n🔴 BREVO VALIDATION ERROR:");
-          console.error("   This usually means:");
+        console.error("   This usually means:");
         console.error("   1. Invalid sender email address");
         console.error("   2. Sender domain not verified in Brevo");
         console.error("   3. Check BREVO_FROM_EMAIL and verify your domain in Brevo dashboard");
-          console.error("");
+        console.error("");
       }
 
-      // Optimized backoff for faster retries
+      // Optimized backoff: faster for priority emails, standard for others
       if (attempt < retries) {
-        const waitTime = Math.min((attempt + 1) * 300, 1500); // Faster backoff: 300ms, 600ms, max 1500ms
+        const baseWaitTime = isPriority ? 100 : 200; // Faster for priority
+        const waitTime = Math.min((attempt + 1) * baseWaitTime, isPriority ? 500 : 1000);
         console.log(`⏳ Retrying in ${waitTime}ms...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
