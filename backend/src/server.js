@@ -1,4 +1,5 @@
 import express from "express";
+import { createServer } from "http";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
@@ -18,6 +19,7 @@ import {
   emitGlobalUpdate,
   deriveTopicsFromPath,
 } from "./services/realtime.js";
+import { initWebSocketServer } from "./services/websocketServer.js";
 
 import { connectDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
@@ -27,6 +29,7 @@ import "./config/passport.js";
 
 dotenv.config();
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 5001;
 
 // Configure allowed origins - include localhost for development
@@ -46,7 +49,7 @@ const allowedOrigins = [
     : []),
 ].filter(Boolean);
 
-// Note: No need for http.createServer when using Pusher
+// HTTP server is created above for WebSocket support
 
 // Middleware
 app.use(express.json());
@@ -131,10 +134,10 @@ app.use((err, req, res, next) => {
 
 // Connect DB and start server
 connectDB().then(async () => {
-  // Initialize Pusher for real-time updates
-  initRealtime();
+  // Initialize WebSocket server for real-time updates
+  initWebSocketServer(server);
   
-  app.listen(PORT, async () => {
+  server.listen(PORT, async () => {
     console.log(`Server listening on port: ${PORT}`);
     
     // Check email configuration on startup

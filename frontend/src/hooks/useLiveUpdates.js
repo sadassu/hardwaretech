@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import Pusher from "pusher-js";
 
 const dispatchLiveEvent = (detail) => {
   const eventDetail = {
@@ -14,9 +13,146 @@ const dispatchLiveEvent = (detail) => {
   });
 };
 
-// Singleton Pusher instance to prevent multiple connections
-let pusherInstance = null;
+// Singleton WebSocket instance to prevent multiple connections
+let wsInstance = null;
+let reconnectTimeout = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 10;
+const RECONNECT_DELAY = 3000; // 3 seconds
 let subscribedChannels = new Set();
+
+// Get WebSocket URL from backend URL
+const getWebSocketUrl = () => {
+  const backendUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || "http://localhost:5001";
+  // Convert http:// to ws:// and https:// to wss://
+  const wsUrl = backendUrl.replace(/^http/, "ws");
+  return `${wsUrl}/ws`;
+};
+
+// Subscribe to channels
+const subscribeToChannels = (ws, channels) => {
+  channels.forEach((channelName) => {
+    if (!subscribedChannels.has(channelName)) {
+      try {
+        ws.send(JSON.stringify({
+          type: "subscribe",
+          channels: [channelName],
+        }));
+        subscribedChannels.add(channelName);
+        
+        if (import.meta.env.DEV) {
+          console.log(`✅ Subscribed to channel: ${channelName}`);
+        }
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn(`⚠️ Failed to subscribe to ${channelName}:`, error);
+        }
+      }
+    }
+  });
+};
+
+// Initialize WebSocket connection
+const initWebSocket = (onConnected, onDisconnected) => {
+  if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
+    return wsInstance;
+  }
+
+  const wsUrl = getWebSocketUrl();
+  
+  try {
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      reconnectAttempts = 0;
+      if (import.meta.env.DEV) {
+        console.log("✅ WebSocket connected");
+      }
+      
+      // Subscribe to all channels
+      const channels = [
+        "hardware-tech-general",
+        "hardware-tech-reservations",
+        "hardware-tech-sales",
+        "hardware-tech-supply",
+        "hardware-tech-inventory",
+        "hardware-tech-dashboard",
+        "hardware-tech-categories",
+        "hardware-tech-users",
+      ];
+      
+      subscribeToChannels(ws, channels);
+      
+      dispatchLiveEvent({ topics: ["general"], message: "socket-connected" });
+      if (onConnected) onConnected();
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        
+        if (message.type === "update" && message.event === "app:update") {
+          // Log in development for debugging
+          if (import.meta.env.DEV) {
+            console.log(`📨 Received update on ${message.channel}:`, message.data);
+          }
+          dispatchLiveEvent(message.data);
+        } else if (message.type === "subscribed") {
+          if (import.meta.env.DEV) {
+            console.log(`✅ ${message.message}`);
+          }
+        } else if (message.type === "connected") {
+          if (import.meta.env.DEV) {
+            console.log(`✅ ${message.message}`);
+          }
+        } else if (message.type === "pong") {
+          // Heartbeat response
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      if (import.meta.env.DEV) {
+        console.warn("⚠️ WebSocket error:", error);
+      }
+    };
+
+    ws.onclose = (event) => {
+      if (import.meta.env.DEV) {
+        console.log("🔌 WebSocket disconnected");
+      }
+      
+      if (onDisconnected) onDisconnected();
+      
+      // Attempt to reconnect
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        const delay = RECONNECT_DELAY * Math.min(reconnectAttempts, 5); // Exponential backoff, max 5x
+        
+        if (import.meta.env.DEV) {
+          console.log(`🔄 Reconnecting in ${delay / 1000}s... (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+        }
+        
+        reconnectTimeout = setTimeout(() => {
+          wsInstance = null;
+          initWebSocket(onConnected, onDisconnected);
+        }, delay);
+      } else {
+        if (import.meta.env.DEV) {
+          console.error("❌ Max reconnection attempts reached. WebSocket connection failed.");
+        }
+      }
+    };
+
+    wsInstance = ws;
+    return ws;
+  } catch (error) {
+    console.error("❌ Failed to initialize WebSocket:", error);
+    return null;
+  }
+};
 
 export const useLiveUpdates = () => {
   const isMountedRef = useRef(true);
@@ -24,127 +160,34 @@ export const useLiveUpdates = () => {
   useEffect(() => {
     isMountedRef.current = true;
 
-    // Get Pusher configuration from environment variables
-    const pusherKey = import.meta.env.VITE_PUSHER_KEY;
-    const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER || "ap1";
-
-    if (!pusherKey) {
-      // Only warn in development
-      if (import.meta.env.DEV) {
-        console.warn("⚠️ Pusher key not configured. Live updates disabled.");
-        console.warn("   Set VITE_PUSHER_KEY in your environment variables.");
+    // Initialize WebSocket connection
+    const ws = initWebSocket(
+      () => {
+        if (!isMountedRef.current) return;
+        // Connection established
+      },
+      () => {
+        if (!isMountedRef.current) return;
+        // Connection lost
       }
-      return;
-    }
+    );
 
-    // Initialize Pusher if not already initialized
-    if (!pusherInstance) {
-      try {
-        pusherInstance = new Pusher(pusherKey, {
-          cluster: pusherCluster,
-          encrypted: true,
-          // Performance optimizations
-          enabledTransports: ["ws", "wss"], // WebSocket only for better performance
-          forceTLS: true,
-          // Reconnection settings
-          authEndpoint: undefined, // No auth needed for public channels
-        });
-
-        pusherInstance.connection.bind("connected", () => {
-          if (!isMountedRef.current) return;
-          // Only log in development
-          if (import.meta.env.DEV) {
-            console.log("✅ Pusher connected");
-          }
-          dispatchLiveEvent({ topics: ["general"], message: "socket-connected" });
-        });
-
-        pusherInstance.connection.bind("disconnected", () => {
-          if (!isMountedRef.current) return;
-          // Only log in development
-          if (import.meta.env.DEV) {
-            console.log("🔌 Pusher disconnected");
-          }
-        });
-
-        pusherInstance.connection.bind("error", (error) => {
-          if (!isMountedRef.current) return;
-          // Only log significant errors
-          if (import.meta.env.DEV) {
-            console.warn("⚠️ Pusher connection error:", error);
-          }
-        });
-
-        pusherInstance.connection.bind("state_change", (states) => {
-          if (!isMountedRef.current) return;
-          // Only log state changes in development
-          if (import.meta.env.DEV && states.previous !== states.current) {
-            console.log(`🔄 Pusher state: ${states.previous} → ${states.current}`);
-          }
-        });
-      } catch (error) {
-        // Always log initialization errors as they're critical
-        console.error("❌ Failed to initialize Pusher:", error);
-        return;
-      }
-    }
-
-    // Subscribe to channels for different topics
-    const channels = [
-      "hardware-tech-general",
-      "hardware-tech-reservations",
-      "hardware-tech-sales",
-      "hardware-tech-supply",
-      "hardware-tech-inventory",
-      "hardware-tech-dashboard",
-      "hardware-tech-categories",
-      "hardware-tech-users",
-    ];
-
-    channels.forEach((channelName) => {
-      if (!subscribedChannels.has(channelName)) {
+    // Send ping every 30 seconds to keep connection alive
+    const pingInterval = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
         try {
-          const channel = pusherInstance.subscribe(channelName);
-          
-          channel.bind("app:update", (payload) => {
-            if (!isMountedRef.current) return;
-            // Log in development for debugging
-            if (import.meta.env.DEV) {
-              console.log(`📨 Received Pusher update on ${channelName}:`, payload);
-            }
-            dispatchLiveEvent(payload);
-          });
-
-          channel.bind("pusher:subscription_succeeded", () => {
-            if (!isMountedRef.current) return;
-            // Only log in development
-            if (import.meta.env.DEV) {
-              console.log(`✅ Subscribed to channel: ${channelName}`);
-            }
-          });
-
-          channel.bind("pusher:subscription_error", (error) => {
-            if (!isMountedRef.current) return;
-            // Only log in development
-            if (import.meta.env.DEV) {
-              console.warn(`⚠️ Subscription error for ${channelName}:`, error);
-            }
-          });
-
-          subscribedChannels.add(channelName);
+          ws.send(JSON.stringify({ type: "ping" }));
         } catch (error) {
-          // Only log in development
-          if (import.meta.env.DEV) {
-            console.warn(`⚠️ Failed to subscribe to ${channelName}:`, error);
-          }
+          console.error("Error sending ping:", error);
         }
       }
-    });
+    }, 30000);
 
     return () => {
       isMountedRef.current = false;
-      // Don't disconnect Pusher on unmount - let it stay connected for other components
-      // Pusher will automatically clean up when the page is closed
+      clearInterval(pingInterval);
+      // Don't close WebSocket on unmount - let it stay connected for other components
+      // WebSocket will automatically clean up when the page is closed
     };
   }, []);
 
@@ -152,6 +195,9 @@ export const useLiveUpdates = () => {
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
     };
   }, []);
 };
