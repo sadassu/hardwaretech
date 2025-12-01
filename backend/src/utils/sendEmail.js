@@ -104,11 +104,11 @@ export const sendEmail = async (to, subject, html, retries = 2) => {
         console.error("");
       } else if (error.statusCode === 400 || error.body?.code === "invalid_parameter") {
         console.error("\n🔴 BREVO VALIDATION ERROR:");
-        console.error("   This usually means:");
+          console.error("   This usually means:");
         console.error("   1. Invalid sender email address");
         console.error("   2. Sender domain not verified in Brevo");
         console.error("   3. Check BREVO_FROM_EMAIL and verify your domain in Brevo dashboard");
-        console.error("");
+          console.error("");
       }
 
       // Optimized backoff for faster retries
