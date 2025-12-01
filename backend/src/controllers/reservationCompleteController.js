@@ -4,7 +4,6 @@ import ReservationDetail from "../models/ReservationDetail.js";
 import Sale from "../models/Sale.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ensureVariantStock } from "../utils/variantStock.js";
-import { emitGlobalUpdate } from "../services/realtime.js";
 
 export const completeReservation = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -158,23 +157,10 @@ export const completeReservation = asyncHandler(async (req, res) => {
       // Don't fail the request if email fails
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Reservation completed and sale recorded successfully",
       reservation,
       sale,
-    });
-
-    // ✅ Emit SSE update for fast notifications (after response is sent)
-    // Include userId so frontend can filter updates for specific user
-    const userId = reservation.userId?.toString() || reservation.userId?._id?.toString();
-    emitGlobalUpdate({
-      method: "PUT",
-      path: `/api/reservations/${id}/complete`,
-      statusCode: 200,
-      topics: ["reservations", "sales"],
-      reservationId: id,
-      userId: userId,
-      status: "completed",
     });
   } catch (error) {
     await session.abortTransaction();

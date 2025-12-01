@@ -1,4 +1,6 @@
-// SSE (Server-Sent Events) implementation for real-time updates
+import Pusher from "pusher";
+
+let pusherInstance = null;
 
 const TOPIC_MATCHERS = [
   { topic: "reservations", regex: /reservations?/i },
@@ -9,9 +11,6 @@ const TOPIC_MATCHERS = [
   { topic: "categories", regex: /categories/i },
   { topic: "users", regex: /auth|profile|user/i },
 ];
-
-// Store all connected SSE clients
-const sseClients = new Set();
 
 export const deriveTopicsFromPath = (path = "") => {
   const normalized = (path || "").toLowerCase();
@@ -25,93 +24,85 @@ export const deriveTopicsFromPath = (path = "") => {
 };
 
 export const initRealtime = () => {
+  // Check if Pusher credentials are configured
+  const appId = process.env.PUSHER_APP_ID;
+  const key = process.env.PUSHER_KEY;
+  const secret = process.env.PUSHER_SECRET;
+  const cluster = process.env.PUSHER_CLUSTER || "ap1";
+
+  if (!appId || !key || !secret) {
+    console.warn("⚠️ Pusher credentials not configured. Real-time updates will be disabled.");
+    console.warn("   Set PUSHER_APP_ID, PUSHER_KEY, and PUSHER_SECRET in your environment variables.");
+    return null;
+  }
+
+  pusherInstance = new Pusher({
+    appId,
+    key,
+    secret,
+    cluster,
+    useTLS: true,
+    // Performance optimizations
+    enabledTransports: ["ws", "wss"], // WebSocket only for better performance
+  });
+
   if (process.env.NODE_ENV !== "production") {
-    console.log("✅ SSE (Server-Sent Events) initialized for real-time updates");
+    console.log("✅ Pusher initialized for real-time updates");
   }
-  return true;
+
+  return pusherInstance;
 };
-
-// Add a new SSE client connection
-export const addSSEClient = (res) => {
-  // Don't add if already in set
-  if (sseClients.has(res)) {
-    return;
-  }
-  
-  sseClients.add(res);
-
-  if (process.env.NODE_ENV !== "production") {
-    console.log(`✅ SSE client connected. Total clients: ${sseClients.size}`);
-  }
-};
-
-// Remove a client (cleanup)
-export const removeSSEClient = (res) => {
-  sseClients.delete(res);
-};
-
-// Get count of connected clients
-export const getClientCount = () => sseClients.size;
 
 export const emitGlobalUpdate = (payload = {}) => {
-  // Fast path: return early if no clients
-  if (sseClients.size === 0) {
+  if (!pusherInstance) {
+    // Only warn in development if Pusher is not initialized
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("⚠️ Pusher instance not initialized. Cannot emit update.");
+    }
     return;
   }
 
-  // Prepare payload efficiently
   const enrichedPayload = {
     timestamp: Date.now(),
-    message: payload.message || "System updated",
+    message: "System updated",
     ...payload,
   };
 
-  // Derive topics if not provided
   if (!enrichedPayload.topics || !enrichedPayload.topics.length) {
     enrichedPayload.topics = deriveTopicsFromPath(enrichedPayload.path);
   }
 
-  // Serialize message once (reused for all clients)
-  const message = `data: ${JSON.stringify(enrichedPayload)}\n\n`;
-  const deadClients = [];
+  // Log in development for debugging
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`📡 Emitting Pusher update for topics:`, enrichedPayload.topics);
+  }
 
-  // Send to all connected clients efficiently
-  sseClients.forEach((res) => {
+  // Emit to each topic channel
+  enrichedPayload.topics.forEach((topic) => {
     try {
-      // Check if response is still writable before attempting to write
-      if (!res.writable || res.destroyed) {
-        deadClients.push(res);
-        return;
-      }
-      
-      // Use res.write() which is non-blocking and fast
-      const written = res.write(message);
-      
-      // If write buffer is full, handle backpressure
-      if (!written) {
-        res.once("drain", () => {
-          // Buffer drained, can continue writing
-        });
+      const channelName = `hardware-tech-${topic}`;
+      pusherInstance.trigger(channelName, "app:update", enrichedPayload);
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`✅ Emitted to channel: ${channelName}`);
       }
     } catch (error) {
-      // Client connection is dead, mark for removal
-      deadClients.push(res);
+      // Only log errors in development
       if (process.env.NODE_ENV !== "production") {
-        console.warn(`⚠️ Failed to write to SSE client: ${error.message}`);
+        console.error(`❌ Failed to emit update to topic "${topic}":`, error);
       }
     }
   });
 
-  // Clean up dead clients in batch
-  if (deadClients.length > 0) {
-    deadClients.forEach((res) => {
-      sseClients.delete(res);
-    });
-  }
-
-  // Log only in development
-  if (process.env.NODE_ENV !== "production" && sseClients.size > 0) {
-    console.log(`📡 SSE update emitted: ${enrichedPayload.topics.join(", ")} → ${sseClients.size} client(s)`);
+  // Also emit to general channel
+  try {
+    pusherInstance.trigger("hardware-tech-general", "app:update", enrichedPayload);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`✅ Emitted to channel: hardware-tech-general`);
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("❌ Failed to emit update to general channel:", error);
+    }
   }
 };
 

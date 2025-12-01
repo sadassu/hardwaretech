@@ -17,8 +17,6 @@ import {
   initRealtime,
   emitGlobalUpdate,
   deriveTopicsFromPath,
-  addSSEClient,
-  removeSSEClient,
 } from "./services/realtime.js";
 
 import { connectDB } from "./config/db.js";
@@ -48,7 +46,7 @@ const allowedOrigins = [
     : []),
 ].filter(Boolean);
 
-// Note: Using SSE (Server-Sent Events) for real-time updates
+// Note: No need for http.createServer when using Pusher
 
 // Middleware
 app.use(express.json());
@@ -108,129 +106,6 @@ app.use((req, res, next) => {
 // ✅ Serve uploads folder as static (important for images)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-// SSE endpoint for real-time updates
-app.get("/api/events", (req, res) => {
-  // Set headers for SSE
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
-  
-  // Enable CORS for SSE
-  const origin = req.headers.origin;
-  if (origin && (allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production")) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-
-  // Prevent timeout - set to a very high value instead of 0
-  // Some systems don't handle 0 well
-  req.setTimeout(2147483647); // Max 32-bit integer (about 68 years)
-  res.setTimeout(2147483647);
-  
-  // Flush headers immediately
-  res.flushHeaders();
-
-  // Send initial connection message
-  try {
-    res.write(`: SSE connection established\n\n`);
-  } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("❌ Failed to send initial SSE message:", error.message);
-    }
-    return;
-  }
-
-  // Add client to SSE clients set
-  addSSEClient(res);
-
-  // Track if connection is still alive
-  let isAlive = true;
-  let heartbeatInterval = null;
-
-  // Function to send heartbeat
-  const sendHeartbeat = () => {
-    if (!isAlive) {
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-        heartbeatInterval = null;
-      }
-      return;
-    }
-
-    try {
-      // Check if response is still writable and not destroyed
-      if (res.writable && !res.destroyed && !res.closed && res.socket && !res.socket.destroyed) {
-        // Send heartbeat comment (SSE format)
-        const success = res.write(`: heartbeat\n\n`);
-        if (!success) {
-          // If write buffer is full, wait for drain
-          res.once("drain", sendHeartbeat);
-        }
-      } else {
-        // Connection is dead
-        isAlive = false;
-        if (heartbeatInterval) {
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
-        }
-        removeSSEClient(res);
-        if (process.env.NODE_ENV !== "production") {
-          console.log("🔌 Heartbeat detected dead connection, removing client");
-        }
-      }
-    } catch (error) {
-      // Connection error
-      isAlive = false;
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-        heartbeatInterval = null;
-      }
-      removeSSEClient(res);
-      if (process.env.NODE_ENV !== "production") {
-        console.warn("⚠️ Heartbeat failed, removing client:", error.message);
-      }
-    }
-  };
-
-  // Send heartbeat every 20 seconds to keep connection alive
-  heartbeatInterval = setInterval(sendHeartbeat, 20000);
-
-  // Clean up on client disconnect
-  const cleanup = () => {
-    if (!isAlive) return; // Already cleaned up
-    isAlive = false;
-    if (heartbeatInterval) {
-      clearInterval(heartbeatInterval);
-      heartbeatInterval = null;
-    }
-    removeSSEClient(res);
-    if (process.env.NODE_ENV !== "production") {
-      console.log("🔌 SSE client disconnected");
-    }
-  };
-
-  req.on("close", cleanup);
-  req.on("aborted", cleanup);
-  res.on("close", cleanup);
-  res.on("finish", cleanup);
-  
-  // Handle errors
-  req.on("error", (error) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("❌ SSE request error:", error.message);
-    }
-    cleanup();
-  });
-
-  res.on("error", (error) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("❌ SSE response error:", error.message);
-    }
-    cleanup();
-  });
-});
-
 // Routes
 app.use("/api/reservations", reservationRoutes);
 
@@ -256,7 +131,7 @@ app.use((err, req, res, next) => {
 
 // Connect DB and start server
 connectDB().then(async () => {
-  // Initialize SSE for real-time updates
+  // Initialize Pusher for real-time updates
   initRealtime();
   
   app.listen(PORT, async () => {
