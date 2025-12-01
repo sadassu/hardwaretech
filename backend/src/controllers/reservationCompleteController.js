@@ -4,6 +4,7 @@ import ReservationDetail from "../models/ReservationDetail.js";
 import Sale from "../models/Sale.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ensureVariantStock } from "../utils/variantStock.js";
+import { logReservationUpdate } from "../utils/reservationUpdates.js";
 
 export const completeReservation = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -113,12 +114,28 @@ export const completeReservation = asyncHandler(async (req, res) => {
     await sale.save({ session });
 
     // 6️⃣ Update reservation status
+    const oldStatus = reservation.status;
     reservation.status = "completed";
     await reservation.save({ session });
 
     // ✅ Commit
     await session.commitTransaction();
     session.endSession();
+
+    // ✅ Log completion (after transaction commits)
+    await logReservationUpdate({
+      reservationId: reservation._id,
+      updateType: "completed",
+      updatedBy: cashierId,
+      description: `Reservation completed. Sale recorded with amount paid: ₱${finalAmountPaid.toFixed(2)}`,
+      oldValue: oldStatus,
+      newValue: "completed",
+      metadata: {
+        saleId: sale._id.toString(),
+        amountPaid: finalAmountPaid,
+        totalDue: totalDue,
+      },
+    });
 
     // ✅ Send email notification to user
     try {
