@@ -743,18 +743,36 @@ export const exportSales = asyncHandler(async (req, res) => {
   res.status(200).send(csvContent);
 });
 
-// get the daily sales
+// get the daily sales (POS only, timezone-aware)
 export const getDailySales = asyncHandler(async (req, res) => {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  // Compute "today" based on Philippines time, not server timezone
+  const now = new Date();
+  const phNow = new Date(
+    now.toLocaleString("en-US", { timeZone: "Asia/Manila" })
+  );
 
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+  const todayString = phNow.toISOString().split("T")[0]; // "YYYY-MM-DD" in PH local date
 
   const result = await Sale.aggregate([
     {
+      // Only include POS transactions
+      $match: { type: "pos" },
+    },
+    {
+      // Convert saleDate to PH local date string and filter to "today"
+      $addFields: {
+        localDate: {
+          $dateToString: {
+            format: "%Y-%m-%d",
+            date: "$saleDate",
+            timezone: "Asia/Manila",
+          },
+        },
+      },
+    },
+    {
       $match: {
-        saleDate: { $gte: startOfDay, $lte: endOfDay },
+        localDate: todayString,
       },
     },
     {
@@ -767,7 +785,10 @@ export const getDailySales = asyncHandler(async (req, res) => {
 
   const totalSales = result.length > 0 ? result[0].totalSales : 0;
 
-  res.status(200).json({ date: startOfDay.toDateString(), totalSales });
+  res.status(200).json({
+    date: todayString,
+    totalSales,
+  });
 });
 
 // take the annual sales
@@ -837,25 +858,39 @@ export const getThisYearSales = async (req, res) => {
   }
 };
 
-// get the monthly sales
+// get the monthly sales (POS only, timezone-aware)
 export const getMonthlySales = async (req, res) => {
   try {
+    // Use Philippines timezone for month boundaries
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
-      999
+    const phNow = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Manila" })
     );
+
+    const year = phNow.getFullYear();
+    const month = phNow.getMonth() + 1; // 1–12
+    const yearMonthString = `${year}-${String(month).padStart(2, "0")}`; // "YYYY-MM"
 
     const result = await Sale.aggregate([
       {
+        // Only include POS transactions
+        $match: { type: "pos" },
+      },
+      {
+        // Convert saleDate to PH local "YYYY-MM" and filter current month
+        $addFields: {
+          localYearMonth: {
+            $dateToString: {
+              format: "%Y-%m",
+              date: "$saleDate",
+              timezone: "Asia/Manila",
+            },
+          },
+        },
+      },
+      {
         $match: {
-          saleDate: { $gte: startOfMonth, $lte: endOfMonth },
+          localYearMonth: yearMonthString,
         },
       },
       {
@@ -866,11 +901,12 @@ export const getMonthlySales = async (req, res) => {
       },
     ]);
 
-    const totalMonthlySales = result.length > 0 ? result[0].totalMonthlySales : 0;
+    const totalMonthlySales =
+      result.length > 0 ? result[0].totalMonthlySales : 0;
 
     res.status(200).json({
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
+      year,
+      month,
       totalMonthlySales,
     });
   } catch (error) {
