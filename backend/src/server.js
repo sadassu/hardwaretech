@@ -152,25 +152,20 @@ connectDB().then(async () => {
     
     // Check email configuration on startup
     const emailConfig = {
-      SMTP_HOST: process.env.SMTP_HOST ? "✅ Set" : "❌ Missing",
-      SMTP_PORT: process.env.SMTP_PORT ? `✅ Set (${process.env.SMTP_PORT})` : "❌ Missing",
-      SMTP_USER: process.env.SMTP_USER ? "✅ Set" : "❌ Missing",
-      SMTP_PASS: process.env.SMTP_PASS ? "✅ Set" : "❌ Missing",
-      EMAIL_FROM: process.env.EMAIL_FROM || "⚠️ Using default",
+      BREVO_API_KEY: process.env.BREVO_API_KEY ? "✅ Set" : "❌ Missing",
+      BREVO_FROM_EMAIL: process.env.BREVO_FROM_EMAIL || "⚠️ Using default (no-reply@resend.dev)",
+      BREVO_FROM_NAME: process.env.BREVO_FROM_NAME || "⚠️ Using default (Hardware Tech)",
     };
     
-    console.log("\n📧 Email Configuration Status:");
-    console.log(`   SMTP_HOST: ${emailConfig.SMTP_HOST}`);
-    console.log(`   SMTP_PORT: ${emailConfig.SMTP_PORT}`);
-    console.log(`   SMTP_USER: ${emailConfig.SMTP_USER}`);
-    console.log(`   SMTP_PASS: ${emailConfig.SMTP_PASS}`);
-    console.log(`   EMAIL_FROM: ${emailConfig.EMAIL_FROM}`);
+    console.log("\n📧 Email Configuration Status (Brevo API):");
+    console.log(`   BREVO_API_KEY: ${emailConfig.BREVO_API_KEY}`);
+    console.log(`   BREVO_FROM_EMAIL: ${emailConfig.BREVO_FROM_EMAIL}`);
+    console.log(`   BREVO_FROM_NAME: ${emailConfig.BREVO_FROM_NAME}`);
     
-    const allSet = process.env.SMTP_HOST && process.env.SMTP_PORT && 
-                    process.env.SMTP_USER && process.env.SMTP_PASS;
+    const allSet = process.env.BREVO_API_KEY;
     
     if (allSet) {
-      console.log("✅ Email service is configured");
+      console.log("✅ Email service is configured (Brevo API)");
       
       // Test email connection (only in production or if TEST_EMAIL is set)
       if (process.env.NODE_ENV === "production" || process.env.TEST_EMAIL === "true") {
@@ -183,7 +178,7 @@ connectDB().then(async () => {
           } else {
             console.log("⚠️  Email connection test: FAILED");
             console.log(`   Reason: ${testResult.message}`);
-            console.log("   ⚠️  Emails may not work. Check your SMTP settings.\n");
+            console.log("   ⚠️  Emails may not work. Check your Brevo API settings.\n");
           }
         } catch (testError) {
           console.log("⚠️  Email connection test: ERROR");
@@ -194,7 +189,8 @@ connectDB().then(async () => {
       }
     } else {
       console.log("⚠️  Email service is NOT fully configured. Emails will fail.\n");
-      console.log("📖 See backend/EMAIL_SETUP.md for configuration guide\n");
+      console.log("📖 Set BREVO_API_KEY in your environment variables\n");
+      console.log("   Get your API key from: https://app.brevo.com/settings/keys/api\n");
     }
   });
 
