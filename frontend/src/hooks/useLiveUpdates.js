@@ -196,7 +196,8 @@ const initWebSocket = (onConnected, onDisconnected) => {
             // Check if we've received a pong recently
             if (lastPongTime && Date.now() - lastPongTime > PONG_TIMEOUT) {
               console.warn("⚠️ No pong received, reconnecting...");
-              ws.close(1006, "No pong received");
+              // Use a valid application-specific close code in the 3xxx–4xxx range
+              ws.close(4000, "No pong received");
               return;
             }
             ws.send(JSON.stringify({ type: "ping" }));
@@ -276,6 +277,13 @@ const initWebSocket = (onConnected, onDisconnected) => {
       if (connectionTimeout) {
         clearTimeout(connectionTimeout);
         connectionTimeout = null;
+      }
+
+      // When a connection closes, we should allow future sockets to
+      // resubscribe. Otherwise, after reconnect, the server never receives
+      // new subscribe messages and live updates stop working.
+      if (subscribedChannels && subscribedChannels.size > 0) {
+        subscribedChannels.clear();
       }
       
       if (import.meta.env.DEV) {

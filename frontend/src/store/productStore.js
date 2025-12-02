@@ -81,8 +81,35 @@ export const useProductStore = create(
           });
 
           const { products, total, pages } = res.data;
+
+          // When searching, prioritize matches on product name over other fields
+          let sortedProducts = products;
+          if (search && Array.isArray(products)) {
+            const term = search.toLowerCase().trim();
+
+            const getNameScore = (product) => {
+              const name = (product?.name || "").toLowerCase();
+              if (!name || !term) return 0;
+              if (name === term) return 3; // exact match
+              if (name.startsWith(term)) return 2; // prefix match
+              if (name.includes(term)) return 1; // substring match
+              return 0;
+            };
+
+            sortedProducts = [...products].sort((a, b) => {
+              const scoreA = getNameScore(a);
+              const scoreB = getNameScore(b);
+              if (scoreA !== scoreB) {
+                // Higher score first
+                return scoreB - scoreA;
+              }
+              // Fallback to existing name sort (already asc from backend)
+              return 0;
+            });
+          }
+
           set({
-            products: enhanceProducts(products),
+            products: enhanceProducts(sortedProducts),
             total,
             page,
             pages,
