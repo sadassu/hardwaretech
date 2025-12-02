@@ -65,9 +65,11 @@ function ReservationDetailsModal({
             </h4>
             <div className="space-y-3">
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Reservation ID</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wide">
+                  Reservation ID
+                </span>
                 <p className="font-mono text-sm text-gray-900 break-all mt-1">
-                  {selectedReservation._id}
+                  #{selectedReservation._id?.slice(-8)}
                 </p>
               </div>
               <div>
