@@ -45,6 +45,7 @@ const UpdateVariant = ({ variant, product }) => {
     autoConvert: false,
     conversionNotes: "",
     includePerText: false,
+    lowStockThreshold: 15,
   });
 
   useEffect(() => {
@@ -66,6 +67,10 @@ const UpdateVariant = ({ variant, product }) => {
         autoConvert: Boolean(variant.autoConvert),
         conversionNotes: variant.conversionNotes || "",
         includePerText: Boolean(variant.includePerText),
+        lowStockThreshold:
+          typeof variant.lowStockThreshold === "number"
+            ? variant.lowStockThreshold
+            : 15,
       });
     }
   }, [isOpen, variant]);
@@ -276,6 +281,26 @@ const UpdateVariant = ({ variant, product }) => {
                   value={formData.color}
                   onChange={handleChange}
                   className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Low stock threshold{" "}
+                  <span className="text-gray-400 text-xs font-normal">
+                    (alert when quantity is at or below this number)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  name="lowStockThreshold"
+                  placeholder="e.g., 15"
+                  value={formData.lowStockThreshold}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  min="0"
                 />
               </div>
             </div>

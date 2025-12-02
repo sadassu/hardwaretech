@@ -20,6 +20,7 @@ import ChangeName from "../Pages/UserPages/ChangeName";
 import api from "../utils/api";
 import { useLiveResourceRefresh } from "../hooks/useLiveResourceRefresh";
 import Avatar from "./Avatar";
+import { useReservationStore } from "../store/reservationStore";
 
 const SideBar = () => {
   const { user } = useAuthContext();
@@ -30,6 +31,7 @@ const SideBar = () => {
   const [pendingReservations, setPendingReservations] = useState(0);
   const userMenuRef = useRef(null);
   const reservationsLiveKey = useLiveResourceRefresh(["reservations"]);
+  const { statusCounts } = useReservationStore();
 
   // ✅ Close dropdown on outside click
   useEffect(() => {
@@ -103,6 +105,21 @@ const SideBar = () => {
       isMounted = false;
     };
   }, [canSeeReservationBadge, reservationsLiveKey]);
+
+  // Keep sidebar badge in sync with reservation store status counts
+  // so that when an admin/cashier updates reservation statuses,
+  // the pending count reflects the latest value without needing
+  // a separate dashboard API call.
+  useEffect(() => {
+    if (!canSeeReservationBadge) return;
+    if (
+      statusCounts &&
+      typeof statusCounts.pending === "number" &&
+      !Number.isNaN(statusCounts.pending)
+    ) {
+      setPendingReservations(statusCounts.pending);
+    }
+  }, [canSeeReservationBadge, statusCounts?.pending]);
 
   const menuItems = [
     {

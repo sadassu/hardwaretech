@@ -139,19 +139,21 @@ export function StockList({ type }) {
                       {/* Quantity Badge */}
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500 font-medium">Quantity:</span>
-                    <span
+                        <span
                           className={`inline-flex items-center px-2 py-1 rounded-lg text-sm font-bold ${
-                        variant.quantity === 0
+                            variant.quantity === 0
                               ? "bg-red-100 text-red-700"
-                          : variant.quantity <= 15
+                              : variant.quantity <= (variant.lowStockThreshold ?? 15)
                               ? "bg-amber-100 text-amber-700"
                               : "bg-green-100 text-green-700"
-                      }`}
-                    >
-                      {variant.quantity}
+                          }`}
+                        >
+                          {variant.quantity}
                           {variant.quantity === 0 && " - Out"}
-                          {variant.quantity > 0 && variant.quantity <= 15 && " - Low"}
-                    </span>
+                          {variant.quantity > 0 &&
+                            variant.quantity <= (variant.lowStockThreshold ?? 15) &&
+                            " - Low"}
+                        </span>
                       </div>
                     </div>
                 </div>

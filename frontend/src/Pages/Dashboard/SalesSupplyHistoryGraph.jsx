@@ -421,7 +421,7 @@ function SalesSupplyHistoryGraph() {
               {interpretation.length > 0 && (
                 <div className="mt-5 rounded-xl border border-dashed border-amber-200 bg-amber-50/60 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-amber-600 mb-3">
-                    Automatic Interpretation
+                    SUMMARY
                   </p>
                   <ul className="space-y-2 text-sm text-gray-800">
                     {interpretation.map((line, idx) => (

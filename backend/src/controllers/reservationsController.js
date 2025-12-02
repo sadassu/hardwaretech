@@ -213,9 +213,11 @@ export const cancelReservation = asyncHandler(async (req, res) => {
   try {
     await logReservationUpdate({
       reservationId: reservation._id,
-      updateType: "cancelled",
+      // Treat this as a status change so history doesn't show a separate
+      // "Reservation cancelled by user" entry in addition to other cancel logs.
+      updateType: "status_changed",
       updatedBy: req.user._id,
-      description: `Reservation cancelled by user`,
+      description: `Reservation status changed from "${oldStatus}" to "cancelled" by user`,
       oldValue: oldStatus,
       newValue: "cancelled",
     });

@@ -30,6 +30,7 @@ export const createVariant = asyncHandler(async (req, res) => {
       autoConvert,
       conversionNotes,
       includePerText,
+      lowStockThreshold,
     } = req.body;
 
     const existingProduct = await Product.findById(productId).session(session);
@@ -60,6 +61,10 @@ export const createVariant = asyncHandler(async (req, res) => {
     if (dimensionType) newVariantData.dimensionType = dimensionType;
     if (conversionNotes) newVariantData.conversionNotes = conversionNotes;
     newVariantData.includePerText = Boolean(includePerText);
+
+    if (lowStockThreshold !== undefined && lowStockThreshold !== null) {
+      newVariantData.lowStockThreshold = Number(lowStockThreshold);
+    }
 
     newVariantData.conversionSource = conversionSource || null;
     newVariantData.autoConvert = Boolean(autoConvert) && Boolean(conversionSource);
@@ -129,6 +134,7 @@ export const updateVariant = asyncHandler(async (req, res) => {
       autoConvert,
       conversionNotes,
       includePerText,
+      lowStockThreshold,
     } = req.body;
 
     const existingVariant = await ProductVariant.findById(
@@ -165,6 +171,13 @@ export const updateVariant = asyncHandler(async (req, res) => {
     if (conversionNotes !== undefined) updateData.conversionNotes = conversionNotes;
     if (includePerText !== undefined) {
       updateData.includePerText = Boolean(includePerText);
+    }
+
+    if (lowStockThreshold !== undefined) {
+      updateData.lowStockThreshold =
+        lowStockThreshold === null || lowStockThreshold === ""
+          ? undefined
+          : Number(lowStockThreshold);
     }
 
     if (conversionSource !== undefined) {
