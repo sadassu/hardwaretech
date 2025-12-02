@@ -203,6 +203,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
   await product.save();
   await product.populate("category");
+  await product.populate("variants"); // ✅ Populate variants so frontend receives complete product data
 
   res.status(200).json({
     message: "Product updated successfully",

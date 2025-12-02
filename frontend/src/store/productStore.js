@@ -137,8 +137,17 @@ export const useProductStore = create(
           });
 
           const updatedProduct = res.data.product;
+          
+          // ✅ Preserve existing variants from the store when updating
+          // The backend doesn't return variants, so we need to keep the existing ones
+          const existingProduct = products.find((p) => p._id === productId);
+          const productWithVariants = {
+            ...updatedProduct,
+            variants: existingProduct?.variants || updatedProduct.variants || [],
+          };
+
           const updatedProducts = products.map((p) =>
-            p._id === productId ? updatedProduct : p
+            p._id === productId ? productWithVariants : p
           );
 
           set({
@@ -151,7 +160,7 @@ export const useProductStore = create(
             window.dispatchEvent(new Event("productUpdated"));
           }, 0);
           
-          return updatedProduct;
+          return productWithVariants;
         } catch (err) {
           set({
             error: err.response?.data?.message || "Failed to update product",
