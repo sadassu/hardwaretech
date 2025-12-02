@@ -180,10 +180,26 @@ const ReservationNotification = () => {
         results.forEach((result) => {
           if (!result || !result.updates) return;
 
-          const reservation = reservations.find(r => r._id === result.reservationId);
+          const reservation = reservations.find(
+            (r) => r._id === result.reservationId
+          );
           if (!reservation) return;
 
           result.updates.forEach((update) => {
+            // Skip updates performed by the reservation owner themselves.
+            // For those, we already generate notifications via local
+            // change-detection on the reservations list, and showing
+            // database-derived notifications as well causes duplicates.
+            const ownerId = reservation.userId;
+            const updatedById =
+              update.updatedBy?._id || update.updatedById || update.updatedBy;
+            if (
+              ownerId &&
+              updatedById &&
+              String(ownerId) === String(updatedById)
+            ) {
+              return;
+            }
             // Use ReservationUpdate _id as the unique key (most reliable)
             const updateId = update._id || update.reservationUpdateId;
             const updateKey = updateId 
