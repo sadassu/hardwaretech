@@ -34,18 +34,18 @@ export const useReservation = () => {
       const updatedReservation = res.data.reservation || res.data;
       const newStatus = updatedReservation.status || formData.status;
 
-      // Automatically switch to the tab that matches the new status
+      // Optimistically update the reservation in the local store so the UI
+      // reflects the change immediately.
+      updateReservation(updatedReservation);
+
+      // Automatically switch to the tab that matches the new status.
+      // ReservationTable will refetch with the new filter; no need to wait here.
       setStatusFilter(newStatus);
 
-      // Refresh the list with the new status filter to show the updated reservation
-      await fetchReservations(user.token, {
-        page: 1, // Reset to page 1 when switching tabs
-        limit: 20,
-        status: newStatus,
+      // Refresh status counts in the background (don't block the UI).
+      updateStatusCounts(user.token).catch((err) => {
+        console.error("Failed to refresh reservation status counts:", err);
       });
-
-      // Update status counts to reflect the change
-      await updateStatusCounts(user.token);
 
       return updatedReservation;
     } catch (error) {
@@ -87,23 +87,26 @@ export const useReservation = () => {
 
       const updatedReservation = res.data.reservation || res.data;
       updateReservation(updatedReservation);
-      
-      // Refresh user reservations with current filter
-      try {
-        await fetchUserReservations(user.token, user.userId, {
-          page,
-          limit: 20,
-          status: "all", // User reservations page typically shows all
-        });
 
-        const isStaff =
-          user.roles?.includes("admin") || user.roles?.includes("cashier");
-        if (isStaff) {
-          await updateStatusCounts(user.token);
-        }
-      } catch (refreshError) {
-        // If refresh fails, don't fail the cancellation - it's already successful
-        console.warn("Failed to refresh reservations after cancellation:", refreshError);
+      // Refresh user reservations with current filter in the background so the
+      // UI doesn't feel blocked by a second network request.
+      fetchUserReservations(user.token, user.userId, {
+        page,
+        limit: 20,
+        status: "all", // User reservations page typically shows all
+      }).catch((refreshError) => {
+        console.warn(
+          "Failed to refresh reservations after cancellation:",
+          refreshError
+        );
+      });
+
+      const isStaff =
+        user.roles?.includes("admin") || user.roles?.includes("cashier");
+      if (isStaff) {
+        updateStatusCounts(user.token).catch((err) => {
+          console.error("Failed to refresh reservation status counts:", err);
+        });
       }
 
       // Success alert removed as requested

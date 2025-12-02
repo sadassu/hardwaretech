@@ -44,6 +44,7 @@ const CreateVariant = ({ product }) => {
     autoConvert: false,
     conversionNotes: "",
     includePerText: false,
+    lowStockThreshold: 15,
   });
 
   // Reset form when modal opens
@@ -63,6 +64,7 @@ const CreateVariant = ({ product }) => {
         autoConvert: false,
         conversionNotes: "",
         includePerText: false,
+        lowStockThreshold: 15,
       });
     }
   }, [isOpen]);
@@ -132,6 +134,7 @@ const CreateVariant = ({ product }) => {
       autoConvert: false,
       conversionNotes: "",
       includePerText: false,
+      lowStockThreshold: 15,
     });
 
     setIsOpen(false);
@@ -304,6 +307,26 @@ const CreateVariant = ({ product }) => {
                   value={formData.color}
                   onChange={handleChange}
                   className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Low stock threshold{" "}
+                  <span className="text-gray-400 text-xs font-normal">
+                    (alert when quantity is at or below this number)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  name="lowStockThreshold"
+                  placeholder="e.g., 15"
+                  value={formData.lowStockThreshold}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  min="0"
                 />
               </div>
             </div>

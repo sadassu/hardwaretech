@@ -1065,7 +1065,7 @@ function Dashboard() {
                   {salesNarrative.length > 0 && (
                     <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-3">
-                        Automatic Interpretation
+                        SUMMARY
                       </p>
                       <ul className="space-y-2 text-sm text-gray-700">
                         {salesNarrative.map((line, idx) => (
@@ -1243,7 +1243,7 @@ function Dashboard() {
                     {supplyInterpretation.length > 0 && (
                       <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 p-4">
                         <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-3">
-                          Automatic Interpretation
+                          SUMMARY
                         </p>
                         <ul className="space-y-2 text-sm text-gray-700">
                           {supplyInterpretation.map((line, idx) => (
@@ -1439,7 +1439,7 @@ function Dashboard() {
                     {salesMovementInterpretation.length > 0 && (
                       <div className="mt-5 rounded-xl border border-dashed border-orange-200 bg-orange-50/70 p-4">
                         <p className="text-xs font-semibold uppercase tracking-wide text-orange-600 mb-3">
-                          Automatic Interpretation
+                          SUMMARY
                         </p>
                         <ul className="space-y-2 text-sm text-gray-700">
                           {salesMovementInterpretation.map((line, idx) => (

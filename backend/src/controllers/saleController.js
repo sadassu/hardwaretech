@@ -743,7 +743,7 @@ export const exportSales = asyncHandler(async (req, res) => {
   res.status(200).send(csvContent);
 });
 
-// get the daily sales (POS only, timezone-aware)
+// get the daily sales (ALL sales types, timezone-aware to match dashboard)
 export const getDailySales = asyncHandler(async (req, res) => {
   // Compute "today" based on Philippines time, not server timezone
   const now = new Date();
@@ -754,10 +754,6 @@ export const getDailySales = asyncHandler(async (req, res) => {
   const todayString = phNow.toISOString().split("T")[0]; // "YYYY-MM-DD" in PH local date
 
   const result = await Sale.aggregate([
-    {
-      // Only include POS transactions
-      $match: { type: "pos" },
-    },
     {
       // Convert saleDate to PH local date string and filter to "today"
       $addFields: {
@@ -858,7 +854,7 @@ export const getThisYearSales = async (req, res) => {
   }
 };
 
-// get the monthly sales (POS only, timezone-aware)
+// get the monthly sales (ALL sales types, timezone-aware to match dashboard)
 export const getMonthlySales = async (req, res) => {
   try {
     // Use Philippines timezone for month boundaries
@@ -872,10 +868,6 @@ export const getMonthlySales = async (req, res) => {
     const yearMonthString = `${year}-${String(month).padStart(2, "0")}`; // "YYYY-MM"
 
     const result = await Sale.aggregate([
-      {
-        // Only include POS transactions
-        $match: { type: "pos" },
-      },
       {
         // Convert saleDate to PH local "YYYY-MM" and filter current month
         $addFields: {

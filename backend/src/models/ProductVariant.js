@@ -34,6 +34,12 @@ const productVariantSchema = new mongoose.Schema(
     price: { type: Number, required: true, min: 0 },
     supplier_price: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, default: 0, min: 0 },
+    // Per-variant low stock threshold so admins can control when an item is considered "low"
+    lowStockThreshold: {
+      type: Number,
+      min: 0,
+      default: 15,
+    },
     includePerText: {
       type: Boolean,
       default: false,
