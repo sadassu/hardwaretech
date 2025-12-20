@@ -167,7 +167,7 @@ const UserReservations = () => {
                       {/* Total Price */}
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">Total Amount</span>
-                        <span className="font-mono text-lg sm:text-xl font-bold text-green-600">
+                        <span className="text-lg sm:text-xl font-bold text-green-600">
                           {formatPrice(reservation.totalPrice)}
                         </span>
                       </div>
@@ -211,7 +211,7 @@ const UserReservations = () => {
                                       {detail.quantity}
                                     </span>
                                     <span className="text-xs text-gray-400">×</span>
-                                    <span className="text-xs font-mono text-gray-700">
+                                    <span className="text-xs text-gray-700">
                                       {formatPrice(detail.price || detail.productVariantId?.price || 0)}
                                     </span>
                                   </div>

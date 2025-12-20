@@ -146,7 +146,7 @@ function Verification() {
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
       >
         <div className="flex flex-col items-center mb-6">
-          <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2" />
+          <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2 bg-white p-3 shadow-lg rounded-lg" />
           <h2 className="text-white text-2xl font-bold text-center">
             Email Verification
           </h2>

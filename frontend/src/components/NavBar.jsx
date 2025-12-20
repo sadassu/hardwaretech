@@ -30,7 +30,7 @@ const NavBar = () => {
       {/* Logo / Brand */}
       <div className="navbar-start">
         <Link to="/" className="btn btn-ghost text-xl font-bold text-white">
-          <img src="/assets/logo.jpg" alt="logo" className="h-7 w-12" />
+          <img src="/assets/logo.jpg" alt="logo" className="h-7 w-12 bg-white p-1 rounded" />
           <span className="hidden sm:inline">Hardware Tech</span>
         </Link>
 
@@ -183,7 +183,7 @@ const NavBar = () => {
                 <li>
                   <button
                     onClick={handleLogoutButton}
-                    className="flex items-center gap-2 text-error hover:bg-error/10"
+                    className="flex items-center gap-2 px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700"
                   >
                     <LogOut className="w-4 h-4" />
                     Logout

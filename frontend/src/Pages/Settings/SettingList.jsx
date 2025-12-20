@@ -4,21 +4,32 @@ import DeleteReservationsData from "./DeleteReservationsData";
 import DeleteSalesData from "./DeleteSalesData";
 import DeleteSupplyHistoryData from "./DeleteSupplyHistoryData";
 import { Link } from "react-router";
-import { UserCog, FolderCog, AlertTriangle } from "lucide-react";
+import { UserCog, FolderCog, AlertTriangle, Settings } from "lucide-react";
 
 function SettingList() {
   return (
-    <div className="container mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200">
-        {/* ===== HEADER ===== */}
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            Settings
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage your data and system preferences
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
+      {/* Header */}
+      <div className="mb-4 sm:mb-6 lg:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-blue-600 rounded-xl shadow-md flex-shrink-0">
+              <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+                Settings
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-600">
+                Manage your data and system preferences
+              </p>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-lg border border-gray-200">
 
         {/* ===== SETTINGS CONTENT ===== */}
         <div className="p-4 sm:p-6 space-y-6">
@@ -127,6 +138,7 @@ function SettingList() {
             </ul>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

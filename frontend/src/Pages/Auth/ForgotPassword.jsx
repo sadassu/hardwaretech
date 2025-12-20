@@ -33,7 +33,7 @@ function ForgotPassword() {
     <div
       className="min-h-screen flex items-center justify-center px-4"
       style={{
-        backgroundImage: "url('assets/bg.jpg')",
+        backgroundImage: "url('assets/carousel/carousel1.2.jpeg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
@@ -44,7 +44,7 @@ function ForgotPassword() {
       >
         {/* Logo + Title */}
         <div className="flex flex-col items-center mb-6">
-          <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2" />
+          <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2 bg-white p-3 shadow-lg rounded-lg" />
           <h2 className="text-white text-2xl font-bold">Forgot Password</h2>
         </div>
 

@@ -215,7 +215,7 @@ const SideBar = () => {
         `}
       >
         {/* Header */}
-        <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+        <div className="px-4 py-3.5 border-b border-slate-700 flex items-center justify-between">
           {!isCollapsed && (
             <h1 className="text-xl font-bold text-slate-50 truncate">
               Hardware Tech
@@ -254,10 +254,10 @@ const SideBar = () => {
 
               const baseClasses = `
       flex items-center w-full p-3 rounded-lg transition-all duration-200
-      text-left hover:bg-red-800 hover:text-slate-50 active:bg-slate-600
+      text-left hover:bg-blue-600 hover:text-slate-50 active:bg-blue-700
       ${
         active
-          ? "bg-red-800 text-red-50 shadow-md border-l-4 "
+          ? "bg-blue-600 text-blue-50 shadow-md border-l-4 border-blue-300"
           : "text-slate-200"
       }
       ${isCollapsed ? "justify-center" : "justify-start"}
@@ -275,8 +275,8 @@ const SideBar = () => {
                     >
                       <Icon size={20} className="flex-shrink-0" />
                       {!isCollapsed && (
-                        <span className="ml-3 font-medium text-white flex items-center gap-2">
-                          {item.name}
+                        <span className="ml-3 font-medium text-white flex-1 flex items-center justify-between">
+                          <span>{item.name}</span>
                           {showBadge && (
                             <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-500 text-white">
                               {pendingReservations}

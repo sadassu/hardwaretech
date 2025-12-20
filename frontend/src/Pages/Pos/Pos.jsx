@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from "react";
+import { ShoppingCart, Search, X, Package } from "lucide-react";
 
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 
 import Loading from "../../components/Loading";
-import SearchBar from "../../components/SearchBar";
 import Pagination from "../../components/Pagination";
 import ProductGrid from "../../components/ProductGrid";
 import CategoryFilter from "../../components/CategoryFilter";
 
 import { useProductStore } from "../../store/productStore";
 import { useCategoriesStore } from "../../store/categoriesStore";
-import SaleCards from "./SaleCards";
-import StockCards from "../Dashboard/StockCards";
 
 function Pos() {
   const { user } = useAuthContext();
@@ -91,11 +89,11 @@ function Pos() {
   if (error) {
     return (
       <div className="min-h-screen bg-base-100 flex items-center justify-center">
-        <div className="alert alert-error shadow-lg max-w-md">
+        <div className="alert alert-error shadow-sm max-w-md text-sm py-2">
           <div>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="stroke-current flex-shrink-0 h-6 w-6"
+              className="stroke-current flex-shrink-0 h-5 w-5"
               fill="none"
               viewBox="0 0 24 24"
             >
@@ -107,7 +105,7 @@ function Pos() {
               />
             </svg>
             <div>
-              <h3 className="font-bold">Error!</h3>
+              <h3 className="font-bold text-sm">Error!</h3>
               <div className="text-xs">{error}</div>
             </div>
           </div>
@@ -118,111 +116,141 @@ function Pos() {
 
   // ✅ Main Render
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 border-b-4 border-blue-800 shadow-lg">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
+        {/* Header + Search */}
+        <div className="mb-3 sm:mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            {/* Title */}
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-blue-600 rounded-lg shadow-md flex-shrink-0">
+                <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
-                  Point of Sale
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">
+                  POS
                 </h1>
-                <p className="text-blue-100 text-sm sm:text-base mt-1">
+                <p className="text-xs text-gray-600 hidden sm:block">
                   Select products to add to cart
                 </p>
               </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/20">
-              <div className="text-center">
-                <div className="text-blue-100 text-xs sm:text-sm font-medium">Total Products</div>
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mt-1">
-                  {products?.length || 0}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="pb-4">
+          {/* Enhanced Filters Section */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 sm:p-4 mb-4">
+            {/* Category Filter with Search */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                  <Package className="w-5 h-5 text-white" strokeWidth={2.5} />
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="container mx-auto px-4 sm:px-6 py-6">
-        <div className="mb-6">
-          <SaleCards />
-        </div>
-        <div className="mb-6">
-          <StockCards isPos={true} />
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-4 sm:px-6 pb-6">
-        {/* Enhanced Search Section */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
-          <div className="mb-6">
-            <SearchBar
-              search={searchInput}
-              onSearchChange={handleSearchChange}
-              onClear={clearSearch}
-              onSearchSubmit={handleSearchSubmit}
-              isSearching={loading}
-              placeholder="Search products for POS..."
-              className="max-w-full"
-            />
-          </div>
-
-          {/* Category Filter */}
-          <CategoryFilter
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onCategoryChange={handleCategoryChange}
-            loading={loading}
-          />
-        </div>
-
-        {/* Product Grid */}
-        {loading ? (
-          <Loading />
-        ) : products?.length > 0 ? (
-          <ProductGrid products={products} user={user} isMobile={isMobile} showAutoConvertInfo={true} />
-        ) : (
-          <div className="hero min-h-[400px]">
-            <div className="hero-content text-center">
-              <div className="max-w-md">
-                <div className="text-6xl mb-4">📦</div>
-                <h1 className="text-2xl font-bold text-base-content/70">
-                  No Products Found
-                </h1>
-                <p className="py-4 text-base-content/50">
-                  {searchQuery
-                    ? "Try adjusting your search terms"
-                    : "No products available at the moment"}
-                </p>
-                {searchQuery && (
-                  <button className="btn btn-primary" onClick={clearSearch}>
-                    Clear Search
+                <h3 className="text-lg font-bold text-gray-800">Filter by Category</h3>
+                {selectedCategory && (
+                  <button
+                    onClick={() => handleCategoryChange("")}
+                    className="flex items-center gap-1.5 px-3 py-1.5 
+                               bg-red-50 hover:bg-red-100 border-2 border-red-200 
+                               rounded-lg text-sm font-semibold text-red-600 
+                               transition-all duration-200 hover:scale-105 active:scale-95
+                               shadow-sm hover:shadow ml-2"
+                  >
+                    <X className="w-4 h-4" strokeWidth={2.5} />
+                    Clear
                   </button>
                 )}
               </div>
+              
+              {/* Search Bar */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearchSubmit();
+                }}
+                className="flex w-full sm:w-auto gap-2 max-w-xl"
+              >
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchInput}
+                    onChange={handleSearchChange}
+                    className="w-full pl-10 pr-10 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all text-sm"
+                  />
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 flex-shrink-0 text-sm"
+                >
+                  <Search className="w-4 h-4" />
+                  <span className="hidden sm:inline">Search</span>
+                </button>
+              </form>
             </div>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {pages > 1 && (
-          <div className="mt-8">
-            <Pagination
-              page={currentPage}
-              pages={pages}
-              onPageChange={setCurrentPage}
+            
+            {/* Category Filter */}
+            <CategoryFilter
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={handleCategoryChange}
+              loading={loading}
+              hideHeader={true}
             />
           </div>
-        )}
+
+          {/* Product Grid */}
+          {loading ? (
+            <Loading />
+          ) : products?.length > 0 ? (
+            <ProductGrid products={products} user={user} isMobile={isMobile} showAutoConvertInfo={true} />
+          ) : (
+            <div className="hero min-h-[300px]">
+              <div className="hero-content text-center">
+                <div className="max-w-md">
+                  <div className="text-4xl mb-3">📦</div>
+                  <h1 className="text-lg sm:text-xl font-bold text-base-content/70">
+                    No Products Found
+                  </h1>
+                  <p className="py-2 text-sm text-base-content/50">
+                    {searchQuery
+                      ? "Try adjusting your search terms"
+                      : "No products available at the moment"}
+                  </p>
+                  {searchQuery && (
+                    <button className="btn btn-primary btn-sm" onClick={clearSearch}>
+                      Clear Search
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {pages > 1 && (
+            <div className="mt-4">
+              <Pagination
+                page={currentPage}
+                pages={pages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

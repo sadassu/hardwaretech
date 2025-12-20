@@ -16,31 +16,34 @@ function CategoryFilter({
   onCategoryChange,
   loading = false,
   className = "",
+  hideHeader = false,
 }) {
   return (
     <div className={`w-full ${className}`}>
       {/* Enhanced Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
-            <Filter className="w-5 h-5 text-white" strokeWidth={2.5} />
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+              <Filter className="w-5 h-5 text-white" strokeWidth={2.5} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800">Filter by Category</h3>
           </div>
-          <h3 className="text-lg font-bold text-gray-800">Filter by Category</h3>
+          {selectedCategory && (
+            <button
+              onClick={() => onCategoryChange("")}
+              className="flex items-center gap-1.5 px-3 py-1.5 
+                         bg-red-50 hover:bg-red-100 border-2 border-red-200 
+                         rounded-lg text-sm font-semibold text-red-600 
+                         transition-all duration-200 hover:scale-105 active:scale-95
+                         shadow-sm hover:shadow"
+            >
+              <X className="w-4 h-4" strokeWidth={2.5} />
+              Clear
+            </button>
+          )}
         </div>
-        {selectedCategory && (
-          <button
-            onClick={() => onCategoryChange("")}
-            className="flex items-center gap-1.5 px-3 py-1.5 
-                       bg-red-50 hover:bg-red-100 border-2 border-red-200 
-                       rounded-lg text-sm font-semibold text-red-600 
-                       transition-all duration-200 hover:scale-105 active:scale-95
-                       shadow-sm hover:shadow"
-          >
-            <X className="w-4 h-4" strokeWidth={2.5} />
-            Clear
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Enhanced Category Buttons */}
       <div className="flex flex-wrap gap-3">
