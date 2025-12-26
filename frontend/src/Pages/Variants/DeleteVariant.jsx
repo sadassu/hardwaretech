@@ -39,7 +39,7 @@ function DeleteVariant({ variant }) {
 
   return (
     <button
-      className="btn btn-sm gap-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white border-0 hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+      className="btn btn-sm btn-ghost gap-1.5 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 disabled:opacity-50"
       onClick={handleDelete}
       disabled={isDeleting}
       title="Delete Variant"

@@ -68,7 +68,7 @@ function ReservationDetailsModal({
                 <span className="text-xs text-gray-500 uppercase tracking-wide">
                   Reservation ID
                 </span>
-                <p className="font-mono text-sm text-gray-900 break-all mt-1">
+                <p className="text-sm text-gray-900 break-all mt-1">
                   #{selectedReservation._id?.slice(-8)}
                 </p>
               </div>
@@ -91,7 +91,7 @@ function ReservationDetailsModal({
               </div>
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wide">Total Amount</span>
-                <p className="text-xl font-bold text-green-600 mt-1 font-mono">
+                <p className="text-xl font-bold text-green-600 mt-1">
                   {formatPrice(selectedReservation.totalPrice)}
                 </p>
               </div>
@@ -196,14 +196,14 @@ function ReservationDetailsModal({
 
                       <div>
                         <span className="text-xs text-gray-500 uppercase tracking-wide">Unit Price</span>
-                        <p className="text-sm font-mono text-gray-900 mt-1">
+                        <p className="text-sm text-gray-900 mt-1">
                           {formatPrice(price)}
                         </p>
                       </div>
 
                       <div>
                         <span className="text-xs text-gray-500 uppercase tracking-wide">Subtotal</span>
-                        <p className="text-sm font-bold text-green-600 font-mono mt-1">
+                        <p className="text-sm font-bold text-green-600 mt-1">
                           {formatPrice(subtotal)}
                         </p>
                       </div>
@@ -217,7 +217,7 @@ function ReservationDetailsModal({
             <div className="pt-4 border-t-2 border-gray-200 bg-white rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <span className="text-lg font-semibold text-gray-900">Total Amount:</span>
-                <span className="text-2xl font-bold text-green-600 font-mono">
+                <span className="text-2xl font-bold text-green-600">
                   {formatPrice(selectedReservation.totalPrice)}
                 </span>
               </div>

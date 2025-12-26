@@ -320,7 +320,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
   return (
     <>
       <button
-        className="btn btn-sm btn-ghost gap-1.5 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+        className="btn btn-sm btn-circle btn-ghost text-black hover:text-gray-700 border-0 transition-all duration-200"
         onClick={() => {
           setIsOpen(true);
           setStockMessages({}); // Reset stock messages when opening
@@ -328,7 +328,6 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
         title="Edit Reservation"
       >
         <Edit className="w-4 h-4" />
-        <span className="hidden sm:inline">Edit</span>
       </button>
 
       <Modal 

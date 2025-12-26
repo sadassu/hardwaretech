@@ -22,6 +22,14 @@ function Login() {
     }
   }, [successMessage]);
 
+  // Allow body scroll when login page is mounted
+  useEffect(() => {
+    document.body.style.overflow = "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -134,33 +142,26 @@ function Login() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{
-        backgroundImage: "url('assets/bg.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+  <div className="min-h-screen flex items-start justify-center px-4 overflow-y-auto py-10 bg-gray-100">
       <div
-        className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-8 w-full max-w-sm"
+        className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-5 w-full max-w-xs mx-auto"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
       >
         {/* Logo + Title */}
-        <div className="flex flex-col items-center mb-6">
-          <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2" />
-          <h2 className="text-white text-2xl font-bold">Log In</h2>
+        <div className="flex flex-col items-center mb-4">
+          <img src="assets/logo.jpg" alt="Logo" className="w-24 mb-1.5 bg-white p-2 shadow-lg rounded-lg" />
+          <h2 className="text-white text-xl font-bold">Log In</h2>
         </div>
 
         {successMessage && (
-          <div className="bg-green-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center animate-fade-in">
+          <div className="bg-green-600/90 text-white text-sm px-3 py-1.5 rounded mb-3 text-center animate-fade-in">
             {successMessage}
           </div>
         )}
 
         {/* Error Message */}
         {error && !showVerification && (
-          <div className="bg-red-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center animate-pulse">
+          <div className="bg-red-600/90 text-white text-sm px-3 py-1.5 rounded mb-3 text-center animate-pulse">
             {error}
           </div>
         )}
@@ -260,9 +261,9 @@ function Login() {
 
         {/* Form */}
         {!showVerification && (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 relative">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 relative">
           {/* Email */}
-          <div className="relative">
+          <div className="relative mb-3">
             <input
               type="email"
               name="email"
@@ -280,7 +281,7 @@ function Login() {
           {/* Password */}
           <div className="relative">
             <input
-              type={showPassword ? "text" : "password"}
+              type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -288,13 +289,6 @@ function Login() {
               className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
               required
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
-            >
-              {showPassword ? "🙈" : "👁️"}
-            </button>
             <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
               Password
             </span>
@@ -302,24 +296,28 @@ function Login() {
 
           {/* ✅ reCAPTCHA - Only render if site key is configured */}
           {recaptchaSiteKey && !captchaError && (
-            <ReCAPTCHA
-              sitekey={recaptchaSiteKey}
-              onChange={(token) => {
-                setCaptchaToken(token);
-                setCaptchaError(false);
-              }}
-              onError={() => {
-                // Silently handle reCAPTCHA errors - they're expected if key is invalid/not configured
-                setCaptchaError(true);
-                setCaptchaToken(""); // Clear token since reCAPTCHA failed
-              }}
-              onExpired={() => {
-                setCaptchaToken("");
-              }}
-            />
+            <div className="flex justify-center items-center -my-2">
+              <div className="scale-75 origin-center">
+                <ReCAPTCHA
+                  sitekey={recaptchaSiteKey}
+                  onChange={(token) => {
+                    setCaptchaToken(token);
+                    setCaptchaError(false);
+                  }}
+                  onError={() => {
+                    // Silently handle reCAPTCHA errors - they're expected if key is invalid/not configured
+                    setCaptchaError(true);
+                    setCaptchaToken(""); // Clear token since reCAPTCHA failed
+                  }}
+                  onExpired={() => {
+                    setCaptchaToken("");
+                  }}
+                />
+              </div>
+            </div>
           )}
           {captchaError && recaptchaSiteKey && (
-            <div className="bg-yellow-600/90 text-white text-xs px-4 py-2 rounded text-center">
+            <div className="bg-yellow-600/90 text-white text-xs px-3 py-1.5 rounded text-center">
               reCAPTCHA is unavailable. You can still proceed with login.
             </div>
           )}
@@ -336,9 +334,9 @@ function Login() {
         )}
 
         {/* Divider */}
-        <div className="flex items-center my-4">
+        <div className="flex items-center my-3">
           <div className="flex-grow border-t border-gray-500"></div>
-          <span className="mx-3 text-gray-300 text-sm">or continue with</span>
+          <span className="mx-3 text-gray-300 text-xs">or continue with</span>
           <div className="flex-grow border-t border-gray-500"></div>
         </div>
 

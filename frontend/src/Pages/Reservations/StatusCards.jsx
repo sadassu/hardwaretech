@@ -69,7 +69,7 @@ const StatusCards = ({ statusFilter, statusCounts, onStatusChange }) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
       {statusCards.map((card) => {
         const IconComponent = card.Icon;
         const isActive = statusFilter === card.key;
@@ -77,34 +77,34 @@ const StatusCards = ({ statusFilter, statusCounts, onStatusChange }) => {
           <button
             key={card.key}
             onClick={() => onStatusChange(card.key)}
-            className={`group bg-white rounded-2xl shadow-md transition-all duration-300 overflow-hidden transform hover:-translate-y-1 hover:shadow-xl active:scale-95 ${
+            className={`group bg-white rounded-lg shadow-sm transition-all duration-200 overflow-hidden transform hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${
               isActive
-                ? `border-2 ${card.borderColor} ring-2 ring-offset-2 ${card.textColor} ring-opacity-30`
-                : `border-2 border-gray-100 ${card.hoverBorder}`
+                ? `border-2 ${card.borderColor} ring-1 ring-offset-1 ${card.textColor} ring-opacity-30`
+                : `border border-gray-100 ${card.hoverBorder}`
             }`}
           >
             {/* Top gradient stripe */}
-            <div className={`h-1.5 bg-gradient-to-r ${card.gradient}`}></div>
+            <div className={`h-1 bg-gradient-to-r ${card.gradient}`}></div>
             
-            <div className="p-3 sm:p-4 lg:p-5">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <div className="p-2.5 sm:p-3">
+              <div className="flex items-center justify-between mb-1.5">
                 <div
-                  className={`${card.iconBg} p-2 sm:p-2.5 rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-sm`}
+                  className={`${card.iconBg} p-1.5 rounded-lg group-hover:scale-105 transition-transform duration-200`}
                 >
-                  <IconComponent className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 ${card.textColor}`} />
+                  <IconComponent className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${card.textColor}`} />
                 </div>
                 
                 {/* Active indicator */}
                 {isActive && (
-                  <div className={`w-2 h-2 rounded-full ${card.gradient} bg-gradient-to-r animate-pulse`}></div>
+                  <div className={`w-1.5 h-1.5 rounded-full ${card.gradient} bg-gradient-to-r animate-pulse`}></div>
                 )}
               </div>
               
               <div>
-                <p className={`text-2xl sm:text-3xl lg:text-4xl font-bold ${card.textColor} mb-1 group-hover:scale-105 transition-transform`}>
+                <p className={`text-xl sm:text-2xl font-bold ${card.textColor} mb-0.5 group-hover:scale-105 transition-transform`}>
                   {statusCounts?.[card.key] || 0}
                 </p>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                <p className="text-xs font-medium text-gray-600">
                   {card.label}
                 </p>
               </div>

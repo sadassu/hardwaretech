@@ -90,7 +90,7 @@ function StockCards({ isPos = false }) {
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
           <Package className="w-4 h-4 text-gray-500" />
           Inventory Overview

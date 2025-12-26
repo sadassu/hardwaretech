@@ -216,7 +216,7 @@ function EditUserData() {
                     className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none min-h-32 text-sm sm:text-base"
                   >
                     <option value="user">User</option>
-                    <option value="admin">Admin</option>
+                    <option value="admin">Owner</option>
                     <option value="cashier">Cashier</option>
                   </select>
                   <div className="flex flex-col sm:flex-row gap-2 mt-3">

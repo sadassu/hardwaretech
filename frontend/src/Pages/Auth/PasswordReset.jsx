@@ -59,7 +59,7 @@ function ResetPassword() {
     <div
       className="min-h-screen flex items-center justify-center px-4"
       style={{
-        backgroundImage: "url('assets/bg.jpg')",
+        backgroundImage: "url('assets/carousel/carousel1.2.jpeg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

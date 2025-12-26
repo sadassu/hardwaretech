@@ -143,12 +143,11 @@ const CreateVariant = ({ product }) => {
   return (
     <>
       <button
-        className="btn btn-sm gap-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white border-0 hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg transition-all duration-200"
+        className="btn btn-sm btn-circle btn-ghost text-black hover:text-gray-700 border-0 transition-all duration-200"
         onClick={() => setIsOpen(true)}
         title="Add Variant"
       >
         <Plus className="w-4 h-4" />
-        <span className="hidden sm:inline">Add Variant</span>
       </button>
 
       <Modal
@@ -156,14 +155,14 @@ const CreateVariant = ({ product }) => {
         onClose={() => setIsOpen(false)}
         className="bg-white rounded-2xl max-w-2xl w-full p-0 max-h-[90vh] flex flex-col"
       >
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-2xl flex-shrink-0">
+        <div className="bg-red-400 p-6 rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <Plus className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Add Variant</h2>
-              <p className="text-green-100 text-sm">Create a new product variant</p>
+              <p className="text-red-100 text-sm">Create a new product variant</p>
             </div>
           </div>
         </div>
@@ -182,7 +181,7 @@ const CreateVariant = ({ product }) => {
                   placeholder="Size (e.g., Small, Medium)"
                   value={formData.size}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                 />
               </div>
 
@@ -194,7 +193,7 @@ const CreateVariant = ({ product }) => {
                   name="unit"
                   value={formData.unit}
                   onChange={handleChange}
-                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                   required
                 >
                   <option value="">No Unit</option>
@@ -219,7 +218,7 @@ const CreateVariant = ({ product }) => {
                   placeholder="e.g., 1 inch, 2.5 cm"
                   value={formData.dimension}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                 />
                 <p className="text-xs text-gray-500 mt-1">e.g., diameter, thickness</p>
               </div>
@@ -233,7 +232,7 @@ const CreateVariant = ({ product }) => {
                   name="dimensionType"
                   value={formData.dimensionType}
                   onChange={handleChange}
-                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                 >
                   <option value="">None</option>
                   <option value="diameter">Diameter</option>
@@ -258,7 +257,7 @@ const CreateVariant = ({ product }) => {
                   placeholder="Supplier price"
                   value={formData.supplier_price}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                   required
                 />
               </div>
@@ -273,7 +272,7 @@ const CreateVariant = ({ product }) => {
                   placeholder="Price"
                   value={formData.price}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                   required
                 />
               </div>
@@ -290,7 +289,7 @@ const CreateVariant = ({ product }) => {
                   placeholder="Quantity"
                   value={formData.quantity}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                   required
                   min="0"
                 />
@@ -306,7 +305,7 @@ const CreateVariant = ({ product }) => {
                   placeholder="Color (e.g., Red, Blue)"
                   value={formData.color}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                 />
               </div>
             </div>
@@ -325,7 +324,7 @@ const CreateVariant = ({ product }) => {
                   placeholder="e.g., 15"
                   value={formData.lowStockThreshold}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                   min="0"
                 />
               </div>
@@ -353,7 +352,7 @@ const CreateVariant = ({ product }) => {
                       name="conversionSource"
                       value={formData.conversionSource}
                       onChange={handleChange}
-                      className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                      className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                       required
                     >
                       <option value="">Select a variant</option>
@@ -377,7 +376,7 @@ const CreateVariant = ({ product }) => {
                         min="1"
                         value={formData.conversionQuantity}
                         onChange={handleChange}
-                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                         required
                       />
                     </div>
@@ -392,7 +391,7 @@ const CreateVariant = ({ product }) => {
                         placeholder="e.g., 1 box = 24 pcs"
                         value={formData.conversionNotes}
                         onChange={handleChange}
-                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-gray-900"
+                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                       />
                     </div>
                   </div>
@@ -410,7 +409,7 @@ const CreateVariant = ({ product }) => {
               </button>
               <button
                 type="submit"
-                className="flex-1 btn bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg"
+                className="flex-1 btn bg-red-400 hover:bg-red-500 text-white border-0 shadow-lg"
               >
                 Create Variant
               </button>

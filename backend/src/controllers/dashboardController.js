@@ -31,6 +31,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const getDashboardSales = asyncHandler(async (req, res) => {
   const { option } = req.query; 
+  const yearParam = parseInt(req.query.year, 10);
+  const currentYear = new Date().getFullYear();
+  const selectedYear =
+    Number.isInteger(yearParam) && yearParam >= 2000 && yearParam <= currentYear
+      ? yearParam
+      : currentYear;
 
   let groupStage = {};
   let matchStage = {};
@@ -63,9 +69,8 @@ export const getDashboardSales = asyncHandler(async (req, res) => {
 
     formatDate = "$_id";
   } else if (option === "monthly") {
-    const currentYear = new Date().getFullYear();
-    const start = new Date(`${currentYear}-01-01`);
-    const end = new Date(`${currentYear}-12-31`);
+    const start = new Date(`${selectedYear}-01-01`);
+    const end = new Date(`${selectedYear}-12-31`);
 
     matchStage = {
       saleDate: { $gte: start, $lte: end },
@@ -81,6 +86,13 @@ export const getDashboardSales = asyncHandler(async (req, res) => {
       $concat: [{ $toString: "$_id.year" }, "-", { $toString: "$_id.month" }],
     };
   } else if (option === "yearly") {
+    const start = new Date(`${selectedYear}-01-01`);
+    const end = new Date(`${selectedYear}-12-31`);
+
+    matchStage = {
+      saleDate: { $gte: start, $lte: end },
+    };
+
     groupStage = {
       _id: { year: { $year: "$saleDate" } },
       totalSales: { $sum: "$totalPrice" },

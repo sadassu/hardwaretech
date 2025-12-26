@@ -102,7 +102,7 @@ function CreateCart({ product, variant }) {
         className={`btn text-sm font-medium transition-all duration-200 ${
           outOfStock || isUserUnverified
             ? "btn-disabled bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "btn-primary hover:btn-primary-focus shadow-md hover:shadow-lg text-white"
+            : "bg-yellow-400 hover:bg-yellow-500 text-white shadow-md hover:shadow-lg border-0"
         }`}
         disabled={outOfStock || isUserUnverified}
         onClick={() => setIsOpen(true)}
@@ -129,14 +129,14 @@ function CreateCart({ product, variant }) {
         className="bg-white rounded-2xl max-w-md w-full p-0 max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl flex-shrink-0">
+        <div className="bg-red-400 p-6 rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
             <div>
               <h3 className="text-xl font-bold text-white">Add to Cart</h3>
-              <p className="text-blue-100 text-sm">Select quantity to add to your cart</p>
+              <p className="text-red-100 text-sm">Select quantity to add to your cart</p>
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@ function CreateCart({ product, variant }) {
                 </label>
                 <div className="flex items-center gap-3">
                   <button
-                    className="btn btn-ghost btn-sm btn-circle border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-ghost btn-sm btn-circle border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => handleQuantityChange(quantity - 1)}
                     disabled={quantity <= 1}
                     title="Decrease quantity"
@@ -196,7 +196,7 @@ function CreateCart({ product, variant }) {
                     min="1"
                     max={availableStock}
                     value={quantity}
-                    className="input input-bordered flex-1 text-center font-semibold text-gray-900 bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="input input-bordered flex-1 text-center font-semibold text-gray-900 bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
                     onChange={(e) => {
                       const value = Number(e.target.value) || 1;
                       handleQuantityChange(value);
@@ -204,7 +204,7 @@ function CreateCart({ product, variant }) {
                   />
 
                   <button
-                    className="btn btn-ghost btn-sm btn-circle border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-ghost btn-sm btn-circle border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => handleQuantityChange(quantity + 1)}
                     disabled={quantity >= availableStock}
                     title="Increase quantity"
@@ -227,7 +227,7 @@ function CreateCart({ product, variant }) {
               <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-700">Total Price:</span>
-                  <span className="text-xl font-bold text-green-600 font-mono">
+                  <span className="text-xl font-bold text-red-500">
                     {formatPrice((variant?.price ?? product?.price ?? 0) * quantity)}
                   </span>
                 </div>
@@ -240,7 +240,7 @@ function CreateCart({ product, variant }) {
         {!isUserUnverified && (
           <div className="border-t-2 border-gray-100 p-6 bg-gray-50 rounded-b-2xl flex-shrink-0">
             <button
-              className="btn w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg flex items-center justify-center gap-2"
+              className="btn w-full bg-yellow-400 hover:bg-yellow-500 text-white border-0 shadow-lg flex items-center justify-center gap-2"
               onClick={handleAddToCart}
               disabled={isUserUnverified || quantity > availableStock || availableStock <= 0}
             >

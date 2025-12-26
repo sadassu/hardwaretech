@@ -124,22 +124,15 @@ function Register() {
   // Show verification code input if registration was successful
   if (showVerification) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4"
-        style={{
-          backgroundImage: "url('assets/bg.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
+      <div className="min-h-screen flex items-center justify-center px-4 bg-gray-100">
         <div
-          className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-8 w-full max-w-sm"
+          className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-5 w-full max-w-xs"
           style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
         >
           {/* Logo + Title */}
-          <div className="flex flex-col items-center mb-6">
-            <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2" />
-            <h2 className="text-white text-2xl font-bold text-center">
+          <div className="flex flex-col items-center mb-4">
+            <img src="assets/logo.jpg" alt="Logo" className="w-24 mb-1.5 bg-white p-2 shadow-lg rounded-lg" />
+            <h2 className="text-white text-xl font-bold text-center">
               Verify Your Email
             </h2>
           </div>
@@ -230,35 +223,28 @@ function Register() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{
-        backgroundImage: "url('assets/bg.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-100">
       <div
-        className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-8 w-full max-w-sm"
+        className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-5 w-full max-w-xs"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
       >
         {/* Logo + Title */}
-        <div className="flex flex-col items-center mb-6">
-          <img src="assets/logo.jpg" alt="Logo" className="w-32 mb-2" />
-          <h2 className="text-white text-2xl font-bold">Create Account</h2>
+        <div className="flex flex-col items-center mb-4">
+          <img src="assets/logo.jpg" alt="Logo" className="w-24 mb-1.5 bg-white p-2 shadow-lg rounded-lg" />
+          <h2 className="text-white text-xl font-bold">Create Account</h2>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-600/90 text-white text-sm px-4 py-2 rounded mb-4 text-center animate-pulse">
+          <div className="bg-red-600/90 text-white text-sm px-3 py-1.5 rounded mb-3 text-center animate-pulse">
             {error}
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 relative">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 relative">
           {/* Full Name */}
-          <div>
+          <div className="mb-3">
             <div className="relative">
               <input
                 type="text"
@@ -273,13 +259,13 @@ function Register() {
                 Full Name
               </span>
             </div>
-            <p className="text-sm text-white mx-2">
+            <p className="text-xs text-white/80 mx-2 mt-0.5">
               Must be at least 2 Characters, letters and spaces only
             </p>
           </div>
 
           {/* Email */}
-          <div>
+          <div className="mb-3">
             <div className="relative">
               <input
                 type="email"
@@ -294,16 +280,16 @@ function Register() {
                 Email
               </span>
             </div>
-            <p className="text-sm text-white mx-2">
+            <p className="text-xs text-white/80 mx-2 mt-0.5">
               Enter a valid email address (e.g., user@example.com)
             </p>
           </div>
 
           {/* Password */}
-          <div>
+          <div className="mb-3">
             <div className="relative">
               <input
-                type={showPassword ? "text" : "password"}
+                type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
@@ -311,18 +297,11 @@ function Register() {
                 className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </button>
               <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
                 Password
               </span>
             </div>
-            <p className="text-sm text-white mx-2">
+            <p className="text-xs text-white/80 mx-2 mt-0.5">
               Must be at least 8 characters with uppercase, lowercase, number,
               and special characters
             </p>
@@ -332,7 +311,7 @@ function Register() {
           <div>
             <div className="relative">
               <input
-                type={showConfirmPassword ? "text" : "password"}
+                type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
@@ -340,18 +319,11 @@ function Register() {
                 className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
-              >
-                {showConfirmPassword ? "🙈" : "👁️"}
-              </button>
               <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
                 Confirm Password
               </span>
             </div>
-            <p className="text-sm text-white mx-2">
+            <p className="text-xs text-white/80 mx-2 mt-0.5">
               Re-enter your password to confirm
             </p>
           </div>
@@ -359,31 +331,35 @@ function Register() {
           {/* Password match warning */}
           {formData.confirmPassword &&
             formData.confirmPassword !== formData.password && (
-              <p className="text-red-400 text-xs -mt-4">
+              <p className="text-red-400 text-xs -mt-2">
                 Passwords do not match
               </p>
             )}
 
           {/* ✅ reCAPTCHA - Only render if site key is configured */}
           {recaptchaSiteKey && !captchaError && (
-            <ReCAPTCHA
-              sitekey={recaptchaSiteKey}
-              onChange={(token) => {
-                setCaptchaToken(token);
-                setCaptchaError(false);
-              }}
-              onError={() => {
-                // Silently handle reCAPTCHA errors - they're expected if key is invalid/not configured
-                setCaptchaError(true);
-                setCaptchaToken(""); // Clear token since reCAPTCHA failed
-              }}
-              onExpired={() => {
-                setCaptchaToken("");
-              }}
-            />
+            <div className="flex justify-center items-center -my-2">
+              <div className="scale-75 origin-center">
+                <ReCAPTCHA
+                  sitekey={recaptchaSiteKey}
+                  onChange={(token) => {
+                    setCaptchaToken(token);
+                    setCaptchaError(false);
+                  }}
+                  onError={() => {
+                    // Silently handle reCAPTCHA errors - they're expected if key is invalid/not configured
+                    setCaptchaError(true);
+                    setCaptchaToken(""); // Clear token since reCAPTCHA failed
+                  }}
+                  onExpired={() => {
+                    setCaptchaToken("");
+                  }}
+                />
+              </div>
+            </div>
           )}
           {captchaError && recaptchaSiteKey && (
-            <div className="bg-yellow-600/90 text-white text-xs px-4 py-2 rounded text-center">
+            <div className="bg-yellow-600/90 text-white text-xs px-3 py-1.5 rounded text-center">
               reCAPTCHA is unavailable. You can still proceed with registration.
             </div>
           )}
@@ -399,9 +375,9 @@ function Register() {
         </form>
 
         {/* Divider */}
-        <div className="flex items-center my-4">
+        <div className="flex items-center my-3">
           <div className="flex-grow border-t border-gray-500"></div>
-          <span className="mx-3 text-gray-300 text-sm">or sign up with</span>
+          <span className="mx-3 text-gray-300 text-xs">or sign up with</span>
           <div className="flex-grow border-t border-gray-500"></div>
         </div>
 

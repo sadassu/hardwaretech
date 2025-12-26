@@ -1,7 +1,7 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const Pagination = ({ page, pages, onPageChange }) => {
+const Pagination = ({ page, pages, onPageChange, variant = "blue" }) => {
   if (pages <= 1) return null;
 
   // Generate page numbers (up to 7 visible)
@@ -20,6 +20,8 @@ const Pagination = ({ page, pages, onPageChange }) => {
           className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
             page === 1
               ? "text-gray-300 cursor-not-allowed bg-gray-50"
+              : variant === "yellow"
+              ? "text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 active:scale-95"
               : "text-gray-700 hover:bg-blue-50 hover:text-blue-600 active:scale-95"
           }`}
           disabled={page === 1}
@@ -37,7 +39,9 @@ const Pagination = ({ page, pages, onPageChange }) => {
               key={num}
               className={`min-w-[36px] sm:min-w-[40px] h-9 sm:h-10 rounded-lg font-semibold text-sm transition-all duration-200 ${
                 page === num
-                  ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md scale-105"
+                  ? variant === "yellow"
+                    ? "bg-yellow-400 text-white shadow-md scale-105"
+                    : "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md scale-105"
                   : "text-gray-700 hover:bg-gray-100 active:scale-95"
               }`}
               onClick={() => onPageChange(num)}
@@ -53,6 +57,8 @@ const Pagination = ({ page, pages, onPageChange }) => {
           className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
             page === pages
               ? "text-gray-300 cursor-not-allowed bg-gray-50"
+              : variant === "yellow"
+              ? "text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 active:scale-95"
               : "text-gray-700 hover:bg-blue-50 hover:text-blue-600 active:scale-95"
           }`}
           disabled={page === pages}
