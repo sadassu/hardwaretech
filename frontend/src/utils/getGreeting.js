@@ -26,7 +26,7 @@ export function getRoleGreeting(roles = []) {
   const timeGreeting = getTimeBasedGreeting();
   
   if (roles.includes("admin")) {
-    return `${timeGreeting}, Administrator`;
+    return `${timeGreeting}, Owner`;
   } else if (roles.includes("cashier")) {
     return `${timeGreeting}, Cashier`;
   }

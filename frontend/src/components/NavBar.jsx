@@ -110,7 +110,10 @@ const NavBar = () => {
       <div className="navbar-end">
         {!user ? (
           <div className="flex gap-2">
-            <Link to="/login" className="btn btn-primary btn-sm">
+            <Link
+              to="/login"
+              className="btn btn-sm bg-red-400 hover:bg-red-500 text-white border-red-400 hover:border-red-500"
+            >
               Login
             </Link>
             <Link to="/register" className="btn btn-outline btn-sm">
@@ -138,12 +141,12 @@ const NavBar = () => {
                 </li>
                 <div className="divider my-1"></div>
 
-                {/* Admin Dashboard */}
+                {/* Owner Dashboard (admin role) */}
                 {user.roles?.some((role) => ["admin"].includes(role)) && (
                   <li>
                     <Link to="/dashboard" className="flex items-center gap-2">
                       <LayoutDashboard className="w-4 h-4" />
-                      Go to Admin Dashboard
+                      Go to Owner Dashboard
                     </Link>
                   </li>
                 )}

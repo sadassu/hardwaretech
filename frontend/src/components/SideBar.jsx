@@ -254,10 +254,10 @@ const SideBar = () => {
 
               const baseClasses = `
       flex items-center w-full p-3 rounded-lg transition-all duration-200
-      text-left hover:bg-blue-600 hover:text-slate-50 active:bg-blue-700
+      text-left hover:bg-red-400/90 hover:text-slate-50 active:bg-red-500
       ${
         active
-          ? "bg-blue-600 text-blue-50 shadow-md border-l-4 border-blue-300"
+          ? "bg-red-400/90 text-red-50 shadow-md border-l-4 border-red-200"
           : "text-slate-200"
       }
       ${isCollapsed ? "justify-center" : "justify-start"}
@@ -278,14 +278,14 @@ const SideBar = () => {
                         <span className="ml-3 font-medium text-white flex-1 flex items-center justify-between">
                           <span>{item.name}</span>
                           {showBadge && (
-                            <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-500 text-white">
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-400 text-white">
                               {pendingReservations}
                             </span>
                           )}
                         </span>
                       )}
                       {showBadge && isCollapsed && (
-                        <span className="absolute top-2 right-2 inline-flex items-center justify-center w-5 h-5 text-[10px] font-semibold rounded-full bg-red-500 text-white">
+                        <span className="absolute top-2 right-2 inline-flex items-center justify-center w-5 h-5 text-[10px] font-semibold rounded-full bg-yellow-400 text-white">
                           {pendingReservations}
                         </span>
                       )}
@@ -328,6 +328,9 @@ const SideBar = () => {
                         admin: "bg-red-500/20 text-red-400 border-red-500/30",
                         cashier: "bg-blue-500/20 text-blue-400 border-blue-500/30",
                       };
+                      const displayLabel = role === "admin"
+                        ? "Owner"
+                        : role.charAt(0).toUpperCase() + role.slice(1);
                       return (
                         <span
                           key={role}
@@ -335,8 +338,8 @@ const SideBar = () => {
                             roleColors[role] || "bg-slate-600 text-slate-300"
                           }`}
                         >
-                          {role.charAt(0).toUpperCase() + role.slice(1)}
-              </span>
+                          {displayLabel}
+                        </span>
                       );
                     })}
                   </div>

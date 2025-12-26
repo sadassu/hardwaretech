@@ -124,14 +124,7 @@ function Register() {
   // Show verification code input if registration was successful
   if (showVerification) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4"
-        style={{
-          backgroundImage: "url('assets/bg.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
+      <div className="min-h-screen flex items-center justify-center px-4 bg-gray-100">
         <div
           className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-5 w-full max-w-xs"
           style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
@@ -230,14 +223,7 @@ function Register() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{
-        backgroundImage: "url('assets/bg.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-100">
       <div
         className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-5 w-full max-w-xs"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
@@ -303,7 +289,7 @@ function Register() {
           <div className="mb-3">
             <div className="relative">
               <input
-                type={showPassword ? "text" : "password"}
+                type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
@@ -311,13 +297,6 @@ function Register() {
                 className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </button>
               <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
                 Password
               </span>
@@ -332,7 +311,7 @@ function Register() {
           <div>
             <div className="relative">
               <input
-                type={showConfirmPassword ? "text" : "password"}
+                type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
@@ -340,13 +319,6 @@ function Register() {
                 className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
-              >
-                {showConfirmPassword ? "🙈" : "👁️"}
-              </button>
               <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
                 Confirm Password
               </span>

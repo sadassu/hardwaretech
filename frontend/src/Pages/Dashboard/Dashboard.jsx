@@ -70,7 +70,9 @@ const reorderForColumns = (items = [], columns = 3) => {
 };
 
 function Dashboard() {
+  const currentYear = new Date().getFullYear();
   const [option, setOption] = useState("daily");
+  const [salesTrendYear, setSalesTrendYear] = useState(currentYear);
   const [panelIndex, setPanelIndex] = useState(1); // 1-4 = analytics panels, 4 = summary page (last)
   const currentDate = new Date();
   const [supplyYear, setSupplyYear] = useState(currentDate.getFullYear());
@@ -95,6 +97,13 @@ function Dashboard() {
     const latest = new Date().getFullYear();
     return Array.from({ length: 6 }, (_, idx) => latest - idx);
   }, []);
+  const salesTrendYearOptions = useMemo(() => {
+    const startYear = 2023;
+    return Array.from(
+      { length: currentYear - startYear + 1 },
+      (_, idx) => currentYear - idx
+    );
+  }, [currentYear]);
   const selectedSupplyMonthLabel =
     MONTH_OPTIONS.find((month) => month.value === supplyMonth)?.label ||
     "Month";
@@ -126,10 +135,10 @@ function Dashboard() {
   } = useFetch(
     "dashboard/sales",
     {
-      params: { option },
+      params: { option, year: salesTrendYear },
       headers: { Authorization: `Bearer ${user.token}` },
     },
-    [option, salesLiveKey]
+    [option, salesTrendYear, salesLiveKey]
   );
 
   // Fetch overall sales since business start
@@ -824,7 +833,7 @@ function Dashboard() {
         <div className="mb-3 sm:mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-600 rounded-lg shadow-md flex-shrink-0">
+              <div className="p-1.5 bg-red-400 rounded-lg shadow-md flex-shrink-0">
                 <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
@@ -863,9 +872,9 @@ function Dashboard() {
                 />
               </div>
               
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-                {/* Chart Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              {/* Chart Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
                 <div className="mb-3 sm:mb-0">
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1">
                     Sales Trends
@@ -875,7 +884,8 @@ function Dashboard() {
                   </p>
                 </div>
 
-                {/* Option Selector */}
+                {/* Filters: Option + Year */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                 <div className="w-full sm:w-auto">
                   <label className="block text-xs font-medium text-gray-700 mb-1.5 sm:hidden">
                     Time Period
@@ -887,8 +897,8 @@ function Dashboard() {
                       className="appearance-none w-full sm:w-auto bg-white border border-gray-300 rounded-lg px-3 sm:px-4 py-2 pr-8 text-xs sm:text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     >
                       <option value="daily">Daily (last 14 days)</option>
-                      <option value="monthly">Monthly (current year)</option>
-                      <option value="yearly">Yearly</option>
+                        <option value="monthly">Monthly (selected year)</option>
+                        <option value="yearly">Yearly (selected year)</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                       <svg
@@ -906,6 +916,43 @@ function Dashboard() {
                       </svg>
                     </div>
                   </div>
+                  </div>
+
+                  {(option === "monthly" || option === "yearly") && (
+                    <div className="w-full sm:w-auto">
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5 sm:hidden">
+                        Year
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={salesTrendYear}
+                          onChange={(e) => setSalesTrendYear(parseInt(e.target.value, 10))}
+                          className="appearance-none w-full sm:w-auto bg-white border border-gray-300 rounded-lg px-3 sm:px-4 py-2 pr-8 text-xs sm:text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        >
+                          {salesTrendYearOptions.map((yr) => (
+                            <option key={yr} value={yr}>
+                              {yr}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1560,7 +1607,7 @@ function Dashboard() {
         type="button"
         onClick={() => setPanelIndex((idx) => Math.min(4, idx + 1))}
         disabled={panelIndex === 4}
-        className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+        className="p-3 rounded-full bg-yellow-400 text-white hover:bg-yellow-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
         title="Next panel (→ Arrow Right)"
         aria-label="Next panel"
       >

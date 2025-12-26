@@ -39,6 +39,7 @@ function Pos() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   // ✅ Fetch categories once
@@ -54,9 +55,10 @@ function Pos() {
         limit: 16, // 4 rows × 4 columns = 16 products per page
         search: searchQuery,
         category: selectedCategory,
+        brand: selectedBrand,
       });
     }
-  }, [user, currentPage, searchQuery, selectedCategory, fetchProducts, inventoryLiveKey]);
+  }, [user, currentPage, searchQuery, selectedCategory, selectedBrand, fetchProducts, inventoryLiveKey]);
 
   // ✅ Handlers
   const handleSearchChange = (e) => setSearchInput(e.target.value);
@@ -75,15 +77,30 @@ function Pos() {
     setCurrentPage(1);
   };
 
+  const handleBrandChange = (e) => {
+    setSelectedBrand(e.target.value);
+    setCurrentPage(1);
+  };
+
   const clearAllFilters = () => {
     setSearchInput("");
     setSearchQuery("");
     setSelectedCategory("");
+    setSelectedBrand("");
     setCurrentPage(1);
   };
 
   const loading = productLoading || categoryLoading;
   const error = productError || categoryError;
+
+  // Build a unique list of brands from currently loaded products
+  const brandOptions = Array.from(
+    new Set(
+      (products || [])
+        .map((p) => (p.brand || "").trim())
+        .filter((b) => b.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b));
 
   // ✅ Error State
   if (error) {
@@ -123,7 +140,7 @@ function Pos() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
             {/* Title */}
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-600 rounded-lg shadow-md flex-shrink-0">
+              <div className="p-1.5 bg-red-400 rounded-lg shadow-md flex-shrink-0">
                 <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
@@ -143,63 +160,69 @@ function Pos() {
           {/* Enhanced Filters Section */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 sm:p-4 mb-4">
             {/* Category Filter with Search */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                <div className="w-10 h-10 bg-red-400 rounded-xl flex items-center justify-center shadow-md">
                   <Package className="w-5 h-5 text-white" strokeWidth={2.5} />
                 </div>
                 <h3 className="text-lg font-bold text-gray-800">Filter by Category</h3>
-                {selectedCategory && (
-                  <button
-                    onClick={() => handleCategoryChange("")}
-                    className="flex items-center gap-1.5 px-3 py-1.5 
-                               bg-red-50 hover:bg-red-100 border-2 border-red-200 
-                               rounded-lg text-sm font-semibold text-red-600 
-                               transition-all duration-200 hover:scale-105 active:scale-95
-                               shadow-sm hover:shadow ml-2"
-                  >
-                    <X className="w-4 h-4" strokeWidth={2.5} />
-                    Clear
-                  </button>
-                )}
               </div>
               
-              {/* Search Bar */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSearchSubmit();
-                }}
-                className="flex w-full sm:w-auto gap-2 max-w-xl"
-              >
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchInput}
-                    onChange={handleSearchChange}
-                    className="w-full pl-10 pr-10 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all text-sm"
-                  />
-                  {searchInput && (
-                    <button
-                      type="button"
-                      onClick={clearSearch}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      aria-label="Clear search"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
+              {/* Brand + Search */}
+              <div className="flex flex-col md:flex-row gap-2 w-full lg:w-auto max-w-3xl">
+                {/* Brand selector */}
+                <div className="flex md:flex-1">
+                  <select
+                    value={selectedBrand}
+                    onChange={handleBrandChange}
+                    className="w-full md:w-56 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-gray-900 text-sm"
+                  >
+                    <option value="">All brands</option>
+                    {brandOptions.map((brand) => (
+                      <option key={brand} value={brand}>
+                        {brand}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <button
-                  type="submit"
-                  className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 flex-shrink-0 text-sm"
+
+                {/* Search Bar */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSearchSubmit();
+                  }}
+                  className="flex w-full md:flex-[2] gap-2"
                 >
-                  <Search className="w-4 h-4" />
-                  <span className="hidden sm:inline">Search</span>
-                </button>
-              </form>
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchInput}
+                      onChange={handleSearchChange}
+                      className="w-full pl-10 pr-10 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all text-sm"
+                    />
+                    {searchInput && (
+                      <button
+                        type="button"
+                        onClick={clearSearch}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        aria-label="Clear search"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-3 sm:px-4 py-2 bg-red-400 text-white font-medium rounded-lg hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 flex-shrink-0 text-sm"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span className="hidden sm:inline">Search</span>
+                  </button>
+                </form>
+              </div>
             </div>
             
             {/* Category Filter */}
@@ -242,11 +265,12 @@ function Pos() {
 
           {/* Pagination */}
           {pages > 1 && (
-            <div className="mt-4">
+            <div className="fixed bottom-6 right-6 z-40">
               <Pagination
                 page={currentPage}
                 pages={pages}
                 onPageChange={setCurrentPage}
+                variant="yellow"
               />
             </div>
           )}

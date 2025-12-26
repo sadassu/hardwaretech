@@ -24,7 +24,7 @@ function CategoryFilter({
       {!hideHeader && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 bg-red-400 rounded-xl flex items-center justify-center shadow-md">
               <Filter className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
             <h3 className="text-lg font-bold text-gray-800">Filter by Category</h3>
@@ -56,8 +56,8 @@ function CategoryFilter({
                      shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed
                      ${
                        selectedCategory === ""
-                         ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105"
-                         : "bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                         ? "bg-red-400 text-white shadow-lg scale-105"
+                         : "bg-white text-gray-700 border-2 border-gray-200 hover:border-red-300 hover:bg-red-50"
                      }`}
         >
           <span className="flex items-center gap-2">
@@ -79,8 +79,8 @@ function CategoryFilter({
                          shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed
                          ${
                            isSelected
-                             ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105"
-                             : "bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                             ? "bg-red-400 text-white shadow-lg scale-105"
+                             : "bg-white text-gray-700 border-2 border-gray-200 hover:border-red-300 hover:bg-red-50"
                          }`}
             >
               {category.name}
@@ -92,7 +92,7 @@ function CategoryFilter({
       {/* Loading State */}
       {loading && (
         <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
-          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
           <span>Loading categories...</span>
         </div>
       )}

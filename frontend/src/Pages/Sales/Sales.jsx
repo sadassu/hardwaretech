@@ -133,7 +133,7 @@ const Sales = () => {
       <div className="mb-3 sm:mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-600 rounded-lg shadow-md flex-shrink-0">
+            <div className="p-1.5 bg-red-400 rounded-lg shadow-md flex-shrink-0">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
@@ -148,7 +148,7 @@ const Sales = () => {
           <button
             onClick={handleExportSales}
             disabled={loading}
-            className="btn btn-primary btn-sm gap-1.5 mt-2 sm:mt-0"
+            className="btn btn-sm gap-1.5 mt-2 sm:mt-0 bg-yellow-400 hover:bg-yellow-500 text-white border-yellow-400 hover:border-yellow-500"
           >
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Export CSV</span>
@@ -241,7 +241,7 @@ const Sales = () => {
                 <tr>
                   <th></th>
                   <th>Sale ID</th>
-                  <th>Cashier/Admin</th>
+                  <th>Cashier/Owner</th>
                   <th>Sale Date</th>
                   <th>Type & Status</th>
                   <th>Actions</th>
@@ -300,28 +300,11 @@ const Sales = () => {
                         </td>
                         <td>{formatDatePHT(sale.saleDate)}</td>
                         <td>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`badge ${
-                                sale.type === "pos"
-                                  ? "badge-primary"
-                                  : "badge-secondary"
-                              }`}
-                            >
-                              {sale.type?.toUpperCase()}
-                            </span>
-                            <span
-                              className={`badge ${
-                                sale.amountPaid >= sale.totalPrice
-                                  ? "badge-success"
-                                  : "badge-warning"
-                              }`}
-                            >
-                              {sale.amountPaid >= sale.totalPrice
-                                ? "PAID"
-                                : "PARTIAL"}
-                            </span>
-                          </div>
+                          <span className="text-xs font-medium text-gray-700">
+                            {sale.type?.toUpperCase() || "N/A"}{" "}
+                            /{" "}
+                            {sale.amountPaid >= sale.totalPrice ? "PAID" : "PARTIAL"}
+                          </span>
                         </td>
                         <td>
                           <div className="flex gap-2">
@@ -472,8 +455,8 @@ const Sales = () => {
       </div>
 
       {pages > 1 && (
-        <div className="mt-4">
-          <Pagination page={page} pages={pages} onPageChange={setPage} />
+        <div className="fixed bottom-6 right-6 z-40">
+      <Pagination page={page} pages={pages} onPageChange={setPage} variant="yellow" />
         </div>
       )}
 

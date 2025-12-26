@@ -127,7 +127,7 @@ const ReservationTable = () => {
                 <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-red-400 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                       {(res.userId?.name || res.userName || "U").charAt(0).toUpperCase()}
                     </div>
                   </div>

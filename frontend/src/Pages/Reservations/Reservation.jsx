@@ -35,14 +35,14 @@ const Reservation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
         {/* Header + Search */}
         <div className="mb-3 sm:mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             {/* Title */}
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-600 rounded-lg shadow-md flex-shrink-0">
+              <div className="p-1.5 bg-red-400 rounded-lg shadow-md flex-shrink-0">
                 <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
@@ -82,7 +82,7 @@ const Reservation = () => {
               </div>
               <button
                 type="submit"
-                className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 flex-shrink-0 text-sm"
+                className="px-3 sm:px-4 py-2 bg-red-400 text-white font-medium rounded-lg hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 flex-shrink-0 text-sm"
               >
                 <Search className="w-4 h-4" />
                 <span className="hidden sm:inline">Search</span>
@@ -105,8 +105,8 @@ const Reservation = () => {
 
         {/* Pagination */}
         {pages > 1 && (
-          <div className="mt-4">
-        <Pagination page={page} pages={pages} onPageChange={setPage} />
+          <div className="fixed bottom-6 right-6 z-40">
+        <Pagination page={page} pages={pages} onPageChange={setPage} variant="yellow" />
           </div>
         )}
       </div>

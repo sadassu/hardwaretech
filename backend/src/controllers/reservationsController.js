@@ -833,7 +833,6 @@ export const getAllReservations = asyncHandler(async (req, res) => {
       let dateMatch = false;
       if (reservation.reservationDate) {
         const reservationDate = new Date(reservation.reservationDate);
-        
         // Try to parse the search query as a date
         const searchDate = new Date(searchTrimmed);
         
@@ -845,62 +844,17 @@ export const getAllReservations = asyncHandler(async (req, res) => {
           dateMatch = resDateStr === searchDateStr;
         }
         
-        // Generate various date format strings for matching
-        const year = reservationDate.getFullYear();
-        const month = reservationDate.getMonth() + 1;
-        const day = reservationDate.getDate();
-        const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
-                           'july', 'august', 'september', 'october', 'november', 'december'];
-        const monthShortNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
-                                'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-        
-        // Create date format strings
+        // Also check formatted date strings
         const dateFormats = [
-          // ISO format: YYYY-MM-DD
-          reservationDate.toISOString().split('T')[0],
-          // MM/DD/YYYY
-          `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`,
-          // DD/MM/YYYY
-          `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`,
-          // MM-DD-YYYY
-          `${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}-${year}`,
-          // DD-MM-YYYY
-          `${day.toString().padStart(2, '0')}-${month.toString().padStart(2, '0')}-${year}`,
-          // M/D/YYYY (without leading zeros)
-          `${month}/${day}/${year}`,
-          // D/M/YYYY (without leading zeros)
-          `${day}/${month}/${year}`,
-          // Full month name formats
-          `${monthNames[month - 1]} ${day}, ${year}`.toLowerCase(),
-          `${monthShortNames[month - 1]} ${day}, ${year}`.toLowerCase(),
-          `${monthNames[month - 1]} ${day}`.toLowerCase(),
-          `${monthShortNames[month - 1]} ${day}`.toLowerCase(),
-          // Locale date strings
           reservationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).toLowerCase(),
           reservationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).toLowerCase(),
           reservationDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }).toLowerCase(),
           reservationDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase(),
           reservationDate.toLocaleDateString('en-US').toLowerCase(),
+          reservationDate.toISOString().split('T')[0], // YYYY-MM-DD format
         ];
         
-        // Check if search matches any date format
         dateMatch = dateMatch || dateFormats.some(format => format.includes(searchLower));
-        
-        // Also check if search contains date components (e.g., "2024", "january", "01/15")
-        const searchContainsYear = searchLower.includes(year.toString());
-        const searchContainsMonth = monthNames.some((name, idx) => 
-          (idx + 1 === month && searchLower.includes(name)) || 
-          (idx + 1 === month && searchLower.includes(monthShortNames[idx]))
-        );
-        const searchContainsDay = searchLower.includes(day.toString()) || 
-                                 searchLower.includes(day.toString().padStart(2, '0'));
-        
-        // If search contains multiple date components, consider it a match
-        if ((searchContainsYear && searchContainsMonth) || 
-            (searchContainsYear && searchContainsDay) ||
-            (searchContainsMonth && searchContainsDay)) {
-          dateMatch = true;
-        }
       }
       
       return userNameMatch || userEmailMatch || reservationIdMatch || productNameMatch || dateMatch;

@@ -86,7 +86,6 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
         title="Complete Reservation"
       >
         <CheckCircle2 className="w-4 h-4" />
-        <span className="hidden sm:inline">Complete</span>
       </button>
 
       {/* Mobile: Centered Modal | Desktop: Right Side Slide-In Panel */}
@@ -581,7 +580,3 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
 }
 
 export default CompleteReservation;
-
-
-
-

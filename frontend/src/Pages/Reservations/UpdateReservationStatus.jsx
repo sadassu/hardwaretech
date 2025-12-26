@@ -56,12 +56,11 @@ function UpdateReservationStatus({ reservation }) {
   return (
     <>
       <button
-        className="btn btn-sm btn-ghost gap-1.5 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+        className="btn btn-sm btn-circle btn-ghost text-black hover:text-gray-700 border-0 transition-all duration-200"
         onClick={() => setIsOpen(true)}
         title="Edit Status"
       >
         <Edit3 className="w-4 h-4" />
-        <span className="hidden sm:inline">Status</span>
       </button>
 
       <Modal

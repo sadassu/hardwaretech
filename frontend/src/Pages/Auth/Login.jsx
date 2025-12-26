@@ -22,9 +22,9 @@ function Login() {
     }
   }, [successMessage]);
 
-  // Lock body scroll when login page is mounted
+  // Allow body scroll when login page is mounted
   useEffect(() => {
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = "";
     return () => {
       document.body.style.overflow = "";
     };
@@ -142,15 +142,7 @@ function Login() {
   };
 
   return (
-    <div
-      className="h-screen flex items-start justify-center px-4 overflow-hidden pt-25"
-      style={{
-        backgroundImage: "url('assets/bg.jpg')",
-        backgroundSize: "auto",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
+  <div className="min-h-screen flex items-start justify-center px-4 overflow-y-auto py-10 bg-gray-100">
       <div
         className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-5 w-full max-w-xs mx-auto"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
@@ -289,7 +281,7 @@ function Login() {
           {/* Password */}
           <div className="relative">
             <input
-              type={showPassword ? "text" : "password"}
+              type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -297,13 +289,6 @@ function Login() {
               className="w-full px-4 py-2 rounded bg-white placeholder-gray-700 focus:outline-none"
               required
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-600 hover:text-black transition"
-            >
-              {showPassword ? "🙈" : "👁️"}
-            </button>
             <span className="absolute bottom-9 left-2 bg-black text-white text-sm px-2 py-0.5 font-bold">
               Password
             </span>

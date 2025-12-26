@@ -165,7 +165,7 @@ const SupplyHistories = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
           {/* Title */}
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-600 rounded-lg shadow-md flex-shrink-0">
+            <div className="p-1.5 bg-red-400 rounded-lg shadow-md flex-shrink-0">
               <Package className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
@@ -258,7 +258,7 @@ const SupplyHistories = () => {
             <p className="text-gray-500 text-xs font-medium mb-1">Total Stock On Hand</p>
             <p className="text-sm sm:text-base font-bold text-gray-900 break-words leading-tight">
               {Number(totalStock || 0).toLocaleString()}
-              <span className="text-xs ml-1 font-medium text-gray-600">pcs</span>
+              <span className="text-xs ml-1 font-medium text-gray-900">pcs</span>
             </p>
             <p className="text-xs text-gray-500 mt-0.5">All active variants</p>
           </div>
@@ -346,7 +346,7 @@ const SupplyHistories = () => {
                     <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
                       {/* Icon */}
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-red-400 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                           <Package className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
                       </div>
@@ -360,21 +360,21 @@ const SupplyHistories = () => {
                             </h3>
                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               {variantSize && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 text-xs font-medium">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-900 text-xs font-medium">
                                   {variantSize}
                                 </span>
                               )}
                               {variantUnit && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-900 text-xs font-medium">
                                   {variantUnit}
                                 </span>
                               )}
                               {variantColor && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-pink-50 text-pink-700 text-xs font-medium capitalize">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-900 text-xs font-medium capitalize">
                                   {variantColor}
                                 </span>
                               )}
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border bg-green-100 text-green-700 border-green-200">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border bg-gray-100 text-gray-900 border-gray-300">
                                 {h.quantity} pcs
                               </span>
                             </div>
@@ -394,7 +394,7 @@ const SupplyHistories = () => {
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="font-bold text-green-600">
+                            <span className="font-bold text-gray-900">
                               ₱{h.total_cost?.toLocaleString("en-PH", {
                                 minimumFractionDigits: 2,
                               }) || "0.00"}
@@ -466,7 +466,7 @@ const SupplyHistories = () => {
                           </div>
                           <div className="pt-1.5 border-t border-gray-200 flex justify-between items-center">
                             <span className="text-xs font-semibold text-gray-700">Total Cost:</span>
-                            <span className="text-sm font-bold text-green-600">
+                            <span className="text-sm font-bold text-gray-900">
                               ₱{h.total_cost?.toLocaleString("en-PH", {
                                 minimumFractionDigits: 2,
                               }) || "0.00"}
@@ -523,8 +523,8 @@ const SupplyHistories = () => {
       )}
 
       {pages > 1 && (
-        <div className="mt-4">
-          <Pagination page={page} pages={pages} onPageChange={setPage} />
+        <div className="fixed bottom-6 right-6 z-40">
+        <Pagination page={page} pages={pages} onPageChange={setPage} variant="yellow" />
         </div>
       )}
       </div>

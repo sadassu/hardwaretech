@@ -14,6 +14,7 @@ const CreateProduct = () => {
 
   const [formData, setFormData] = useState({
     name: "",
+    brand: "",
     description: "",
     category: "",
     image: "",
@@ -79,7 +80,7 @@ const CreateProduct = () => {
       });
 
       // Reset form + close modal
-      setFormData({ name: "", description: "", category: "", image: "" });
+      setFormData({ name: "", brand: "", description: "", category: "", image: "" });
       setIsOpen(false);
       setLocalError(null);
     } catch (err) {
@@ -92,7 +93,7 @@ const CreateProduct = () => {
   return (
     <>
       <button
-        className="btn w-full bg-red-500 text-white border-red-500"
+        className="btn w-full bg-red-400 hover:bg-red-500 text-white border-red-400"
         onClick={() => setIsOpen(true)}
       >
         Add Product
@@ -103,14 +104,14 @@ const CreateProduct = () => {
         onClose={() => setIsOpen(false)}
         className="bg-white rounded-2xl max-w-2xl w-full p-0 max-h-[90vh] flex flex-col"
       >
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl flex-shrink-0">
+        <div className="bg-red-400 p-6 rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <Plus className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Create Product</h2>
-              <p className="text-blue-100 text-sm">Add a new product to the catalog</p>
+              <p className="text-red-100 text-sm">Add a new product to the catalog</p>
             </div>
           </div>
         </div>
@@ -128,14 +129,31 @@ const CreateProduct = () => {
                   Product Name
                 </label>
                 <input
-            type="text"
-            name="name"
-            placeholder="Product Name"
-            value={formData.name}
-            onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
-            required
-          />
+                  type="text"
+                  name="name"
+                  placeholder="Product Name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
+                  required
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Brand
+                  </label>
+                  <span className="text-xs text-gray-500">Optional (e.g. Makita, Bosch, Stanley)</span>
+                </div>
+                <input
+                  type="text"
+                  name="brand"
+                  placeholder="Enter brand name"
+                  value={formData.brand}
+                  onChange={handleChange}
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
+                />
               </div>
 
               <div className="md:col-span-2">
@@ -150,7 +168,7 @@ const CreateProduct = () => {
                   placeholder="Brief description (optional)"
             value={formData.description}
             onChange={handleChange}
-                  className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                   rows={3}
           />
               </div>
@@ -166,7 +184,7 @@ const CreateProduct = () => {
             placeholder="Select or type a category"
             value={formData.category}
             onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
             required
           />
           <datalist id="categories-list">
@@ -190,7 +208,7 @@ const CreateProduct = () => {
             placeholder="Paste image URL"
             value={formData.image}
             onChange={handleChange}
-                  className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="textarea textarea-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-gray-900"
                   rows={2}
                   required
                 />
@@ -207,9 +225,9 @@ const CreateProduct = () => {
               </button>
           <button
             type="submit"
-                className="flex-1 btn bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg"
+            className="flex-1 btn bg-red-400 hover:bg-red-500 text-white border-0 shadow-lg"
           >
-                Create Product
+            Create Product
           </button>
             </div>
           </div>
