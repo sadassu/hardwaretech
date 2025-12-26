@@ -14,7 +14,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { BarChart3, AlertCircle } from "lucide-react";
+import { BarChart3, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatPrice } from "../../utils/formatPrice";
 import SalesCards from "./SalesCards";
 import StockCards from "./StockCards";
@@ -22,6 +22,7 @@ import { formatDatePHT } from "../../utils/formatDate";
 import SupplyHistoryCard from "./SupplyHistoryCard";
 import SalesSupplyHistoryGraph from "./SalesSupplyHistoryGraph";
 import { useCategoriesStore } from "../../store/categoriesStore";
+import SaleCards from "../Pos/SaleCards";
 
 const MONTH_OPTIONS = [
   { value: 1, label: "January" },
@@ -69,7 +70,10 @@ const reorderForColumns = (items = [], columns = 3) => {
 };
 
 function Dashboard() {
+  const currentYear = new Date().getFullYear();
   const [option, setOption] = useState("daily");
+  const [salesTrendYear, setSalesTrendYear] = useState(currentYear);
+  const [panelIndex, setPanelIndex] = useState(1); // 1-4 = analytics panels, 4 = summary page (last)
   const currentDate = new Date();
   const [supplyYear, setSupplyYear] = useState(currentDate.getFullYear());
   const [supplyMonth, setSupplyMonth] = useState(currentDate.getMonth() + 1);
@@ -93,6 +97,13 @@ function Dashboard() {
     const latest = new Date().getFullYear();
     return Array.from({ length: 6 }, (_, idx) => latest - idx);
   }, []);
+  const salesTrendYearOptions = useMemo(() => {
+    const startYear = 2023;
+    return Array.from(
+      { length: currentYear - startYear + 1 },
+      (_, idx) => currentYear - idx
+    );
+  }, [currentYear]);
   const selectedSupplyMonthLabel =
     MONTH_OPTIONS.find((month) => month.value === supplyMonth)?.label ||
     "Month";
@@ -124,10 +135,10 @@ function Dashboard() {
   } = useFetch(
     "dashboard/sales",
     {
-      params: { option },
+      params: { option, year: salesTrendYear },
       headers: { Authorization: `Bearer ${user.token}` },
     },
-    [option, salesLiveKey]
+    [option, salesTrendYear, salesLiveKey]
   );
 
   // Fetch overall sales since business start
@@ -794,22 +805,42 @@ function Dashboard() {
     setSelectedSalesBar(null);
   }, []);
 
+  // Keyboard navigation for panels
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't handle navigation if modals are open or if user is typing in an input/select
+      if (selectedSupplyBar || selectedSalesBar) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+      
+      if (e.key === 'ArrowLeft' && panelIndex > 1) {
+        e.preventDefault();
+        setPanelIndex((idx) => Math.max(1, idx - 1));
+      } else if (e.key === 'ArrowRight' && panelIndex < 4) {
+        e.preventDefault();
+        setPanelIndex((idx) => Math.min(4, idx + 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [panelIndex, selectedSupplyBar, selectedSalesBar]);
+
   return (
     <>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+      <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
         {/* Header */}
-        <div className="mb-4 sm:mb-6 lg:mb-8">
+        <div className="mb-3 sm:mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 bg-blue-600 rounded-xl shadow-md flex-shrink-0">
-                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-red-400 rounded-lg shadow-md flex-shrink-0">
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">
                   Dashboard
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-xs text-gray-600 hidden sm:block">
                   Live overview of sales, stock, and reservations
                 </p>
               </div>
@@ -818,20 +849,29 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Two-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* LEFT (2/3) */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            {/* Stats Cards */}
-            <SalesCards
-              salesData={salesData}
-              loading={loading || overallLoading}
-              totalSales={overallTotalSales}
-              averageSales={overallAverageSales}
-              totalDataPoints={overallStats?.totalCount || 0}
-            />
-
-            {/* Main Chart Container */}
+        {/* Main Layout */}
+        <div className={`grid grid-cols-1 ${panelIndex === 4 ? "lg:grid-cols-1" : "lg:grid-cols-1"} gap-2 sm:gap-3`}>
+          {/* MAIN CONTENT - Full Width */}
+          <div className="space-y-2 sm:space-y-3">
+            {/* Panel 1: Sales Trend */}
+            {panelIndex === 1 && (
+            <>
+              {/* Today's, This Month's, and Annual Sales Cards */}
+              <div className="mb-4">
+                <SaleCards />
+              </div>
+              
+              {/* KPI Cards: Total Sales, Average Sales, Data Points */}
+              <div className="mb-4">
+                <SalesCards
+                  salesData={salesData}
+                  loading={loading || overallLoading}
+                  totalSales={overallTotalSales}
+                  averageSales={overallAverageSales}
+                  totalDataPoints={overallStats?.totalCount || 0}
+                />
+              </div>
+              
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
               {/* Chart Header */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
@@ -844,7 +884,8 @@ function Dashboard() {
                   </p>
                 </div>
 
-                {/* Option Selector */}
+                {/* Filters: Option + Year */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                 <div className="w-full sm:w-auto">
                   <label className="block text-xs font-medium text-gray-700 mb-1.5 sm:hidden">
                     Time Period
@@ -856,8 +897,8 @@ function Dashboard() {
                       className="appearance-none w-full sm:w-auto bg-white border border-gray-300 rounded-lg px-3 sm:px-4 py-2 pr-8 text-xs sm:text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     >
                       <option value="daily">Daily (last 14 days)</option>
-                      <option value="monthly">Monthly (current year)</option>
-                      <option value="yearly">Yearly</option>
+                        <option value="monthly">Monthly (selected year)</option>
+                        <option value="yearly">Yearly (selected year)</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                       <svg
@@ -875,212 +916,272 @@ function Dashboard() {
                       </svg>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Chart Content */}
-              <div className="relative">
-                {loading && (
-                  <div className="flex items-center justify-center h-64 sm:h-80 lg:h-96">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                      <p className="text-gray-500">Loading sales data...</p>
-                    </div>
-                  </div>
-                )}
-
-                {error && (
-                  <div className="flex items-center justify-center h-64 sm:h-80 lg:h-96">
-                    <div className="flex flex-col items-center gap-4 text-center">
-                      <div className="p-4 bg-red-100 rounded-full">
-                        <AlertCircle className="w-8 h-8 text-red-600" />
-                      </div>
-                      <div>
-                        <p className="text-red-600 font-semibold mb-1">
-                          Error loading data
-                        </p>
-                        <p className="text-gray-500 text-sm">{error}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {salesData && salesData.length > 0 && !loading && (
-                  <div className="h-64 sm:h-80 lg:h-96">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={salesData}
-                        margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis
-                          dataKey="period"
-                          stroke="#6b7280"
-                          fontSize={10}
-                          tickLine={false}
-                          axisLine={false}
-                          angle={-45}
-                          textAnchor="end"
-                          height={60}
-                        />
-                        <YAxis
-                          stroke="#6b7280"
-                          fontSize={10}
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(value) => `₱${(value / 1000).toFixed(0)}k`}
-                          width={50}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Line
-                          type="monotone"
-                          dataKey="totalSales"
-                          stroke="#2563eb"
-                          strokeWidth={3}
-                          dot={{ fill: "#2563eb", strokeWidth: 2, r: 4 }}
-                          activeDot={{
-                            r: 6,
-                            stroke: "#2563eb",
-                            strokeWidth: 2,
-                            fill: "#ffffff",
-                          }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-
-                {                !loading && salesData?.length === 0 && (
-                  <div className="flex items-center justify-center h-64 sm:h-80 lg:h-96">
-                    <div className="flex flex-col items-center gap-4 text-center">
-                      <div className="p-4 bg-gray-100 rounded-full">
-                        <BarChart3 className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <div>
-                        <p className="text-gray-600 font-semibold mb-1">
-                          No data available
-                        </p>
-                        <p className="text-gray-500 text-sm">
-                          No sales data found for this period.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Summary Statistics */}
-              {statsSummary && salesData && salesData.length > 0 && !loading && (
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-4">
-                    Period Summary
-                  </h3>
-                  
-                  {/* Top Row - 2 Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
-                    {/* Highest Sale */}
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 sm:p-4 border border-green-100">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <p className="text-xs text-gray-600 font-medium">
-                          Highest Sale
-                        </p>
-                      </div>
-                      <p className="text-lg sm:text-xl font-bold text-green-600 mb-0.5">
-                        {formatPrice(statsSummary.highest.totalSales)}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {formatDatePHT(statsSummary.highest.period)}
-                      </p>
-                    </div>
-
-                    {/* Lowest Sale */}
-                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-3 sm:p-4 border border-orange-100">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                        <p className="text-xs text-gray-600 font-medium">
-                          Lowest Sale
-                        </p>
-                      </div>
-                      <p className="text-lg sm:text-xl font-bold text-orange-600 mb-0.5">
-                        {formatPrice(statsSummary.lowest.totalSales)}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {formatDatePHT(statsSummary.lowest.period)}
-                      </p>
-                    </div>
-                    </div>
-
-                  {/* Bottom Row - 3 Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    {/* Average Sale */}
-                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 sm:p-4 border border-blue-100">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <p className="text-xs text-gray-600 font-medium">
-                          Average Sale
-                        </p>
-                      </div>
-                      <p className="text-lg sm:text-xl font-bold text-blue-600 mb-0.5">
-                        {formatPrice(statsSummary.periodAverage)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Per {option === "daily" ? "day" : option === "monthly" ? "month" : "year"} (filtered period)
-                      </p>
-                    </div>
-
-                    {/* Total Sales (Period) */}
-                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-3 sm:p-4 border border-purple-100">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                        <p className="text-xs text-gray-600 font-medium">
-                          Total Sales
-                        </p>
-                      </div>
-                      <p className="text-lg sm:text-xl font-bold text-purple-600 mb-0.5">
-                        {formatPrice(statsSummary.periodTotal)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {option === "daily" ? "Last 14 days" : option === "monthly" ? "This year" : "All years"}
-                      </p>
-                    </div>
-
-                    {/* Data Points (Period) */}
-                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-3 sm:p-4 border border-indigo-100">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                        <p className="text-xs text-gray-600 font-medium">
-                          Data Points
-                        </p>
-                  </div>
-                      <p className="text-lg sm:text-xl font-bold text-indigo-600 mb-0.5">
-                        {salesData.length}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {option === "daily" ? "Days" : option === "monthly" ? "Months" : "Years"}
-                      </p>
-                    </div>
                   </div>
 
-                  {salesNarrative.length > 0 && (
-                    <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-3">
-                        SUMMARY
-                      </p>
-                      <ul className="space-y-2 text-sm text-gray-700">
-                        {salesNarrative.map((line, idx) => (
-                          <li key={idx} className="leading-relaxed">
-                            • {line}
-                          </li>
-                        ))}
-                      </ul>
+                  {(option === "monthly" || option === "yearly") && (
+                    <div className="w-full sm:w-auto">
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5 sm:hidden">
+                        Year
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={salesTrendYear}
+                          onChange={(e) => setSalesTrendYear(parseInt(e.target.value, 10))}
+                          className="appearance-none w-full sm:w-auto bg-white border border-gray-300 rounded-lg px-3 sm:px-4 py-2 pr-8 text-xs sm:text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        >
+                          {salesTrendYearOptions.map((yr) => (
+                            <option key={yr} value={yr}>
+                              {yr}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-            <SalesSupplyHistoryGraph />
+              </div>
 
+              {/* Chart */}
+              <div className="relative">
+                    {loading && (
+                      <div className="flex items-center justify-center h-64 sm:h-80 lg:h-96">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                          <p className="text-gray-500">Loading sales data...</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {error && (
+                      <div className="flex items-center justify-center h-64 sm:h-80 lg:h-96">
+                        <div className="flex flex-col items-center gap-4 text-center">
+                          <div className="p-4 bg-red-100 rounded-full">
+                            <AlertCircle className="w-8 h-8 text-red-600" />
+                          </div>
+                          <div>
+                            <p className="text-red-600 font-semibold mb-1">
+                              Error loading data
+                            </p>
+                            <p className="text-gray-500 text-sm">{error}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {salesData && salesData.length > 0 && !loading && (
+                      <div className="h-64 sm:h-80 lg:h-96">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={salesData}
+                            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis
+                              dataKey="period"
+                              stroke="#6b7280"
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                              angle={-45}
+                              textAnchor="end"
+                              height={60}
+                            />
+                            <YAxis
+                              stroke="#6b7280"
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                              tickFormatter={(value) => `₱${(value / 1000).toFixed(0)}k`}
+                              width={50}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Line
+                              type="monotone"
+                              dataKey="totalSales"
+                              stroke="#2563eb"
+                              strokeWidth={3}
+                              dot={{ fill: "#2563eb", strokeWidth: 2, r: 4 }}
+                              activeDot={{
+                                r: 6,
+                                stroke: "#2563eb",
+                                strokeWidth: 2,
+                                fill: "#ffffff",
+                              }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {!loading && salesData?.length === 0 && (
+                      <div className="flex items-center justify-center h-64 sm:h-80 lg:h-96">
+                        <div className="flex flex-col items-center gap-4 text-center">
+                          <div className="p-4 bg-gray-100 rounded-full">
+                            <BarChart3 className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <div>
+                            <p className="text-gray-600 font-semibold mb-1">
+                              No data available
+                            </p>
+                            <p className="text-gray-500 text-sm">
+                              No sales data found for this period.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+              </div>
+
+              {/* Period Summary (below chart) */}
+              {statsSummary &&
+                salesData &&
+                salesData.length > 0 &&
+                !loading && (
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                      Period Summary
+                    </h3>
+
+                        {/* Top Row - 2 Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                          {/* Highest Sale */}
+                          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 sm:p-4 border border-green-100">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                              <p className="text-xs text-gray-600 font-medium">
+                                Highest Sale
+                              </p>
+                            </div>
+                            <p className="text-lg sm:text-xl font-bold text-green-600 mb-0.5">
+                              {formatPrice(statsSummary.highest.totalSales)}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {formatDatePHT(statsSummary.highest.period)}
+                            </p>
+                          </div>
+
+                          {/* Lowest Sale */}
+                          <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-3 sm:p-4 border border-orange-100">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                              <p className="text-xs text-gray-600 font-medium">
+                                Lowest Sale
+                              </p>
+                            </div>
+                            <p className="text-lg sm:text-xl font-bold text-orange-600 mb-0.5">
+                              {formatPrice(statsSummary.lowest.totalSales)}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {formatDatePHT(statsSummary.lowest.period)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Bottom Row - 3 Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                          {/* Average Sale */}
+                          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 sm:p-4 border border-blue-100">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                              <p className="text-xs text-gray-600 font-medium">
+                                Average Sale
+                              </p>
+                            </div>
+                            <p className="text-lg sm:text-xl font-bold text-blue-600 mb-0.5">
+                              {formatPrice(statsSummary.periodAverage)}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Per{" "}
+                              {option === "daily"
+                                ? "day"
+                                : option === "monthly"
+                                ? "month"
+                                : "year"}{" "}
+                              (filtered period)
+                            </p>
+                          </div>
+
+                          {/* Total Sales (Period) */}
+                          <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-3 sm:p-4 border border-purple-100">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                              <p className="text-xs text-gray-600 font-medium">
+                                Total Sales
+                              </p>
+                            </div>
+                            <p className="text-lg sm:text-xl font-bold text-purple-600 mb-0.5">
+                              {formatPrice(statsSummary.periodTotal)}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {option === "daily"
+                                ? "Last 14 days"
+                                : option === "monthly"
+                                ? "This year"
+                                : "All years"}
+                            </p>
+                          </div>
+
+                          {/* Data Points (Period) */}
+                          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-3 sm:p-4 border border-indigo-100">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                              <p className="text-xs text-gray-600 font-medium">
+                                Data Points
+                              </p>
+                            </div>
+                            <p className="text-lg sm:text-xl font-bold text-indigo-600 mb-0.5">
+                              {salesData.length}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {option === "daily"
+                                ? "Days"
+                                : option === "monthly"
+                                ? "Months"
+                                : "Years"}
+                            </p>
+                          </div>
+                    </div>
+
+                    {salesNarrative.length > 0 && (
+                      <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-3">
+                          SUMMARY
+                        </p>
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          {salesNarrative.map((line, idx) => (
+                            <li key={idx} className="leading-relaxed">
+                              • {line}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+            </div>
+            </>
+            )}
+
+            {/* Panel 2: Supply vs Sales Analysis */}
+            {panelIndex === 2 && <SalesSupplyHistoryGraph />}
+
+            {/* Panel 3: Supply History Movement */}
+            {panelIndex === 3 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
               <div className="flex flex-col gap-4 mb-4">
                 <div>
@@ -1200,46 +1301,46 @@ function Dashboard() {
                 supplyChartData.length > 0 && (
                   <>
                     <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={supplyChartData}
-                          margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                          <XAxis
-                            dataKey="label"
-                            tick={{ fontSize: 10 }}
-                            interval={0}
-                          />
-                          <YAxis
-                            tick={{ fontSize: 10 }}
-                            tickFormatter={(value) =>
-                              value >= 1000
-                                ? `${(value / 1000).toFixed(0)}k`
-                                : `${value.toLocaleString()}`
-                            }
-                          />
-                          <Tooltip content={<SupplyHistoryTooltip />} />
-                          <Legend
-                            wrapperStyle={{ paddingTop: "20px", fontSize: "11px" }}
-                            iconType="rect"
-                          />
-                          {supplySeries.map((series, idx) => (
-                            <Bar
-                              key={series.productId}
-                              dataKey={series.productId}
-                              fill={SUPPLY_COLORS[idx % SUPPLY_COLORS.length]}
-                              name={series.label}
-                              maxBarSize={60}
-                              className="cursor-pointer"
-                              onClick={handleSupplyBarClick}
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={supplyChartData}
+                            margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fontSize: 10 }}
+                              interval={0}
                             />
-                          ))}
-                        </BarChart>
-                      </ResponsiveContainer>
+                            <YAxis
+                              tick={{ fontSize: 10 }}
+                              tickFormatter={(value) =>
+                                value >= 1000
+                                  ? `${(value / 1000).toFixed(0)}k`
+                                  : `${value.toLocaleString()}`
+                              }
+                            />
+                            <Tooltip content={<SupplyHistoryTooltip />} />
+                            <Legend
+                              wrapperStyle={{ paddingTop: "20px", fontSize: "11px" }}
+                              iconType="rect"
+                            />
+                            {supplySeries.map((series, idx) => (
+                              <Bar
+                                key={series.productId}
+                                dataKey={series.productId}
+                                fill={SUPPLY_COLORS[idx % SUPPLY_COLORS.length]}
+                                name={series.label}
+                                maxBarSize={60}
+                                className="cursor-pointer"
+                                onClick={handleSupplyBarClick}
+                              />
+                            ))}
+                          </BarChart>
+                        </ResponsiveContainer>
                     </div>
 
-                    {/* Supply History Movement Interpretation */}
+                    {/* Summary (below chart) */}
                     {supplyInterpretation.length > 0 && (
                       <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-blue-50/70 p-4">
                         <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-3">
@@ -1257,6 +1358,10 @@ function Dashboard() {
                   </>
                 )}
             </div>
+            )}
+
+            {/* Panel 4: Product Sales Movement */}
+            {panelIndex === 4 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
               <div className="flex flex-col gap-4 mb-4">
                 <div>
@@ -1376,66 +1481,66 @@ function Dashboard() {
                 salesChartData.length > 0 && (
                   <>
                     <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={salesChartData}
-                          margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                          <XAxis
-                            dataKey="label"
-                            tick={{ fontSize: 10 }}
-                            interval={0}
-                          />
-                          <YAxis 
-                            tick={{ fontSize: 10 }}
-                            tickFormatter={(value) =>
-                              value >= 1000
-                                ? `₱${(value / 1000).toFixed(0)}k`
-                                : `₱${value.toLocaleString()}`
-                            }
-                          />
-                          <Legend
-                            wrapperStyle={{ paddingTop: "20px", fontSize: "11px" }}
-                            iconType="rect"
-                          />
-                          <Tooltip
-                            content={({ active, label }) => {
-                              if (!active) return null;
-                              const meta = salesChartMeta[label];
-                              return (
-                                <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[220px] -translate-y-2">
-                                  <p className="text-xs font-semibold text-gray-700">
-                                    {meta?.title || label}
-                                  </p>
-                                  {meta?.subtitle && (
-                                    <p className="text-xs text-gray-500 mb-2">
-                                      {meta.subtitle}
-                                    </p>
-                                  )}
-                                  <p className="text-[11px] text-gray-500 italic">
-                                    Click any bar to view the full product list.
-                                  </p>
-                                </div>
-                              );
-                            }}
-                          />
-                          {salesSeries.map((series, idx) => (
-                            <Bar
-                              key={series.productId}
-                              dataKey={series.productId}
-                              fill={SUPPLY_COLORS[idx % SUPPLY_COLORS.length]}
-                              name={series.label}
-                              maxBarSize={60}
-                              className="cursor-pointer"
-                              onClick={handleSalesBarClick}
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={salesChartData}
+                            margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fontSize: 10 }}
+                              interval={0}
                             />
-                          ))}
-                        </BarChart>
-                      </ResponsiveContainer>
+                            <YAxis 
+                              tick={{ fontSize: 10 }}
+                              tickFormatter={(value) =>
+                                value >= 1000
+                                  ? `₱${(value / 1000).toFixed(0)}k`
+                                  : `₱${value.toLocaleString()}`
+                              }
+                            />
+                            <Legend
+                              wrapperStyle={{ paddingTop: "20px", fontSize: "11px" }}
+                              iconType="rect"
+                            />
+                            <Tooltip
+                              content={({ active, label }) => {
+                                if (!active) return null;
+                                const meta = salesChartMeta[label];
+                                return (
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[220px] -translate-y-2">
+                                    <p className="text-xs font-semibold text-gray-700">
+                                      {meta?.title || label}
+                                    </p>
+                                    {meta?.subtitle && (
+                                      <p className="text-xs text-gray-500 mb-2">
+                                        {meta.subtitle}
+                                      </p>
+                                    )}
+                                    <p className="text-[11px] text-gray-500 italic">
+                                      Click any bar to view the full product list.
+                                    </p>
+                                  </div>
+                                );
+                              }}
+                            />
+                            {salesSeries.map((series, idx) => (
+                              <Bar
+                                key={series.productId}
+                                dataKey={series.productId}
+                                fill={SUPPLY_COLORS[idx % SUPPLY_COLORS.length]}
+                                name={series.label}
+                                maxBarSize={60}
+                                className="cursor-pointer"
+                                onClick={handleSalesBarClick}
+                              />
+                            ))}
+                          </BarChart>
+                        </ResponsiveContainer>
                     </div>
 
-                    {/* Product Sales Movement Interpretation */}
+                    {/* Summary (below chart) */}
                     {salesMovementInterpretation.length > 0 && (
                       <div className="mt-5 rounded-xl border border-dashed border-orange-200 bg-orange-50/70 p-4">
                         <p className="text-xs font-semibold uppercase tracking-wide text-orange-600 mb-3">
@@ -1453,40 +1558,61 @@ function Dashboard() {
                   </>
                 )}
             </div>
+            )}
+
+            {/* Panel 4: Summary Page (Last Page) - KPIs + Inventory & Supply */}
+            {panelIndex === 4 && (
+              <>
+                {/* Top KPI cards: Total Sales, Average Sales, Data Points */}
+                <SalesCards
+                  salesData={salesData}
+                  loading={loading || overallLoading}
+                  totalSales={overallTotalSales}
+                  averageSales={overallAverageSales}
+                  totalDataPoints={overallStats?.totalCount || 0}
+                />
+
+                {/* Inventory (left) and Recent Supply (right) below KPIs */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                    <StockCards />
+                  </div>
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                    <SupplyHistoryCard />
+                  </div>
+                </div>
+              </>
+            )}
+
           </div>
 
-          {/* RIGHT (1/3) */}
-          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-              {/* <h2 className="text-lg font-semibold mb-4">Quick Insights</h2>
-              <ul className="space-y-2 text-gray-600 text-sm">
-                <li>
-                  📈 Highest Sales Day: <strong>₱12,500</strong>
-                </li>
-                <li>
-                  🛒 Best Product: <strong>Product A</strong>
-                </li>
-                <li>
-                  👥 Top Customer: <strong>John Doe</strong>
-                </li>
-              </ul>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Stock Overview
-                </h2>
-                <p className="text-gray-500 text-sm mt-1">
-                  Monitor your inventory levels at a glance
-                </p>
-              </div> */}
-              <StockCards />
-            </div>
-
-            <SupplyHistoryCard />
-          </div>
+          {/* No right-side summary card; analytics panels now use full width on desktop */}
         </div>
       </div>
+    </div>
+
+    {/* Panel navigation - Floating buttons */}
+    <div className="fixed bottom-6 right-6 z-40 flex gap-2">
+      <button
+        type="button"
+        onClick={() => setPanelIndex((idx) => Math.max(1, idx - 1))}
+        disabled={panelIndex === 1}
+        className="p-3 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+        title="Previous panel (← Arrow Left)"
+        aria-label="Previous panel"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => setPanelIndex((idx) => Math.min(4, idx + 1))}
+        disabled={panelIndex === 4}
+        className="p-3 rounded-full bg-yellow-400 text-white hover:bg-yellow-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+        title="Next panel (→ Arrow Right)"
+        aria-label="Next panel"
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
     </div>
 
     {selectedSupplyBar && (

@@ -89,9 +89,8 @@ const exactNameRegex = (name) =>
   new RegExp("^" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$", "i");
 
 //  Create new product
-// Create product
 export const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, category, image } = req.body || {};
+  const { name, description, category, image, brand } = req.body || {};
 
   // ✅ Validate required fields
   if (!name || !category || !image) {
@@ -125,6 +124,7 @@ export const createProduct = asyncHandler(async (req, res) => {
   const newProduct = await Product.create({
     name,
     description,
+    brand: brand || "",
     category: existingCategory._id,
     image,
   });
@@ -139,7 +139,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 
 // Update product
 export const updateProduct = asyncHandler(async (req, res) => {
-  const { name, description, category, image } = req.body || {};
+  const { name, description, category, image, brand } = req.body || {};
   const productId = req.params.id;
 
   // ✅ Validate product ID
@@ -197,6 +197,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
   product.name = name;
   if (description !== undefined) {
     product.description = description;
+  }
+  if (brand !== undefined) {
+    product.brand = brand;
   }
   product.category = categoryId;
   product.image = image;

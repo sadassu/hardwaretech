@@ -192,7 +192,7 @@ function CartContent() {
         <Modal
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
-          className="bg-white rounded-2xl max-w-3xl w-full p-0 max-h-[90vh] flex flex-col font-mono"
+          className="bg-white rounded-2xl max-w-3xl w-full p-0 max-h-[90vh] flex flex-col"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5 flex-shrink-0 border-b border-blue-800/30 rounded-t-2xl">
@@ -515,7 +515,7 @@ function CartContent() {
           
           {/* Cart Panel */}
           <div
-            className={`fixed top-0 right-0 h-full w-full sm:w-[420px] lg:w-[480px] bg-white shadow-2xl z-[9999] flex flex-col transform transition-transform duration-300 ease-out font-mono ${
+            className={`fixed top-0 right-0 h-full w-full sm:w-[420px] lg:w-[480px] bg-white shadow-2xl z-[9999] flex flex-col transform transition-transform duration-300 ease-out ${
               isOpen ? "translate-x-0" : "translate-x-full"
             }`}
             style={{ margin: 0, padding: 0 }}

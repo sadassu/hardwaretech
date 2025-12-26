@@ -10,7 +10,7 @@ function UserInformationCard({ user }) {
   const getRoleBadge = (role) => {
     const badges = {
       admin: {
-        label: "Admin",
+        label: "Owner",
         icon: Shield,
         classes: "bg-red-500 text-white",
       },

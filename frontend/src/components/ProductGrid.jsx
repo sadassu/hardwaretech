@@ -27,7 +27,7 @@ function ProductGrid({ products, user, isMobile, showAutoConvertInfo = false }) 
         return (
           <div key={product._id} className="group relative">
             {/* Product Card */}
-            <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border-2 border-gray-100 hover:border-blue-300 overflow-hidden h-full flex flex-col transform hover:-translate-y-1">
+            <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 border-2 border-gray-100 hover:border-red-300 overflow-hidden h-full flex flex-col transform hover:-translate-y-1">
               {/* Product Image or Fallback */}
               <div className="relative flex-shrink-0">
                 {product.image && product.image.trim() !== "" && !hasImageError ? (
@@ -55,7 +55,7 @@ function ProductGrid({ products, user, isMobile, showAutoConvertInfo = false }) 
                   <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm ${
                     variantCount === 0 
                       ? "bg-red-500/90 text-white" 
-                      : "bg-blue-500/90 text-white"
+                      : "bg-red-400/90 text-white"
                   }`}>
                     <Package className="w-3.5 h-3.5" />
                     <span>{variantCount}</span>
@@ -65,10 +65,17 @@ function ProductGrid({ products, user, isMobile, showAutoConvertInfo = false }) 
 
               {/* Card Content */}
               <div className="p-3 sm:p-4 flex flex-col flex-1">
-                {/* Product Name */}
-                <h2 className="font-bold text-sm sm:text-base lg:text-lg text-gray-900 mb-2 line-clamp-2 leading-tight min-h-[2.5rem] sm:min-h-[3rem]">
-                  {product.name}
-                </h2>
+                {/* Product Name + Brand */}
+                <div className="mb-2">
+                  <h2 className="font-bold text-sm sm:text-base lg:text-lg text-gray-900 leading-tight line-clamp-2">
+                    {product.name}
+                  </h2>
+                  {product.brand && (
+                    <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+                      Brand: <span className="font-medium">{product.brand}</span>
+                    </p>
+                  )}
+                </div>
 
                 {/* Category Badge */}
                 {product.category && (
@@ -92,7 +99,7 @@ function ProductGrid({ products, user, isMobile, showAutoConvertInfo = false }) 
                       <span className="text-xs sm:text-sm text-gray-500">Starting at</span>
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
+                      <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                         ₱{product.price.toLocaleString()}
                       </span>
                     </div>

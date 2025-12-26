@@ -17,9 +17,15 @@ export const queryOptions =
       }));
     }
 
-    // Category filter - ADD THIS
+    // Category filter
     if (req.query.category) {
       filter.category = req.query.category;
+    }
+
+    // Brand filter
+    if (req.query.brand) {
+      // Exact brand match but case-insensitive
+      filter.brand = { $regex: `^${req.query.brand}$`, $options: "i" };
     }
 
     req.queryOptions = {

@@ -14,7 +14,7 @@ function Receipt({ sale, onClose }) {
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
-              font-family: 'Courier New', monospace; 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
               padding: 20px; 
               max-width: 400px; 
               margin: 0 auto;
@@ -120,7 +120,7 @@ function Receipt({ sale, onClose }) {
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
-              font-family: 'Courier New', monospace; 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
               padding: 20px; 
               max-width: 400px; 
               margin: 0 auto;
@@ -254,7 +254,7 @@ function Receipt({ sale, onClose }) {
         </div>
 
         {/* Receipt Content */}
-        <div ref={receiptRef} className="p-6 font-mono">
+        <div ref={receiptRef} className="p-6">
           <div className="receipt">
             {/* Store Header */}
             <div className="text-center mb-4 pb-3 border-b-2 border-dashed border-black">

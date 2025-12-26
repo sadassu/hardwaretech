@@ -27,7 +27,7 @@ const SearchBar = ({
           placeholder={placeholder}
           className="w-full pl-14 pr-32 py-4 bg-white border-2 border-gray-200 rounded-2xl 
                      text-base text-gray-900 placeholder-gray-400
-                     focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100
+                     focus:outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100
                      transition-all duration-200 shadow-sm hover:shadow-md
                      disabled:bg-gray-50 disabled:cursor-not-allowed"
           value={search}
@@ -39,7 +39,7 @@ const SearchBar = ({
           <Search
             className={`h-5 w-5 transition-colors duration-200 ${
               search || isSearching
-                ? "text-blue-500"
+                ? "text-red-500"
                 : "text-gray-400 group-hover:text-gray-600"
             }`}
             strokeWidth={2.5}
@@ -68,9 +68,9 @@ const SearchBar = ({
           {/* Submit Button */}
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white text-sm font-semibold
-                       hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all duration-200
-                       disabled:bg-blue-200 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-400 text-white text-sm font-semibold
+                       hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-200 transition-all duration-200
+                       disabled:bg-red-200 disabled:cursor-not-allowed"
             disabled={isSearching}
           >
             {isSearching ? (

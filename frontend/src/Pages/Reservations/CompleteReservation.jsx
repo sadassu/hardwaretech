@@ -1,59 +1,78 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
+import { CheckCircle2, Banknote, ChevronLeft, Loader2, X, PackageX } from "lucide-react";
 import Modal from "../../components/Modal";
 import { useReservation } from "../../hooks/useReservation";
 import { useConfirm } from "../../hooks/useConfirm";
 import { useQuickToast } from "../../hooks/useQuickToast";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
-function CompleteReservation({ reservation, onCompleteSuccess }) {
+function CompleteReservation({ reservation, onUpdateSuccess }) {
   const { completeReservation } = useReservation();
-  const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
-  const [amountPaid, setAmountPaid] = useState("");
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
   const confirm = useConfirm();
   const quickToast = useQuickToast();
+  const { isMobile } = useIsMobile();
 
-  const change =
-    Number(amountPaid) > 0 ? Number(amountPaid) - reservation.totalPrice : 0;
+  const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [amountPaid, setAmountPaid] = useState("");
 
-  const handleComplete = async () => {
+  const totalPrice = reservation?.totalPrice || 0;
+
+  // Lock body scroll when panel is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setAmountPaid(value);
+    setError(null);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    const amount = parseFloat(amountPaid);
+    
+    if (!amountPaid || isNaN(amount) || amount <= 0) {
+      setError("Please enter a valid amount greater than 0.");
+      return;
+    }
+
+    const result = await confirm({
+      title: "Complete reservation?",
+      text: `This will mark the reservation as completed and create a sale record. Amount paid: ₱${amount.toLocaleString()}`,
+      confirmButtonText: "Yes, complete reservation",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-
-      const paid = Number(amountPaid);
-
-      if (paid < reservation.totalPrice) {
-        setError("Insufficient amount.");
-        setLoading(false);
-        return;
-      }
-      const result = await confirm({
-        title: "Complete this reservation?",
-        text: "This will convert the reservation into a sale.",
-        confirmButtonText: "Yes, process payment",
-      });
-      if (!result.isConfirmed) {
-        setLoading(false);
-        return;
-      }
-
-      const updated = await completeReservation(reservation._id, paid);
-
+      const updatedReservation = await completeReservation(reservation._id, amount);
+      
       setIsOpen(false);
+      setAmountPaid("");
+      
+      // Notify parent component
+      onUpdateSuccess?.(updatedReservation);
+      
       quickToast({
         title: "Reservation completed",
         icon: "success",
       });
-      if (onCompleteSuccess) onCompleteSuccess(updated);
-      
-      // Redirect to sales page to verify the sale was added
-      navigate("/sales", { replace: true });
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.response?.data?.message || err.message || "Failed to complete reservation");
     } finally {
       setLoading(false);
     }
@@ -66,128 +85,496 @@ function CompleteReservation({ reservation, onCompleteSuccess }) {
         onClick={() => setIsOpen(true)}
         title="Complete Reservation"
       >
-        <CheckCircle className="w-4 h-4" />
-        <span className="hidden sm:inline">Complete</span>
+        <CheckCircle2 className="w-4 h-4" />
       </button>
 
-      <Modal 
-        isOpen={isOpen} 
-        onClose={() => setIsOpen(false)}
-        className="bg-white rounded-2xl max-w-lg w-full p-0"
-      >
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-2xl">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">Complete Reservation</h2>
-              <p className="text-green-100 text-sm">Process payment and finalize</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-4">
-          {/* Total Amount Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200">
+      {/* Mobile: Centered Modal | Desktop: Right Side Slide-In Panel */}
+      {isMobile ? (
+        <Modal
+          isOpen={isOpen}
+          onClose={() => {
+            setIsOpen(false);
+            setAmountPaid("");
+            setError(null);
+          }}
+          className="bg-white rounded-2xl max-w-3xl w-full p-0 max-h-[90vh] flex flex-col"
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5 flex-shrink-0 border-b border-blue-800/30 rounded-t-2xl">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium mb-1">Total Amount Due</p>
-                <p className="text-3xl font-bold text-blue-900">
-                  ₱{reservation.totalPrice.toLocaleString()}
-                </p>
-              </div>
-              <div className="w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center">
-                <span className="text-2xl">💰</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Amount Paid Input */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Amount Paid by Customer
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">₱</span>
-              <input
-          type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-          value={amountPaid}
-          onChange={(e) => setAmountPaid(e.target.value)}
-                className="input input-bordered w-full pl-10 pr-4 py-3 text-lg font-semibold bg-white border-2 border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200"
-              />
-            </div>
-          </div>
-
-          {/* Change Display */}
-        {Number(amountPaid) > 0 && (
-            <div className={`rounded-xl p-4 border-2 ${
-              change >= 0 
-                ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-200' 
-                : 'bg-gradient-to-br from-red-50 to-red-100 border-red-200'
-            }`}>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
                 <div>
-                  <p className={`text-sm font-medium mb-1 ${
-                    change >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {change >= 0 ? 'Change to Return' : 'Insufficient Amount'}
+                  <h2 className="text-2xl font-bold">Complete Reservation</h2>
+                  <p className="text-blue-100 text-sm font-medium">
+                    Mark reservation as completed
                   </p>
-                  <p className={`text-3xl font-bold ${
-                    change >= 0 ? 'text-green-900' : 'text-red-900'
-                  }`}>
-                    ₱{Math.abs(change).toLocaleString()}
-                  </p>
-                </div>
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                  change >= 0 ? 'bg-green-200' : 'bg-red-200'
-                }`}>
-                  <span className="text-2xl">{change >= 0 ? '💵' : '⚠️'}</span>
                 </div>
               </div>
-          </div>
-        )}
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 flex items-center gap-3">
-              <span className="text-red-500 text-xl">⚠️</span>
-              <p className="text-red-700 text-sm font-medium">{error}</p>
             </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
-          <button
-              className="flex-1 btn btn-ghost border-2 border-gray-200 hover:bg-gray-100"
-            onClick={() => setIsOpen(false)}
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button
-              className="flex-1 btn bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 hover:from-green-600 hover:to-emerald-700 shadow-lg disabled:opacity-50"
-            onClick={handleComplete}
-              disabled={loading || !amountPaid || Number(amountPaid) < reservation.totalPrice}
-          >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Processing...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5" />
-                  Confirm Payment
-                </span>
-              )}
-          </button>
           </div>
-        </div>
-      </Modal>
+
+          {/* Body - Scrollable */}
+          <div className="flex-1 overflow-y-auto bg-gray-50 min-h-0">
+            <div className="p-5 space-y-4">
+              {reservation?.reservationDetails?.length > 0 ? (
+                reservation.reservationDetails.map((detail, index) => {
+                  const variant = detail.productVariantId;
+                  const product = variant?.product;
+                  const productName = product?.name || detail.productName || "Unnamed Product";
+                  const variantSize = variant?.size || detail.variantSize || detail.size;
+                  const variantUnit = variant?.unit || detail.variantUnit || detail.unit || "pcs";
+                  const variantColor = variant?.color || detail.variantColor;
+                  const lockedPrice =
+                    typeof detail.price === "number"
+                      ? detail.price
+                      : variant?.price ?? 0;
+                  const subtotal = lockedPrice * (detail.quantity || 0);
+
+                  return (
+                    <div
+                      key={index}
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
+                    >
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1 min-w-0 pr-3">
+                            <h3 className="font-bold text-lg text-gray-900 mb-1.5 line-clamp-2">
+                              {productName}
+                            </h3>
+                            {variantSize && (
+                              <p className="text-sm text-gray-600 font-medium">
+                                ₱{lockedPrice.toFixed(2)} / {variantSize} {variantUnit}
+                              </p>
+                            )}
+                            {!variantSize && (
+                              <p className="text-sm text-gray-600 font-medium">
+                                ₱{lockedPrice.toFixed(2)} / {variantUnit}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                              <span className="w-12 text-center font-bold text-gray-900 bg-transparent border-none focus:outline-none text-sm">
+                                Qty: {detail.quantity}
+                              </span>
+                            </div>
+                            {variantSize && (
+                              <div className="flex flex-wrap gap-2">
+                                <span className="inline-flex items-center px-2 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium">
+                                  {variantSize}
+                                </span>
+                                {variantColor && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-lg bg-pink-50 text-pink-700 text-xs font-medium capitalize">
+                                    {variantColor}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-blue-600">
+                              ₱{subtotal.toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-6">
+                    <PackageX className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">
+                    No items found
+                  </h3>
+                  <p className="text-gray-500 text-center">
+                    No reservation details available
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Fixed Footer */}
+          <form onSubmit={handleSubmit}>
+            <div className="flex-shrink-0 bg-white border-t border-gray-200 p-5 space-y-4 rounded-b-2xl">
+              {/* Error Display */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-2.5">
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              )}
+              {/* Amount Paid Input and Total Amount - Horizontally Aligned */}
+              <div className="flex gap-3">
+                {/* Amount Paid Input */}
+                <div className="flex-1 flex flex-col">
+                  <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Banknote className="w-4 h-4 text-blue-600" />
+                    Amount Paid
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full h-11 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-medium"
+                    placeholder="Enter amount paid"
+                    value={amountPaid}
+                    min={0}
+                    step="0.01"
+                    onChange={handleChange}
+                    disabled={loading}
+                    autoFocus
+                  />
+                </div>
+
+                {/* Total Amount */}
+                <div className="flex-1 flex flex-col">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Total Amount
+                  </label>
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 h-11 p-2.5 rounded-lg border border-blue-200 flex items-center">
+                    <div className="flex justify-between items-center w-full">
+                      <span className="text-sm font-bold text-gray-700">
+                        Total:
+                      </span>
+                      <span className="text-lg font-bold text-blue-600">
+                        ₱{totalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Change Display */}
+              {amountPaid && parseFloat(amountPaid) >= totalPrice && (
+                <div className="bg-green-50 border border-green-200 p-2.5 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-green-700">
+                      Change:
+                    </span>
+                    <span className="text-base font-bold text-green-600">
+                      ₱{(parseFloat(amountPaid) - totalPrice).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Insufficient Payment Warning */}
+              {amountPaid && parseFloat(amountPaid) < totalPrice && (
+                <div className="bg-red-50 border border-red-200 p-2.5 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-red-700">
+                      Insufficient:
+                    </span>
+                    <span className="text-base font-bold text-red-600">
+                      ₱{(totalPrice - parseFloat(amountPaid)).toFixed(2)} short
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                  onClick={() => {
+                    setIsOpen(false);
+                    setAmountPaid("");
+                    setError(null);
+                  }}
+                  disabled={loading}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={
+                    loading ||
+                    !amountPaid ||
+                    parseFloat(amountPaid) < totalPrice ||
+                    parseFloat(amountPaid) <= 0
+                  }
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Complete Reservation"
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+        </Modal>
+      ) : (
+        <>
+          {/* Desktop: Right Side Slide-In Panel */}
+          {isOpen &&
+            ReactDOM.createPortal(
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] transition-opacity duration-300"
+                  onClick={() => {
+                    setIsOpen(false);
+                    setAmountPaid("");
+                    setError(null);
+                  }}
+                />
+                
+                {/* Panel */}
+                <div
+                  className="fixed top-0 right-0 h-full w-full sm:w-[420px] lg:w-[480px] bg-white shadow-2xl z-[9999] flex flex-col transform transition-transform duration-300 ease-out translate-x-0"
+                  style={{ margin: 0, padding: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5 flex-shrink-0 border-b border-blue-800/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold">Complete Reservation</h2>
+                          <p className="text-blue-100 text-sm font-medium">
+                            Mark reservation as completed
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        className="bg-white/20 hover:bg-white/30 rounded-full p-2 transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+                        onClick={() => {
+                          setIsOpen(false);
+                          setAmountPaid("");
+                          setError(null);
+                        }}
+                        title="Close"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Body - Scrollable */}
+                  <div className="flex-1 overflow-y-auto bg-gray-50">
+                    <div className="p-5 space-y-4">
+                      {reservation?.reservationDetails?.length > 0 ? (
+                        reservation.reservationDetails.map((detail, index) => {
+                          const variant = detail.productVariantId;
+                          const product = variant?.product;
+                          const productName = product?.name || detail.productName || "Unnamed Product";
+                          const variantSize = variant?.size || detail.variantSize || detail.size;
+                          const variantUnit = variant?.unit || detail.variantUnit || detail.unit || "pcs";
+                          const variantColor = variant?.color || detail.variantColor;
+                          const lockedPrice =
+                            typeof detail.price === "number"
+                              ? detail.price
+                              : variant?.price ?? 0;
+                          const subtotal = lockedPrice * (detail.quantity || 0);
+
+                          return (
+                            <div
+                              key={index}
+                              className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
+                            >
+                              <div className="p-4">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div className="flex-1 min-w-0 pr-3">
+                                    <h3 className="font-bold text-lg text-gray-900 mb-1.5 line-clamp-2">
+                                      {productName}
+                                    </h3>
+                                    {variantSize && (
+                                      <p className="text-sm text-gray-600 font-medium">
+                                        ₱{lockedPrice.toFixed(2)} / {variantSize} {variantUnit}
+                                      </p>
+                                    )}
+                                    {!variantSize && (
+                                      <p className="text-sm text-gray-600 font-medium">
+                                        ₱{lockedPrice.toFixed(2)} / {variantUnit}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                                      <span className="w-12 text-center font-bold text-gray-900 bg-transparent border-none focus:outline-none text-sm">
+                                        Qty: {detail.quantity}
+                                      </span>
+                                    </div>
+                                    {variantSize && (
+                                      <div className="flex flex-wrap gap-2">
+                                        <span className="inline-flex items-center px-2 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium">
+                                          {variantSize}
+                                        </span>
+                                        {variantColor && (
+                                          <span className="inline-flex items-center px-2 py-1 rounded-lg bg-pink-50 text-pink-700 text-xs font-medium capitalize">
+                                            {variantColor}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="text-right">
+                                    <p className="text-2xl font-bold text-blue-600">
+                                      ₱{subtotal.toFixed(2)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-16 px-4">
+                          <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-6">
+                            <PackageX className="w-12 h-12 text-gray-400" />
+                          </div>
+                          <h3 className="text-xl font-bold text-gray-800 mb-2">
+                            No items found
+                          </h3>
+                          <p className="text-gray-500 text-center">
+                            No reservation details available
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Fixed Footer */}
+                  <form onSubmit={handleSubmit}>
+                    <div className="flex-shrink-0 bg-white border-t border-gray-200 p-5 space-y-4">
+                      {/* Error Display */}
+                      {error && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-2.5">
+                          <p className="text-red-700 text-sm">{error}</p>
+                        </div>
+                      )}
+                      {/* Amount Paid Input and Total Amount - Horizontally Aligned */}
+                      <div className="flex gap-3">
+                        {/* Amount Paid Input */}
+                        <div className="flex-1 flex flex-col">
+                          <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                            <Banknote className="w-4 h-4 text-blue-600" />
+                            Amount Paid
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full h-11 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-medium"
+                            placeholder="Enter amount paid"
+                            value={amountPaid}
+                            min={0}
+                            step="0.01"
+                            onChange={handleChange}
+                            disabled={loading}
+                            autoFocus
+                          />
+                        </div>
+
+                        {/* Total Amount */}
+                        <div className="flex-1 flex flex-col">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Total Amount
+                          </label>
+                          <div className="bg-gradient-to-r from-blue-50 to-blue-100 h-11 p-2.5 rounded-lg border border-blue-200 flex items-center">
+                            <div className="flex justify-between items-center w-full">
+                              <span className="text-sm font-bold text-gray-700">
+                                Total:
+                              </span>
+                              <span className="text-lg font-bold text-blue-600">
+                                ₱{totalPrice.toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Change Display */}
+                      {amountPaid && parseFloat(amountPaid) >= totalPrice && (
+                        <div className="bg-green-50 border border-green-200 p-2.5 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-semibold text-green-700">
+                              Change:
+                            </span>
+                            <span className="text-base font-bold text-green-600">
+                              ₱{(parseFloat(amountPaid) - totalPrice).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Insufficient Payment Warning */}
+                      {amountPaid && parseFloat(amountPaid) < totalPrice && (
+                        <div className="bg-red-50 border border-red-200 p-2.5 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-semibold text-red-700">
+                              Insufficient:
+                            </span>
+                            <span className="text-base font-bold text-red-600">
+                              ₱{(totalPrice - parseFloat(amountPaid)).toFixed(2)} short
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                          onClick={() => {
+                            setIsOpen(false);
+                            setAmountPaid("");
+                            setError(null);
+                          }}
+                          disabled={loading}
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={
+                            loading ||
+                            !amountPaid ||
+                            parseFloat(amountPaid) < totalPrice ||
+                            parseFloat(amountPaid) <= 0
+                          }
+                        >
+                          {loading ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            "Complete Reservation"
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </>,
+              document.body
+            )}
+        </>
+      )}
     </>
   );
 }

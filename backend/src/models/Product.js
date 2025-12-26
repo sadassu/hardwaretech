@@ -5,6 +5,8 @@ const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
+    // Brand/manufacturer (e.g. Makita, Bosch, Stanley)
+    brand: { type: String, trim: true, default: "" },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",

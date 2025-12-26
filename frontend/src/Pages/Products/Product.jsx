@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Package, Search, X } from "lucide-react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useProductStore } from "../../store/productStore";
 import { useCategoriesStore } from "../../store/categoriesStore";
@@ -15,9 +15,7 @@ import DeleteVariant from "../Variants/DeleteVariant";
 import UpdateVariant from "../Variants/UpdateVariant";
 
 import Pagination from "../../components/Pagination";
-import SearchBar from "../../components/SearchBar";
 import CategoryFilter from "../../components/CategoryFilter";
-import StockCards from "../Dashboard/StockCards";
 
 const Product = () => {
   const { products, pages, loading, error, fetchProducts } = useProductStore();
@@ -33,6 +31,7 @@ const Product = () => {
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   // ✅ Fetch categories only once
@@ -47,12 +46,14 @@ const Product = () => {
       page: currentPage,
       search: searchQuery,
       category: selectedCategory,
+      brand: selectedBrand,
     });
   }, [
     user?.token,
     currentPage,
     searchQuery,
     selectedCategory,
+    selectedBrand,
     fetchProducts,
   ]);
 
@@ -72,57 +73,134 @@ const Product = () => {
     setCurrentPage(1);
   };
 
+  const handleBrandChange = (e) => {
+    setSelectedBrand(e.target.value);
+    setCurrentPage(1);
+  };
+
   const clearAllFilters = () => {
     setSearchInput("");
     setSearchQuery("");
     setSelectedCategory("");
+    setSelectedBrand("");
     setCurrentPage(1);
   };
 
+  // Build a unique list of brands from currently loaded products
+  const brandOptions = Array.from(
+    new Set(
+      (products || [])
+        .map((p) => (p.brand || "").trim())
+        .filter((b) => b.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
   return (
-    <div className="min-h-screen p-4 lg:p-2">
-      <div className="container mx-auto p-6">
-        {/* 🧭 Header */}
-        <div className="bg-[#222831] rounded-2xl p-6 mb-8 text-primary-content shadow-xl">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div>
-              <h1 className="text-3xl lg:text-4xl font-bold mb-2">
-                Product Management
-              </h1>
-              <p className="opacity-90">Manage your inventory with ease</p>
-              <p className="mt-2 text-sm text-white">
-                Products can have multiple <strong>variants</strong> (e.g.,
-                sizes or sets). Variants track stock, prices, and details
-                separately.
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
+        {/* Header + Search */}
+        <div className="mb-3 sm:mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            {/* Title */}
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-red-400 rounded-lg shadow-md flex-shrink-0">
+                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">
+                  Inventory
+                </h1>
+                <p className="text-xs text-gray-600 hidden sm:block">
+                  Manage your inventory with ease
+                </p>
+              </div>
             </div>
 
-            <SearchBar
-              search={searchInput}
-              onSearchChange={handleSearchChange}
-              onClear={clearSearch}
-              onSearchSubmit={handleSearchSubmit}
-              isSearching={loading}
-              placeholder="Search products..."
-            />
-          </div>
-
-          <div className="mt-4">
-            <CategoryFilter
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onCategoryChange={handleCategoryChange}
-              loading={categoriesLoading}
-            />
           </div>
         </div>
 
+        {/* Category Filter with Search */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 sm:p-4 mb-3">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
+            <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-red-400 rounded-xl flex items-center justify-center shadow-md">
+                <Package className="w-5 h-5 text-white" strokeWidth={2.5} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800">Filter by Category</h3>
+            </div>
+            
+            {/* Brand + Search */}
+            <div className="flex flex-col md:flex-row gap-2 w-full lg:w-auto max-w-3xl">
+              {/* Brand selector */}
+              <div className="flex md:flex-1">
+                <select
+                  value={selectedBrand}
+                  onChange={handleBrandChange}
+                  className="w-full md:w-56 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-gray-900 text-sm"
+                >
+                  <option value="">All brands</option>
+                  {brandOptions.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search Bar */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearchSubmit();
+                }}
+                className="flex w-full md:flex-[2] gap-2"
+              >
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchInput}
+                    onChange={handleSearchChange}
+                    className="w-full pl-10 pr-10 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all text-sm"
+                  />
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="px-3 sm:px-4 py-2 bg-red-400 text-white font-medium rounded-lg hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 flex-shrink-0 text-sm"
+                >
+                  <Search className="w-4 h-4" />
+                  <span className="hidden sm:inline">Search</span>
+                </button>
+              </form>
+            </div>
+          </div>
+          
+          <CategoryFilter
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onCategoryChange={handleCategoryChange}
+            loading={categoriesLoading}
+            hideHeader={true}
+          />
+        </div>
+
         {/* 🧩 Filters Active */}
-        {(searchQuery || selectedCategory) && (
-          <div className="mb-6 flex flex-wrap items-center gap-2">
-            <span className="text-base">Active filters:</span>
+        {(searchQuery || selectedCategory || selectedBrand) && (
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs">Active filters:</span>
             {searchQuery && (
-              <div className="badge badge-primary badge-lg gap-2">
+              <div className="badge badge-primary badge-xs gap-1">
                 Search: "{searchQuery}"
                 <button onClick={clearSearch} className="btn btn-ghost btn-xs">
                   ✕
@@ -130,7 +208,7 @@ const Product = () => {
               </div>
             )}
             {selectedCategory && (
-              <div className="badge badge-secondary badge-lg gap-2">
+              <div className="badge badge-secondary badge-xs gap-1">
                 Category:{" "}
                 {categories.find((c) => c._id === selectedCategory)?.name ||
                   "Selected"}
@@ -142,29 +220,36 @@ const Product = () => {
                 </button>
               </div>
             )}
+            {selectedBrand && (
+              <div className="badge badge-accent badge-xs gap-1">
+                Brand: {selectedBrand}
+                <button
+                  onClick={() => setSelectedBrand("")}
+                  className="btn btn-ghost btn-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             <button
               onClick={clearAllFilters}
-              className="btn btn-ghost btn-sm ml-2"
+              className="btn btn-ghost btn-xs ml-1.5"
             >
-              Clear All Filters
+              Clear All
             </button>
           </div>
         )}
-
-        <div className="mb-4">
-          <StockCards />
-        </div>
         {/* ➕ Create Product */}
-        <div className="mb-8">
+        <div className="mb-3">
           <CreateProduct onSuccess={() => fetchProducts(user.token)} />
         </div>
 
         {/* ⏳ Loading */}
         {loading && (
-          <div className="flex justify-center py-8">
-            <div className="flex items-center gap-3">
-              <span className="loading loading-dots loading-md text-primary"></span>
-              <span className="text-base text-base-content/70">
+          <div className="flex justify-center py-4">
+            <div className="flex items-center gap-2">
+              <span className="loading loading-dots loading-sm text-primary"></span>
+              <span className="text-sm text-base-content/70">
                 Updating results...
               </span>
             </div>
@@ -173,25 +258,25 @@ const Product = () => {
 
         {/* ⚠️ Error */}
         {!loading && error && (
-          <div className="alert alert-error shadow-lg">
+          <div className="alert alert-error shadow-sm text-sm py-2">
             <span>{error}</span>
           </div>
         )}
 
         {/* 📦 Product List */}
         {!loading && !error && (
-          <div className="space-y-4">
+          <div className="space-y-2 sm:space-y-3">
             {products.length > 0 ? (
               products.map((product) => (
                 <div
                   key={product._id}
-                  className="bg-white border-2 border-gray-100 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300"
+                  className="bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                 >
-                  <div className="p-6 space-y-6">
+                  <div className="p-3 sm:p-4 space-y-3">
                     {/* Product Header */}
-                    <div className="flex flex-col lg:flex-row gap-6">
+                    <div className="flex flex-col lg:flex-row gap-3">
                       {/* Image */}
-                      <div className="flex-shrink-0 w-20 h-20 rounded-2xl border-2 border-gray-100 bg-gray-50 overflow-hidden flex items-center justify-center">
+                      <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg border border-gray-100 bg-gray-50 overflow-hidden flex items-center justify-center">
                           <img
                             src={product?.image || "/placeholder.png"}
                             alt={product?.name || "No image"}
@@ -202,22 +287,22 @@ const Product = () => {
 
                       {/* Details */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <h2 className="text-2xl font-bold text-gray-900">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <h2 className="text-base sm:text-lg font-bold text-gray-900">
                             {product.name}
                           </h2>
-                          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold uppercase tracking-wide">
+                          <span className="px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200 text-xs font-semibold uppercase tracking-wide">
                             {product.category?.name || "Uncategorized"}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
+                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
                           Created {formatDatePHT(product.createdAt)}
                         </p>
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         <CreateVariant product={product} />
                         <UpdateProduct product={product} />
                         <DeleteProduct product={product} />
@@ -226,7 +311,7 @@ const Product = () => {
 
                     {/* Variants */}
                     {product.variants?.length > 0 ? (
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-3">
                         {product.variants.map((variant) => {
                           const availableQty =
                             variant.availableQuantity ?? variant.quantity ?? 0;
@@ -254,30 +339,30 @@ const Product = () => {
                           return (
                           <div
                             key={variant._id}
-                              className="rounded-2xl border-2 border-gray-100 bg-gray-50/70 hover:border-blue-200 transition-all duration-200 p-4 flex flex-col gap-3"
+                              className="rounded-lg border border-gray-100 bg-gray-50/70 hover:border-blue-200 transition-all duration-200 p-2.5 sm:p-3 flex flex-col gap-2"
                           >
-                              <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start justify-between gap-2">
                                 <div>
-                                  <p className="text-lg font-semibold text-gray-900">
+                                  <p className="text-sm sm:text-base font-semibold text-gray-900">
                                     {formatVariantLabel(variant) || `${variant.size || ""} ${variant.unit || ""}`.trim()}
                                   </p>
-                                  <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-xs">
                                     <span
-                                      className={`px-2.5 py-1 rounded-full border font-semibold ${qtyClass}`}
+                                      className={`px-2 py-0.5 rounded-full border font-semibold ${qtyClass}`}
                                     >
                                       Qty: {availableQty}
                                     </span>
-                                    <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 border border-green-200 font-semibold">
+                                    <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 font-semibold">
                                       ₱{variant.price}
                                     </span>
                                   </div>
                                   {colorBubble && (
                                     <span
-                                      className="inline-flex items-center gap-2 text-xs font-semibold"
+                                      className="inline-flex items-center gap-1.5 text-xs font-semibold mt-1"
                                       style={{ color: colorBubble }}
                                     >
                                       <span
-                                        className="inline-block w-3.5 h-3.5 rounded-full border border-gray-300"
+                                        className="inline-block w-3 h-3 rounded-full border border-gray-300"
                                         style={{ backgroundColor: colorBubble }}
                                       ></span>
                                       {colorBubble}
@@ -301,7 +386,7 @@ const Product = () => {
                                 </div>
                               ) : null}
 
-                              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 mt-auto">
+                              <div className="flex items-center justify-end gap-1.5 pt-1.5 border-t border-gray-200 mt-auto">
                                 <UpdateVariant variant={variant} product={product} />
                                 <DeleteVariant variant={variant} />
                               </div>
@@ -310,7 +395,7 @@ const Product = () => {
                         })}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-gray-500 italic border-2 border-dashed border-gray-200 rounded-2xl">
+                      <div className="text-center py-6 text-gray-500 italic border border-dashed border-gray-200 rounded-lg text-sm">
                         No variants available — add one to manage stock.
                       </div>
                     )}
@@ -318,12 +403,12 @@ const Product = () => {
                 </div>
               ))
             ) : (
-              <div className="card bg-base-100 shadow-xl">
-                <div className="card-body text-center py-16">
-                  <h3 className="text-xl font-semibold mb-2">
+              <div className="card bg-base-100 shadow-sm">
+                <div className="card-body text-center py-8">
+                  <h3 className="text-lg font-semibold mb-1.5">
                     No products found
                   </h3>
-                  <p className="text-base-content/70">
+                  <p className="text-sm text-base-content/70">
                     {searchQuery || selectedCategory
                       ? "No products match your filters"
                       : "Start by creating your first product"}
@@ -331,7 +416,7 @@ const Product = () => {
                   {(searchQuery || selectedCategory) && (
                     <button
                       onClick={clearAllFilters}
-                      className="btn btn-primary btn-wide mt-4"
+                      className="btn btn-primary btn-sm btn-wide mt-3"
                     >
                       Clear All Filters & Show All
                     </button>
@@ -343,11 +428,16 @@ const Product = () => {
         )}
 
         {/* 📄 Pagination */}
-        <Pagination
-          page={currentPage}
-          pages={pages}
-          onPageChange={setCurrentPage}
-        />
+        {pages > 1 && (
+          <div className="fixed bottom-6 right-6 z-40">
+            <Pagination
+              page={currentPage}
+              pages={pages}
+              onPageChange={setCurrentPage}
+              variant="yellow"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ const AdminLayout = () => {
         <AdminNavbar />
 
         {/* Page Content */}
-        <main className="flex-1 p-2 md:p-6">
+        <main className="flex-1">
           <Outlet />
         </main>
       </div>

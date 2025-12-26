@@ -95,7 +95,7 @@ const UserReservations = () => {
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-400 rounded-2xl flex items-center justify-center shadow-lg">
               <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             My Reservations
@@ -167,7 +167,7 @@ const UserReservations = () => {
                       {/* Total Price */}
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">Total Amount</span>
-                        <span className="font-mono text-lg sm:text-xl font-bold text-green-600">
+                        <span className="text-lg sm:text-xl font-bold text-green-600">
                           {formatPrice(reservation.totalPrice)}
                         </span>
                       </div>
@@ -211,7 +211,7 @@ const UserReservations = () => {
                                       {detail.quantity}
                                     </span>
                                     <span className="text-xs text-gray-400">×</span>
-                                    <span className="text-xs font-mono text-gray-700">
+                                    <span className="text-xs text-gray-700">
                                       {formatPrice(detail.price || detail.productVariantId?.price || 0)}
                                     </span>
                                   </div>
@@ -270,7 +270,7 @@ const UserReservations = () => {
             {/* Pagination */}
             {pages > 1 && (
               <div className="mt-6">
-                <Pagination page={page} pages={pages} onPageChange={setPage} />
+                <Pagination page={page} pages={pages} onPageChange={setPage} variant="yellow" />
               </div>
             )}
           </>

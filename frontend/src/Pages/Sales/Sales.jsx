@@ -7,9 +7,8 @@ import Receipt from "../../components/Receipt";
 import Pagination from "../../components/Pagination";
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatPrice } from "../../utils/formatPrice";
-import { Printer, RotateCcw, Download } from "lucide-react";
+import { Printer, RotateCcw, Download, TrendingUp } from "lucide-react";
 import api from "../../utils/api";
-import SaleCards from "../Pos/SaleCards";
 import ReturnSales from "./ReturnSales";
 
 const Sales = () => {
@@ -128,30 +127,39 @@ const Sales = () => {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
       {/* Header */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-base-content">Sales</h1>
-          <p className="text-base-content/70 mt-1">
-            Track and manage sales transactions from POS and reservations
-          </p>
+      <div className="mb-3 sm:mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-red-400 rounded-lg shadow-md flex-shrink-0">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">
+                Sales
+              </h1>
+              <p className="text-xs text-gray-600 hidden sm:block">
+                Track and manage sales transactions from POS and reservations
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleExportSales}
+            disabled={loading}
+            className="btn btn-sm gap-1.5 mt-2 sm:mt-0 bg-yellow-400 hover:bg-yellow-500 text-white border-yellow-400 hover:border-yellow-500"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">Export</span>
+          </button>
         </div>
-        <button
-          onClick={handleExportSales}
-          disabled={loading}
-          className="btn btn-primary gap-2"
-        >
-          <Download className="w-4 h-4" />
-          Export CSV
-        </button>
       </div>
 
-      <SaleCards />
-
       {/* Filters */}
-      <div className="my-4">
-        <div className="flex flex-wrap gap-2 items-center">
+      <div className="mb-4">
+        <div className="flex flex-wrap gap-1.5 items-center">
           <input
             type="text"
             value={search}
@@ -160,7 +168,7 @@ const Sales = () => {
               setPage(1);
             }}
             placeholder="Search sale ID, product..."
-            className="input input-sm input-bordered"
+            className="input input-xs sm:input-sm input-bordered"
           />
 
           <input
@@ -171,7 +179,7 @@ const Sales = () => {
               setPage(1);
             }}
             placeholder="Cashier name or email"
-            className="input input-sm input-bordered"
+            className="input input-xs sm:input-sm input-bordered"
           />
 
           <select
@@ -180,7 +188,7 @@ const Sales = () => {
               setTypeFilter(e.target.value);
               setPage(1);
             }}
-            className="select select-sm select-bordered"
+            className="select select-xs sm:select-sm select-bordered"
           >
             <option value="">All Types</option>
             <option value="pos">POS</option>
@@ -194,7 +202,7 @@ const Sales = () => {
               setDateFrom(e.target.value);
               setPage(1);
             }}
-            className="input input-sm input-bordered"
+            className="input input-xs sm:input-sm input-bordered"
           />
 
           <input
@@ -204,11 +212,11 @@ const Sales = () => {
               setDateTo(e.target.value);
               setPage(1);
             }}
-            className="input input-sm input-bordered"
+            className="input input-xs sm:input-sm input-bordered"
           />
 
           <button
-            className="btn btn-sm btn-ghost"
+            className="btn btn-xs sm:btn-sm btn-ghost"
             onClick={() => {
               setSearch("");
               setCashierFilter("");
@@ -225,7 +233,7 @@ const Sales = () => {
       </div>
 
       {/* Table */}
-      <div className="card bg-base-100 shadow-xl">
+      <div className="card bg-base-100 shadow-sm">
         <div className="card-body p-0">
           <div className="overflow-x-auto">
             <table className="table table-zebra w-full">
@@ -233,7 +241,7 @@ const Sales = () => {
                 <tr>
                   <th></th>
                   <th>Sale ID</th>
-                  <th>Cashier/Admin</th>
+                  <th>Cashier/Owner</th>
                   <th>Sale Date</th>
                   <th>Type & Status</th>
                   <th>Actions</th>
@@ -279,7 +287,7 @@ const Sales = () => {
                             </svg>
                           </button>
                         </td>
-                        <td className="font-mono text-sm font-semibold">
+                        <td className="text-sm font-semibold">
                           #{sale._id?.slice(-8)}
                         </td>
                         <td>
@@ -292,28 +300,11 @@ const Sales = () => {
                         </td>
                         <td>{formatDatePHT(sale.saleDate)}</td>
                         <td>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`badge ${
-                                sale.type === "pos"
-                                  ? "badge-primary"
-                                  : "badge-secondary"
-                              }`}
-                            >
-                              {sale.type?.toUpperCase()}
-                            </span>
-                            <span
-                              className={`badge ${
-                                sale.amountPaid >= sale.totalPrice
-                                  ? "badge-success"
-                                  : "badge-warning"
-                              }`}
-                            >
-                              {sale.amountPaid >= sale.totalPrice
-                                ? "PAID"
-                                : "PARTIAL"}
-                            </span>
-                          </div>
+                          <span className="text-xs font-medium text-gray-700">
+                            {sale.type?.toUpperCase() || "N/A"}{" "}
+                            /{" "}
+                            {sale.amountPaid >= sale.totalPrice ? "PAID" : "PARTIAL"}
+                          </span>
                         </td>
                         <td>
                           <div className="flex gap-2">
@@ -346,19 +337,19 @@ const Sales = () => {
                                   <div className="bg-base-100 p-3 rounded space-y-2">
                                     <div className="flex justify-between text-sm">
                                       <span>Total Price:</span>
-                                      <span className="font-mono">
+                                      <span>
                                         {formatPrice(sale.totalPrice)}
                                       </span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                       <span>Amount Paid:</span>
-                                      <span className="font-mono">
+                                      <span>
                                         {formatPrice(sale.amountPaid)}
                                       </span>
                                     </div>
                                     <div className="flex justify-between text-sm border-t pt-2">
                                       <span>Change:</span>
-                                      <span className="font-mono">
+                                      <span>
                                         {formatPrice(sale.change)}
                                       </span>
                                     </div>
@@ -422,7 +413,7 @@ const Sales = () => {
                                                 <div className="text-xs text-base-content/60">
                                                   Subtotal
                                                 </div>
-                                                <div className="font-mono text-sm font-medium">
+                                                <div className="text-sm font-medium">
                                                   ₱
                                                   {item.subtotal?.toLocaleString()}
                                                 </div>
@@ -463,7 +454,11 @@ const Sales = () => {
         </div>
       </div>
 
-      <Pagination page={page} pages={pages} onPageChange={setPage} />
+      {pages > 1 && (
+        <div className="fixed bottom-6 right-6 z-40">
+      <Pagination page={page} pages={pages} onPageChange={setPage} variant="yellow" />
+        </div>
+      )}
 
       {showReceipt && selectedSale && (
         <Receipt
@@ -474,6 +469,7 @@ const Sales = () => {
           }}
         />
       )}
+      </div>
     </div>
   );
 };

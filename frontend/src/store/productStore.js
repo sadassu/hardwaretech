@@ -63,7 +63,7 @@ export const useProductStore = create(
       // ✅ Fetch products
       fetchProducts: async (
         token,
-        { page = 1, limit = 12, search = "", category = "" } = {}
+        { page = 1, limit = 12, search = "", category = "", brand = "" } = {}
       ) => {
         set({ loading: true, error: null });
         try {
@@ -75,6 +75,7 @@ export const useProductStore = create(
               sortOrder: "asc",
               search,
               category,
+              brand,
               includeCategories: "true",
             },
             headers: { Authorization: `Bearer ${token}` },

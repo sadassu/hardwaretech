@@ -26,7 +26,7 @@ export function getRoleGreeting(roles = []) {
   const timeGreeting = getTimeBasedGreeting();
   
   if (roles.includes("admin")) {
-    return `${timeGreeting}, Administrator`;
+    return `${timeGreeting}, Owner`;
   } else if (roles.includes("cashier")) {
     return `${timeGreeting}, Cashier`;
   }
@@ -52,7 +52,6 @@ export function getCurrentTimePHT() {
     timeZone: "Asia/Manila",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
     hour12: true,
   });
 }

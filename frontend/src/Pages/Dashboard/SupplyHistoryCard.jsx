@@ -43,7 +43,7 @@ function SupplyHistoryCard() {
   const last10 = supplyHistories.slice(0, 10);
 
   return (
-    <div className="space-y-3 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+    <div className="space-y-3">
       <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-3">
         Recent Supply History
       </h3>

@@ -35,7 +35,7 @@ const HomePage = () => {
         <div className="hero-content text-center max-w-5xl">
           <div>
             <div className="flex justify-center mb-6">
-              <img src="assets/logo.jpg" alt="" className="w-100 h-50" />
+              <img src="assets/logo.jpg" alt="" className="w-100 h-50 bg-white p-4 shadow-lg rounded-lg" />
             </div>
             <h1 className="text-5xl md:text-7xl font-bold mb-6">
               <span className="bg-gradient-to-r from-orange-600 via-red-500 to-yellow-600 bg-clip-text text-transparent">
