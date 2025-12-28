@@ -4,6 +4,7 @@ import { useReservationStore } from "../../store/reservationStore";
 import Pagination from "../../components/Pagination";
 import StatusCards from "./StatusCards";
 import ReservationTable from "./ReservationTable";
+import useKeyboardPagination from "../../hooks/useKeyboardPagination";
 
 const Reservation = () => {
   const { page, pages, statusFilter, statusCounts, searchQuery, setPage, setStatusFilter, setSearchQuery } =
@@ -34,8 +35,11 @@ const Reservation = () => {
     setSearchQuery("");
   };
 
+  // Add keyboard pagination
+  useKeyboardPagination(page, pages, setPage);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" tabIndex="0">
       <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
         {/* Header + Search */}
         <div className="mb-3 sm:mb-4">
@@ -105,8 +109,8 @@ const Reservation = () => {
 
         {/* Pagination */}
         {pages > 1 && (
-          <div className="fixed bottom-6 right-6 z-40">
-        <Pagination page={page} pages={pages} onPageChange={setPage} variant="yellow" />
+          <div className="flex justify-center mt-6 w-full">
+            <Pagination page={page} pages={pages} onPageChange={setPage} variant="yellow" />
           </div>
         )}
       </div>

@@ -68,14 +68,14 @@ function UpdateReservationStatus({ reservation }) {
         onClose={() => setIsOpen(false)}
         className="bg-white rounded-2xl max-w-md w-full p-0"
       >
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl">
+        <div className="bg-red-400 p-6 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <Edit3 className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Update Status</h2>
-              <p className="text-blue-100 text-sm">Change reservation status</p>
+              <p className="text-red-100 text-sm">Change reservation status</p>
             </div>
           </div>
         </div>
@@ -172,7 +172,7 @@ function UpdateReservationStatus({ reservation }) {
             </button>
             <button
               type="submit"
-              className="flex-1 btn bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg"
+              className="flex-1 btn bg-red-400 text-white border-0 hover:bg-red-500 shadow-lg transition-colors duration-200"
               disabled={loading}
             >
               {loading ? (

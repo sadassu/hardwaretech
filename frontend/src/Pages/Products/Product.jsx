@@ -3,6 +3,7 @@ import { Calendar, Package, Search, X } from "lucide-react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useProductStore } from "../../store/productStore";
 import { useCategoriesStore } from "../../store/categoriesStore";
+import useKeyboardPagination from "../../hooks/useKeyboardPagination";
 
 import { formatDatePHT } from "../../utils/formatDate";
 import { formatVariantLabel } from "../../utils/formatVariantLabel";
@@ -95,8 +96,11 @@ const Product = () => {
     )
   ).sort((a, b) => a.localeCompare(b));
 
+  // Add keyboard pagination
+  useKeyboardPagination(currentPage, pages, setCurrentPage);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50" tabIndex="0">
       <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
         {/* Header + Search */}
         <div className="mb-3 sm:mb-4">
@@ -429,7 +433,7 @@ const Product = () => {
 
         {/* 📄 Pagination */}
         {pages > 1 && (
-          <div className="fixed bottom-6 right-6 z-40">
+          <div className="flex justify-center mt-6 w-full">
             <Pagination
               page={currentPage}
               pages={pages}
