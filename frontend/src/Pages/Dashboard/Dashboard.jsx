@@ -1562,26 +1562,14 @@ function Dashboard() {
 
             {/* Panel 4: Summary Page (Last Page) - KPIs + Inventory & Supply */}
             {panelIndex === 4 && (
-              <>
-                {/* Top KPI cards: Total Sales, Average Sales, Data Points */}
-                <SalesCards
-                  salesData={salesData}
-                  loading={loading || overallLoading}
-                  totalSales={overallTotalSales}
-                  averageSales={overallAverageSales}
-                  totalDataPoints={overallStats?.totalCount || 0}
-                />
-
-                {/* Inventory (left) and Recent Supply (right) below KPIs */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-                    <StockCards />
-                  </div>
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-                    <SupplyHistoryCard />
-                  </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                  <StockCards />
                 </div>
-              </>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                  <SupplyHistoryCard />
+                </div>
+              </div>
             )}
 
           </div>
