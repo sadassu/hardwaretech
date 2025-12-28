@@ -4,6 +4,7 @@ import { ShoppingCart, Search, X, Package } from "lucide-react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
+import useKeyboardPagination from "../../hooks/useKeyboardPagination";
 
 import Loading from "../../components/Loading";
 import Pagination from "../../components/Pagination";
@@ -93,6 +94,9 @@ function Pos() {
   const loading = productLoading || categoryLoading;
   const error = productError || categoryError;
 
+  // Add keyboard pagination
+  useKeyboardPagination(currentPage, pages, setCurrentPage);
+
   // Build a unique list of brands from currently loaded products
   const brandOptions = Array.from(
     new Set(
@@ -133,7 +137,7 @@ function Pos() {
 
   // ✅ Main Render
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50" tabIndex="0">
       <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
         {/* Header + Search */}
         <div className="mb-3 sm:mb-4">
@@ -265,7 +269,7 @@ function Pos() {
 
           {/* Pagination */}
           {pages > 1 && (
-            <div className="fixed bottom-6 right-6 z-40">
+            <div className="flex justify-center mt-6 w-full">
               <Pagination
                 page={currentPage}
                 pages={pages}

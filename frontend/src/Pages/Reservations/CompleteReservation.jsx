@@ -100,7 +100,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
           className="bg-white rounded-2xl max-w-3xl w-full p-0 max-h-[90vh] flex flex-col"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5 flex-shrink-0 border-b border-blue-800/30 rounded-t-2xl">
+          <div className="bg-red-400 text-white px-6 py-5 flex-shrink-0 border-b border-red-500/30 rounded-t-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
@@ -108,7 +108,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold">Complete Reservation</h2>
-                  <p className="text-blue-100 text-sm font-medium">
+                  <p className="text-red-100 text-sm font-medium">
                     Mark reservation as completed
                   </p>
                 </div>
@@ -218,12 +218,12 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                 {/* Amount Paid Input */}
                 <div className="flex-1 flex flex-col">
                   <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <Banknote className="w-4 h-4 text-blue-600" />
+                    <Banknote className="w-4 h-4 text-red-600" />
                     Amount Paid
                   </label>
                   <input
                     type="number"
-                    className="w-full h-11 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-medium"
+                    className="w-full h-11 p-2.5 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm font-medium"
                     placeholder="Enter amount paid"
                     value={amountPaid}
                     min={0}
@@ -239,12 +239,12 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Total Amount
                   </label>
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 h-11 p-2.5 rounded-lg border border-blue-200 flex items-center">
+                  <div className="bg-gradient-to-r from-red-50 to-red-100 h-11 p-2.5 rounded-lg border border-red-200 flex items-center">
                     <div className="flex justify-between items-center w-full">
                       <span className="text-sm font-bold text-gray-700">
                         Total:
                       </span>
-                      <span className="text-lg font-bold text-blue-600">
+                      <span className="text-lg font-bold text-red-600">
                         ₱{totalPrice.toFixed(2)}
                       </span>
                     </div>
@@ -297,7 +297,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 bg-yellow-400 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={
                     loading ||
                     !amountPaid ||
@@ -341,7 +341,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Header */}
-                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5 flex-shrink-0 border-b border-blue-800/30">
+                  <div className="bg-red-400 text-white px-6 py-5 flex-shrink-0 border-b border-red-500/30">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
@@ -349,7 +349,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                         </div>
                         <div>
                           <h2 className="text-2xl font-bold">Complete Reservation</h2>
-                          <p className="text-blue-100 text-sm font-medium">
+                          <p className="text-red-100 text-sm font-medium">
                             Mark reservation as completed
                           </p>
                         </div>
@@ -397,12 +397,12 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                                       {productName}
                                     </h3>
                                     {variantSize && (
-                                      <p className="text-sm text-gray-600 font-medium">
+                                      <p className="text-sm text-red-600 font-medium">
                                         ₱{lockedPrice.toFixed(2)} / {variantSize} {variantUnit}
                                       </p>
                                     )}
                                     {!variantSize && (
-                                      <p className="text-sm text-gray-600 font-medium">
+                                      <p className="text-sm text-red-600 font-medium">
                                         ₱{lockedPrice.toFixed(2)} / {variantUnit}
                                       </p>
                                     )}
@@ -431,7 +431,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                                   </div>
 
                                   <div className="text-right">
-                                    <p className="text-2xl font-bold text-blue-600">
+                                    <p className="text-2xl font-bold text-red-600">
                                       ₱{subtotal.toFixed(2)}
                                     </p>
                                   </div>
@@ -470,12 +470,12 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                         {/* Amount Paid Input */}
                         <div className="flex-1 flex flex-col">
                           <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                            <Banknote className="w-4 h-4 text-blue-600" />
+                            <Banknote className="w-4 h-4 text-red-600" />
                             Amount Paid
                           </label>
                           <input
                             type="number"
-                            className="w-full h-11 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-medium"
+                            className="w-full h-11 p-2.5 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm font-medium"
                             placeholder="Enter amount paid"
                             value={amountPaid}
                             min={0}
@@ -491,12 +491,12 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Total Amount
                           </label>
-                          <div className="bg-gradient-to-r from-blue-50 to-blue-100 h-11 p-2.5 rounded-lg border border-blue-200 flex items-center">
+                          <div className="bg-gradient-to-r from-red-50 to-red-100 h-11 p-2.5 rounded-lg border border-red-200 flex items-center">
                             <div className="flex justify-between items-center w-full">
                               <span className="text-sm font-bold text-gray-700">
                                 Total:
                               </span>
-                              <span className="text-lg font-bold text-blue-600">
+                              <span className="text-lg font-bold text-red-600">
                                 ₱{totalPrice.toFixed(2)}
                               </span>
                             </div>
@@ -549,7 +549,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                         </button>
                         <button
                           type="submit"
-                          className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-1 px-4 py-3 bg-yellow-400 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           disabled={
                             loading ||
                             !amountPaid ||

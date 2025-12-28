@@ -3,6 +3,7 @@ import { useSalesContext } from "../../hooks/useSaleContext";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { useFetch } from "../../hooks/useFetch";
 import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
+import useKeyboardPagination from "../../hooks/useKeyboardPagination";
 import Receipt from "../../components/Receipt";
 import Pagination from "../../components/Pagination";
 import { formatDatePHT } from "../../utils/formatDate";
@@ -19,6 +20,9 @@ const Sales = () => {
   const [showReceipt, setShowReceipt] = useState(false);
   const [page, setPage] = useState(1);
   const [expandedRow, setExpandedRow] = useState(null);
+  
+  // Add keyboard pagination
+  useKeyboardPagination(page, pages, setPage);
 
   // New filter states
   const [search, setSearch] = useState("");
@@ -127,7 +131,7 @@ const Sales = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50" tabIndex="0">
       <div className="w-full px-2 sm:px-3 lg:px-3 xl:px-4 py-2 sm:py-3 ml-4 sm:ml-6 lg:ml-8 transform scale-98 origin-top-left">
       {/* Header */}
       <div className="mb-3 sm:mb-4">
@@ -455,8 +459,8 @@ const Sales = () => {
       </div>
 
       {pages > 1 && (
-        <div className="fixed bottom-6 right-6 z-40">
-      <Pagination page={page} pages={pages} onPageChange={setPage} variant="yellow" />
+        <div className="flex justify-center mt-6 w-full">
+          <Pagination page={page} pages={pages} onPageChange={setPage} variant="yellow" />
         </div>
       )}
 
