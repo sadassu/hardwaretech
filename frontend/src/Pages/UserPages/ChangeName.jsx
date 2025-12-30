@@ -123,7 +123,7 @@ function ChangeName({ onUpdateSuccess, className = "", icon: Icon }) {
               </button>
               <button
                 type="submit"
-                className="flex-1 btn bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg"
+                className="flex-1 btn bg-red-400 text-white border-0 hover:bg-red-500 shadow-lg"
               >
                 Update Name
               </button>

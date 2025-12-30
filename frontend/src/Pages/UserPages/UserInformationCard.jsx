@@ -81,11 +81,11 @@ function UserInformationCard({ user }) {
               />
             )}
             <ChangeName
-              className="btn bg-red-500 text-white"
+              className="btn bg-red-400 text-white hover:bg-red-500"
               icon={SquarePen}
             />
             <DeleteAccount
-              className="btn bg-red-500 text-white"
+              className="btn bg-red-400 text-white hover:bg-red-500"
               icon={AlertTriangle}
             />
           </div>

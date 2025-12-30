@@ -254,7 +254,7 @@ const UserReservations = () => {
                           </div>
                         )}
                         <button
-                          className="flex-1 btn btn-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-md flex items-center justify-center gap-2"
+                          className="flex-1 btn btn-sm bg-red-400 text-white border-0 hover:bg-red-500 shadow-md flex items-center justify-center gap-2"
                           onClick={() => handleViewDetails(reservation)}
                         >
                           <Eye className="w-4 h-4" />

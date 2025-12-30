@@ -118,7 +118,7 @@ const UpdateVariant = ({ variant, product }) => {
   return (
     <>
         <button
-        className="btn btn-sm btn-ghost gap-1.5 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-200"
+        className="btn btn-sm btn-ghost gap-1.5 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
           onClick={() => setIsOpen(true)}
         title="Update Variant"
         >
@@ -130,14 +130,14 @@ const UpdateVariant = ({ variant, product }) => {
         onClose={() => setIsOpen(false)}
         className="bg-white rounded-2xl max-w-2xl w-full p-0 max-h-[90vh] flex flex-col"
       >
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl flex-shrink-0">
+        <div className="bg-red-400 p-6 rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <Edit className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Update Variant</h2>
-              <p className="text-blue-100 text-sm">Modify variant details</p>
+              <p className="text-red-100 text-sm">Modify variant details</p>
             </div>
           </div>
         </div>
@@ -156,7 +156,7 @@ const UpdateVariant = ({ variant, product }) => {
                 placeholder="Size (e.g., Small, Medium)"
                 value={formData.size}
                 onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                 />
               </div>
 
@@ -168,7 +168,7 @@ const UpdateVariant = ({ variant, product }) => {
                   name="unit"
                   value={formData.unit}
                   onChange={handleChange}
-                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                   required
                 >
                   <option value="">No Unit</option>
@@ -193,7 +193,7 @@ const UpdateVariant = ({ variant, product }) => {
                   placeholder="e.g., 1 inch, 2.5 cm"
                   value={formData.dimension}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                 />
                 <p className="text-xs text-gray-500 mt-1">e.g., diameter, thickness</p>
               </div>
@@ -207,7 +207,7 @@ const UpdateVariant = ({ variant, product }) => {
                   name="dimensionType"
                   value={formData.dimensionType}
                   onChange={handleChange}
-                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                 >
                   <option value="">None</option>
                   <option value="diameter">Diameter</option>
@@ -232,7 +232,7 @@ const UpdateVariant = ({ variant, product }) => {
                   placeholder="Supplier price"
                   value={formData.supplier_price}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                   required
                 />
               </div>
@@ -247,7 +247,7 @@ const UpdateVariant = ({ variant, product }) => {
                   placeholder="Price"
                   value={formData.price}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                   required
                 />
               </div>
@@ -264,7 +264,7 @@ const UpdateVariant = ({ variant, product }) => {
                   placeholder="Quantity"
                   value={formData.quantity}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                   required
                   min="0"
                 />
@@ -280,7 +280,7 @@ const UpdateVariant = ({ variant, product }) => {
                   placeholder="Color (e.g., Red, Blue)"
                   value={formData.color}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                 />
               </div>
             </div>
@@ -299,7 +299,7 @@ const UpdateVariant = ({ variant, product }) => {
                   placeholder="e.g., 15"
                   value={formData.lowStockThreshold}
                   onChange={handleChange}
-                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                  className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                   min="0"
                 />
               </div>
@@ -327,7 +327,7 @@ const UpdateVariant = ({ variant, product }) => {
                       name="conversionSource"
                       value={formData.conversionSource}
                       onChange={handleChange}
-                      className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                      className="select select-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                       required
                     >
                       <option value="">Select a variant</option>
@@ -353,7 +353,7 @@ const UpdateVariant = ({ variant, product }) => {
                         min="1"
                         value={formData.conversionQuantity}
                         onChange={handleChange}
-                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                         required
                       />
                     </div>
@@ -368,7 +368,7 @@ const UpdateVariant = ({ variant, product }) => {
                         placeholder="e.g., 1 box = 24 pcs"
                         value={formData.conversionNotes}
                         onChange={handleChange}
-                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+                        className="input input-bordered w-full bg-white border-2 border-gray-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-gray-900"
                       />
                     </div>
                   </div>
@@ -386,7 +386,7 @@ const UpdateVariant = ({ variant, product }) => {
               </button>
               <button
                 type="submit"
-                className="flex-1 btn bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 hover:from-blue-600 hover:to-blue-700 shadow-lg"
+                className="flex-1 btn bg-red-400 text-white border-0 hover:bg-red-500 shadow-lg"
               >
                 Update Variant
               </button>

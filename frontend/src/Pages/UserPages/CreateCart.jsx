@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Modal from "../../components/Modal";
 import { useCart } from "../../hooks/useCart";
@@ -6,7 +6,7 @@ import { ShoppingCart, X, Plus, Minus, PlusCircle, AlertTriangle, Package } from
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { formatPrice } from "../../utils/formatPrice";
 
-function CreateCart({ product, variant }) {
+function CreateCart({ product, variant, onOpen, onClose: onCloseCallback }) {
   const { user } = useAuthContext();
   const { addToCart, cartItems } = useCart();
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ function CreateCart({ product, variant }) {
   const [isOpen, setIsOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [maxStockMessage, setMaxStockMessage] = useState("");
+  const isOpeningRef = useRef(false);
   const computedQuantity =
     variant?.availableQuantity ?? variant?.quantity ?? 0;
   const outOfStock = computedQuantity <= 0;
@@ -89,6 +90,11 @@ function CreateCart({ product, variant }) {
     setQuantity(1);
     setMaxStockMessage("");
     
+    // Notify parent that CreateCart is closing
+    if (onCloseCallback) {
+      onCloseCallback();
+    }
+    
     // Navigate based on current page: stay on POS if already on POS, otherwise go to product list
     if (location.pathname !== "/pos") {
       navigate("/user/product-list");
@@ -99,13 +105,29 @@ function CreateCart({ product, variant }) {
   return (
     <>
       <button
+        type="button"
         className={`btn text-sm font-medium transition-all duration-200 ${
           outOfStock || isUserUnverified
             ? "btn-disabled bg-gray-100 text-gray-400 cursor-not-allowed"
             : "bg-yellow-400 hover:bg-yellow-500 text-white shadow-md hover:shadow-lg border-0"
         }`}
         disabled={outOfStock || isUserUnverified}
-        onClick={() => setIsOpen(true)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation(); // Prevent event bubbling to parent elements
+          e.nativeEvent.stopImmediatePropagation(); // Stop all event propagation
+          if (!outOfStock && !isUserUnverified) {
+            // Open CreateCart modal FIRST
+            setIsOpen(true);
+            // Notify parent that CreateCart is opening (this hides variant modal but keeps it mounted)
+            if (onOpen) {
+              // Small delay to ensure CreateCart modal is rendered first
+              setTimeout(() => {
+                onOpen(); // This sets isCreateCartOpening to true, hiding variant modal
+              }, 100);
+            }
+          }
+        }}
         title={
           outOfStock
             ? "Out of stock"
@@ -125,7 +147,13 @@ function CreateCart({ product, variant }) {
 
       <Modal
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={() => {
+          setIsOpen(false);
+          // Notify parent that CreateCart is closing
+          if (onCloseCallback) {
+            onCloseCallback();
+          }
+        }}
         className="bg-white rounded-2xl max-w-md w-full p-0 max-h-[90vh] flex flex-col"
       >
         {/* Header */}
@@ -227,7 +255,7 @@ function CreateCart({ product, variant }) {
               <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-700">Total Price:</span>
-                  <span className="text-xl font-bold text-red-500">
+                  <span className="text-xl font-bold text-black">
                     {formatPrice((variant?.price ?? product?.price ?? 0) * quantity)}
                   </span>
                 </div>
