@@ -30,7 +30,7 @@ function ReservationDetailsModal({
       className="bg-white rounded-2xl max-w-4xl w-full p-0 max-h-[90vh] flex flex-col"
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl flex-shrink-0">
+      <div className="bg-red-400 p-6 rounded-t-2xl flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -38,7 +38,7 @@ function ReservationDetailsModal({
             </div>
             <div>
               <h3 className="text-xl font-bold text-white">Reservation Details</h3>
-              <p className="text-blue-100 text-sm">View complete reservation information</p>
+              <p className="text-red-100 text-sm">View complete reservation information</p>
             </div>
           </div>
           <button
@@ -58,8 +58,8 @@ function ReservationDetailsModal({
           {/* Reservation Info */}
           <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl shadow-sm p-5">
             <h4 className="font-semibold text-lg mb-4 text-gray-900 flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-red-600" />
               </div>
               Reservation Info
             </h4>
@@ -91,7 +91,7 @@ function ReservationDetailsModal({
               </div>
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wide">Total Amount</span>
-                <p className="text-xl font-bold text-green-600 mt-1">
+                <p className="text-xl font-bold text-black mt-1">
                   {formatPrice(selectedReservation.totalPrice)}
                 </p>
               </div>
@@ -217,7 +217,7 @@ function ReservationDetailsModal({
             <div className="pt-4 border-t-2 border-gray-200 bg-white rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <span className="text-lg font-semibold text-gray-900">Total Amount:</span>
-                <span className="text-2xl font-bold text-green-600">
+                <span className="text-2xl font-bold text-black">
                   {formatPrice(selectedReservation.totalPrice)}
                 </span>
               </div>

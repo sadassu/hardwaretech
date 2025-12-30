@@ -11,11 +11,37 @@ const baseOptions = {
   focusCancel: true,
   confirmButtonColor: "#2563eb",
   cancelButtonColor: "#9ca3af",
+  // Ensure it appears above all modals (cart modal uses z-[9999])
+  // Use didOpen to set z-index after SweetAlert2 renders
+  didOpen: () => {
+    // Set z-index for the container to appear above modals
+    setTimeout(() => {
+      const swalContainer = document.querySelector('.swal2-container');
+      if (swalContainer) {
+        swalContainer.style.zIndex = '10001';
+      }
+      // Also set for backdrop
+      const swalBackdrop = document.querySelector('.swal2-backdrop-show');
+      if (swalBackdrop) {
+        swalBackdrop.style.zIndex = '10000';
+      }
+    }, 10);
+  },
 };
 
 export const useConfirm = () =>
   useCallback((options = {}) => {
-    const { title, text, confirmButtonText, cancelButtonText, icon } = options;
+    const { title, text, confirmButtonText, cancelButtonText, icon, didOpen: customDidOpen } = options;
+
+    // Combine didOpen callbacks if custom one is provided
+    const didOpen = () => {
+      // Always set z-index first
+      baseOptions.didOpen();
+      // Then call custom didOpen if provided
+      if (customDidOpen) {
+        customDidOpen();
+      }
+    };
 
     return Swal.fire({
       ...baseOptions,
@@ -26,6 +52,7 @@ export const useConfirm = () =>
       icon: icon || baseOptions.icon,
       confirmButtonText: confirmButtonText || baseOptions.confirmButtonText,
       cancelButtonText: cancelButtonText || baseOptions.cancelButtonText,
+      didOpen: customDidOpen ? didOpen : baseOptions.didOpen,
     });
   }, []);
 

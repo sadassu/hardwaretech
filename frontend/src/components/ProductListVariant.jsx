@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { ChevronDown, AlertTriangle, X, ShoppingCart, Package } from "lucide-react";
 import CreateCart from "../Pages/UserPages/CreateCart";
 import { formatVariantLabel } from "../utils/formatVariantLabel.js";
 
 function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = false }) {
   const [showVariants, setShowVariants] = useState(false);
+  const [isCreateCartOpening, setIsCreateCartOpening] = useState(false);
   const variantMap = new Map(
     (product?.variants || []).map((variant) => [variant._id, variant])
   );
@@ -58,19 +60,16 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
     gray: "bg-gray-500 border-gray-500 text-white",
   };
 
-  // Check if no variants or all variants have zero or no quantity
+  // Check if no variants
   const hasNoVariants = !product.variants?.length;
-  const allOutOfStock = hasNoVariants
-    ? true
-    : product.variants.every((variant) => getAvailableQuantity(variant) <= 0);
 
-  // If no variants or all out of stock, show message
-  if (hasNoVariants || allOutOfStock) {
+  // If no variants at all, show message
+  if (hasNoVariants) {
     return (
       <div className="mt-auto">
         <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
-          <span className="text-red-700 text-sm font-semibold">Out of Stock</span>
+          <span className="text-red-700 text-sm font-semibold">No variants available</span>
         </div>
       </div>
     );
@@ -91,18 +90,35 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
           </button>
 
           {/* Modal Popup */}
-          {showVariants && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              {/* Backdrop */}
-              <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                onClick={() => setShowVariants(false)}
-              ></div>
-              
-              {/* Modal Content */}
-              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col z-10">
+          {showVariants &&
+            ReactDOM.createPortal(
+              <div 
+                className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-opacity ${
+                  isCreateCartOpening ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                }`}
+                style={{ 
+                  visibility: isCreateCartOpening ? 'hidden' : 'visible',
+                  pointerEvents: isCreateCartOpening ? 'none' : 'auto'
+                }}
+              >
+                {/* Backdrop */}
+                <div
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                  onClick={() => {
+                    if (!isCreateCartOpening) {
+                      setShowVariants(false);
+                      setIsCreateCartOpening(false);
+                    }
+                  }}
+                ></div>
+                
+                {/* Modal Content */}
+                <div 
+                  className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col z-10 overflow-hidden"
+                  onClick={(e) => e.stopPropagation()} // Prevent clicks inside modal from closing it
+                >
                 {/* Header */}
-                <div className="bg-red-400 p-5 rounded-t-2xl">
+                <div className="bg-red-400 p-5 rounded-t-2xl flex-shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -127,70 +143,97 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
                 </div>
 
                 {/* Scrollable variants list */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {product.variants.map((variant, idx) => (
-                <div
-                  key={variant._id || `${product._id}-variant-${idx}`}
-                  className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4 hover:border-red-300 hover:shadow-md transition-all"
-                >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            {variant.price && (
-                              <div className="text-xl font-bold text-gray-900">
-                                ₱{variant.price.toLocaleString()}
-                              </div>
-                            )}
-                          {variant.color && (
-                              <span
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold capitalize border border-gray-300"
-                                style={{ color: variant.color }}
-                              >
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+                  {product.variants && Array.isArray(product.variants) && product.variants.length > 0 ? (
+                    product.variants.map((variant, idx) => {
+                      if (!variant) return null;
+                      return (
+                      <div
+                        key={variant._id || `${product._id}-variant-${idx}`}
+                        className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4 hover:border-red-300 hover:shadow-md transition-all"
+                        onClick={(e) => e.stopPropagation()} // Prevent card click from closing modal
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              {variant.price && (
+                                <div className="text-xl font-bold text-gray-900">
+                                  ₱{variant.price.toLocaleString()}
+                                </div>
+                              )}
+                              {variant.color && (
                                 <span
-                                  className="inline-block w-3 h-3 rounded-full border border-gray-300"
-                                  style={{ backgroundColor: variant.color }}
-                                ></span>
-                                {variant.color}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold capitalize border border-gray-300"
+                                  style={{ color: variant.color }}
+                                >
+                                  <span
+                                    className="inline-block w-3 h-3 rounded-full border border-gray-300"
+                                    style={{ backgroundColor: variant.color }}
+                                  ></span>
+                                  {variant.color}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <span className="text-xs font-medium text-gray-500 block mb-2">
+                              Stock: {getAvailableQuantity(variant)}
+                            </span>
+                            {showAutoConvertInfo && variant.autoConvert && variant.conversionSource && (() => {
+                              const sourceVariant = variantMap.get(
+                                variant.conversionSource
+                              );
+                              if (!sourceVariant) return null;
+                              const sourceLabel =
+                                getVariantLabel(sourceVariant) || "source";
+                              return (
+                                <p className="text-[11px] text-red-500">
+                                  Auto converts from {sourceLabel} •{" "}
+                                  {variant.conversionQuantity || 1} {variant.unit} each
+                                </p>
+                              );
+                            })()}
+                            
+                            {getVariantLabel(variant) && (
+                              <span className="px-2.5 py-1 bg-gray-100 text-gray-900 rounded-lg text-xs font-semibold inline-block whitespace-nowrap">
+                                {getVariantLabel(variant)}
                               </span>
                             )}
                           </div>
                           
-                          <span className="text-xs font-medium text-gray-500 block mb-2">
-                            Stock: {getAvailableQuantity(variant)}
-                          </span>
-                          {showAutoConvertInfo && variant.autoConvert && variant.conversionSource && (() => {
-                            const sourceVariant = variantMap.get(
-                              variant.conversionSource
-                            );
-                            if (!sourceVariant) return null;
-                            const sourceLabel =
-                              getVariantLabel(sourceVariant) || "source";
-                            return (
-                              <p className="text-[11px] text-red-500">
-                                Auto converts from {sourceLabel} •{" "}
-                                {variant.conversionQuantity || 1} {variant.unit} each
-                              </p>
-                            );
-                          })()}
-                          
-                          {getVariantLabel(variant) && (
-                            <span className="px-2.5 py-1 bg-gray-100 text-gray-900 rounded-lg text-xs font-semibold inline-block whitespace-nowrap">
-                              {getVariantLabel(variant)}
-                            </span>
-                          )}
+                          <div className="flex-shrink-0">
+                            {user && (
+                              <CreateCart 
+                                product={product} 
+                                variant={variant}
+                                onOpen={() => {
+                                  // Mark that CreateCart is opening to prevent variant modal from interfering
+                                  setIsCreateCartOpening(true);
+                                  // DON'T close variant modal - just hide it
+                                  // This keeps CreateCart component mounted so its modal stays open
+                                  // The variant modal will be hidden but still mounted
+                                }}
+                                onClose={() => {
+                                  // Reset variant modal state when CreateCart closes
+                                  setIsCreateCartOpening(false);
+                                  setShowVariants(false);
+                                }}
+                              />
+                            )}
+                          </div>
+                        </div>
                       </div>
-                        
-                        <div className="flex-shrink-0">
-                        {user && (
-                          <CreateCart product={product} variant={variant} />
-                        )}
-                      </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8">
+                      <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500 text-sm">No variants available</p>
                     </div>
-                  </div>
-                  ))}
+                  )}
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       )}
@@ -277,7 +320,11 @@ function ProductListVariant({ product, user, isMobile, showAutoConvertInfo = fal
                       {/* Add to Cart Button */}
                       <div className="flex-shrink-0">
                         {user && (
-                          <CreateCart product={product} variant={variant} />
+                          <CreateCart 
+                            product={product} 
+                            variant={variant}
+                            onOpen={() => setShowVariants(false)}
+                          />
                         )}
                       </div>
                     </div>

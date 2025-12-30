@@ -145,12 +145,12 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                               {productName}
                             </h3>
                             {variantSize && (
-                              <p className="text-sm text-gray-600 font-medium">
+                              <p className="text-sm text-black font-medium">
                                 ₱{lockedPrice.toFixed(2)} / {variantSize} {variantUnit}
                               </p>
                             )}
                             {!variantSize && (
-                              <p className="text-sm text-gray-600 font-medium">
+                              <p className="text-sm text-black font-medium">
                                 ₱{lockedPrice.toFixed(2)} / {variantUnit}
                               </p>
                             )}
@@ -179,7 +179,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                           </div>
 
                           <div className="text-right">
-                            <p className="text-2xl font-bold text-blue-600">
+                            <p className="text-2xl font-bold text-black">
                               ₱{subtotal.toFixed(2)}
                             </p>
                           </div>
@@ -244,7 +244,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                       <span className="text-sm font-bold text-gray-700">
                         Total:
                       </span>
-                      <span className="text-lg font-bold text-red-600">
+                      <span className="text-lg font-bold text-black">
                         ₱{totalPrice.toFixed(2)}
                       </span>
                     </div>
@@ -397,12 +397,12 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                                       {productName}
                                     </h3>
                                     {variantSize && (
-                                      <p className="text-sm text-red-600 font-medium">
+                                      <p className="text-sm text-black font-medium">
                                         ₱{lockedPrice.toFixed(2)} / {variantSize} {variantUnit}
                                       </p>
                                     )}
                                     {!variantSize && (
-                                      <p className="text-sm text-red-600 font-medium">
+                                      <p className="text-sm text-black font-medium">
                                         ₱{lockedPrice.toFixed(2)} / {variantUnit}
                                       </p>
                                     )}
@@ -431,7 +431,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                                   </div>
 
                                   <div className="text-right">
-                                    <p className="text-2xl font-bold text-red-600">
+                                    <p className="text-2xl font-bold text-black">
                                       ₱{subtotal.toFixed(2)}
                                     </p>
                                   </div>
@@ -496,7 +496,7 @@ function CompleteReservation({ reservation, onUpdateSuccess }) {
                               <span className="text-sm font-bold text-gray-700">
                                 Total:
                               </span>
-                              <span className="text-lg font-bold text-red-600">
+                              <span className="text-lg font-bold text-black">
                                 ₱{totalPrice.toFixed(2)}
                               </span>
                             </div>

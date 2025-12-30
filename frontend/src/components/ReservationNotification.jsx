@@ -885,7 +885,7 @@ const ReservationNotification = () => {
           className="bg-white rounded-2xl max-w-md w-full p-0 max-h-[90vh] flex flex-col"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-t-2xl flex items-center justify-between border-b border-blue-800/30 flex-shrink-0">
+          <div className="bg-red-400 text-white px-4 py-3 rounded-t-2xl flex items-center justify-between border-b border-red-500/30 flex-shrink-0">
             <div className="flex items-center gap-2">
               <Bell className="w-5 h-5" />
               <h3 className="font-semibold text-lg">Reservation Updates</h3>
@@ -995,7 +995,7 @@ const ReservationNotification = () => {
                               {formatDatePHT(notificationDate)}
                             </p>
                             {notification.totalPrice && (
-                              <p className="text-xs font-semibold text-blue-600">
+                              <p className="text-xs font-semibold text-black">
                                 Total: {formatPrice(notification.totalPrice)}
                               </p>
                             )}
@@ -1018,7 +1018,7 @@ const ReservationNotification = () => {
               <Link
                 to={`/reservations/user/${user.userId}`}
                 onClick={() => setIsOpen(false)}
-                className="block text-center text-sm font-medium text-blue-600 hover:text-blue-700"
+                className="block text-center text-sm font-medium text-red-400 hover:text-red-500"
               >
                 View All Reservations
               </Link>
@@ -1039,7 +1039,7 @@ const ReservationNotification = () => {
               {/* Notification Panel */}
               <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-[9999] max-h-[600px] flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-t-xl flex items-center justify-between border-b border-blue-800/30">
+            <div className="bg-red-400 text-white px-4 py-3 rounded-t-xl flex items-center justify-between border-b border-red-500/30">
               <div className="flex items-center gap-2">
                 <Bell className="w-5 h-5" />
                 <h3 className="font-semibold text-lg">Reservation Updates</h3>
@@ -1149,7 +1149,7 @@ const ReservationNotification = () => {
                               {formatDatePHT(notificationDate)}
                             </p>
                             {notification.totalPrice && (
-                              <p className="text-xs font-semibold text-blue-600">
+                              <p className="text-xs font-semibold text-black">
                                 Total: {formatPrice(notification.totalPrice)}
                               </p>
                             )}
@@ -1172,7 +1172,7 @@ const ReservationNotification = () => {
                 <Link
                   to={`/reservations/user/${user.userId}`}
                   onClick={() => setIsOpen(false)}
-                  className="block text-center text-sm font-medium text-blue-600 hover:text-blue-700"
+                  className="block text-center text-sm font-medium text-red-400 hover:text-red-500"
                 >
                   View All Reservations
                 </Link>

@@ -142,9 +142,9 @@ function Login() {
   };
 
   return (
-  <div className="min-h-screen flex items-start justify-center px-4 overflow-y-auto py-10 bg-gray-100">
+  <div className="min-h-screen flex items-center justify-center px-4 overflow-y-auto py-4 sm:py-10 bg-gray-100">
       <div
-        className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-5 w-full max-w-xs mx-auto"
+        className="backdrop-blur-md bg-zinc-800/90 rounded-xl p-5 w-full max-w-xs mx-auto -mt-16 sm:mt-0"
         style={{ boxShadow: "0 10px 15px -3px rgba(255, 255, 255, 0.4)" }}
       >
         {/* Logo + Title */}
