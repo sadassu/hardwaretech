@@ -135,7 +135,7 @@ function DeleteAccount({ className = "", icon: Icon }) {
                 type="button"
                 onClick={handleDelete}
                 disabled={confirmText.toLowerCase() !== "delete"}
-                className="flex-1 btn bg-gradient-to-r from-red-500 to-red-600 text-white border-0 hover:from-red-600 hover:to-red-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 btn bg-red-400 text-white border-0 hover:bg-red-500 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Delete Account
               </button>
