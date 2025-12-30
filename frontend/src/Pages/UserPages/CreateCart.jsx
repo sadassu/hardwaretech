@@ -227,7 +227,7 @@ function CreateCart({ product, variant }) {
               <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-700">Total Price:</span>
-                  <span className="text-xl font-bold text-red-500">
+                  <span className="text-xl font-bold text-black">
                     {formatPrice((variant?.price ?? product?.price ?? 0) * quantity)}
                   </span>
                 </div>

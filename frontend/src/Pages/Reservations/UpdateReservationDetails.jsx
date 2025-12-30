@@ -695,7 +695,7 @@ const UpdateReservationDetails = ({ reservation, onUpdateSuccess }) => {
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Subtotal:</span>
-                          <span className="text-lg font-bold text-red-600">
+                          <span className="text-lg font-bold text-black">
                             ₱
                             {(
                               (typeof detail.price === "number"

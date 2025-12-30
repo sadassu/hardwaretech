@@ -368,7 +368,7 @@ function CartContent() {
                         </div>
 
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-blue-600">
+                          <p className="text-2xl font-bold text-black">
                             ₱{item.total.toFixed(2)}
                           </p>
                         </div>
@@ -387,7 +387,7 @@ function CartContent() {
                   Special Notes
                 </label>
                 <textarea
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-sm text-black placeholder-gray-400"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none resize-none text-sm text-black placeholder-gray-400"
                   placeholder="Any special requests? (Optional)"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -406,12 +406,12 @@ function CartContent() {
                 {isRestricted && (
                   <div className="flex-1 flex flex-col">
                     <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                      <Banknote className="w-4 h-4 text-blue-600" />
+                      <Banknote className="w-4 h-4 text-red-400" />
                       Amount Paid
                     </label>
                     <input
                       type="number"
-                      className="w-full h-11 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-medium"
+                      className="w-full h-11 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none text-sm font-medium"
                       placeholder="Enter amount paid"
                       value={amountPaid}
                       min={0}
@@ -426,12 +426,12 @@ function CartContent() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Total Amount
                   </label>
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 h-11 p-2.5 rounded-lg border border-blue-200 flex items-center">
+                  <div className="bg-gradient-to-r from-red-50 to-red-100 h-11 p-2.5 rounded-lg border border-red-200 flex items-center">
                     <div className="flex justify-between items-center w-full">
                       <span className="text-sm font-bold text-gray-700">
                         Total:
                       </span>
-                      <span className="text-lg font-bold text-blue-600">
+                      <span className="text-lg font-bold text-black">
                         ₱{totalPrice.toFixed(2)}
                       </span>
                     </div>
@@ -481,7 +481,7 @@ function CartContent() {
                   Continue Shopping
                 </button>
                 <button
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 bg-yellow-400 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleCheckout}
                   disabled={
                     loading ||
@@ -701,7 +701,7 @@ function CartContent() {
                           </div>
 
                           <div className="text-right">
-                            <p className="text-2xl font-bold text-red-600">
+                            <p className="text-2xl font-bold text-black">
                               ₱{item.total.toFixed(2)}
                             </p>
                           </div>
@@ -764,7 +764,7 @@ function CartContent() {
                         <span className="text-sm font-bold text-gray-700">
                           Total:
                         </span>
-                        <span className="text-lg font-bold text-red-600">
+                        <span className="text-lg font-bold text-black">
                           ₱{totalPrice.toFixed(2)}
                         </span>
                       </div>

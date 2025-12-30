@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import Pagination from "../../components/Pagination";
-import SearchBar from "../../components/SearchBar";
 import { useSupplyHistoryStore } from "../../store/supplyHistoryStore";
 import { useLiveResourceRefresh } from "../../hooks/useLiveResourceRefresh";
 import useKeyboardPagination from "../../hooks/useKeyboardPagination";
@@ -17,6 +16,7 @@ import {
   Loader2,
   FileWarning,
   DollarSign,
+  Search,
 } from "lucide-react";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
@@ -40,7 +40,6 @@ const SupplyHistories = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [expandedRow, setExpandedRow] = useState(null);
@@ -86,14 +85,23 @@ const SupplyHistories = () => {
 
   // Debounce search input
   useEffect(() => {
-    setIsSearching(true);
     const timeout = setTimeout(() => {
       setQuery(search);
       setPage(1);
-      setIsSearching(false);
     }, 500);
     return () => clearTimeout(timeout);
   }, [search]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setQuery(search);
+    setPage(1);
+  };
+
+  const handleClearSearch = () => {
+    setSearch("");
+    setQuery("");
+  };
 
   // Fetch data whenever filters change
   useEffect(() => {
@@ -183,15 +191,38 @@ const SupplyHistories = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="w-full sm:w-auto sm:ml-auto max-w-xl">
-            <SearchBar
-              search={search}
-              onSearchChange={(e) => setSearch(e.target.value)}
-              onClear={() => setSearch("")}
-              isSearching={isSearching}
-              placeholder="Search product name..."
-            />
-          </div>
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex w-full sm:w-auto gap-2 sm:ml-auto max-w-xl"
+          >
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search product name..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-10 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all text-sm"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="px-3 sm:px-4 py-2 bg-red-400 text-white font-medium rounded-lg hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 flex-shrink-0 text-sm"
+            >
+              <Search className="w-4 h-4" />
+              <span className="hidden sm:inline">Search</span>
+            </button>
+          </form>
         </div>
       </div>
 
